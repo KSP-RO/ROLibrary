@@ -14,7 +14,7 @@ namespace ROLib
         private static bool fireEditorEvent = false;
 
         public static ROLStockInterop INSTANCE;
-        
+
         public void Start()
         {
             INSTANCE = this;
@@ -36,7 +36,7 @@ namespace ROLib
             if(part != null && HighLogic.LoadedSceneIsFlight && !dragCubeUpdateParts.Contains(part))
             {
                 dragCubeUpdateParts.Add(part);
-            }          
+            }
         }
 
         public static void fireEditorUpdate()
@@ -128,7 +128,7 @@ namespace ROLib
             part.DragCubes.Cubes.Add(newDefaultCube);
             part.DragCubes.ResetCubeWeights();
         }
-        
+
         public static void updateEngineThrust(ModuleEngines engine, float minThrust, float maxThrust)
         {
             engine.minThrust = minThrust;

@@ -38,5 +38,10 @@ namespace ROLib
             if (!debugMode) { return; }
             MonoBehaviour.print(obj);
         }
+
+        public static void exc(Exception e)
+        {
+            MonoBehaviour.print("ROL-LOG  : " + e);
+        }
     }
 }
