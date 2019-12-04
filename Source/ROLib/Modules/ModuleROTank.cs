@@ -6,7 +6,13 @@ using KSPShaderTools;
 
 namespace ROLib
 {
-    public class ROLModularPart : PartModule, IContainerVolumeContributor
+
+    // TODO: prevDiameter allows the surface attached parts to update, so I should make a prevHeight to allow the surface attached parts on the top and bottom to update as well.
+    /// <summary>
+    /// PartModule that manages multiple models/meshes and accompanying features for model switching - resources, modules, textures, recoloring.<para/>
+    /// Includes 3 stack-mounted modules.  All modules support model-switching, texture-switching, recoloring.
+    /// </summary>
+    public class ModuleROTank : PartModule, IPartCostModifier, IPartMassModifier, IRecolorable, IContainerVolumeContributor
     {
         #region KSPFields
 
@@ -29,7 +35,16 @@ namespace ROLib
         public float volumeScalingPower = 3f;
 
         [KSPField]
+        public float massScalingPower = 3f;
+
+        [KSPField]
         public bool enableVScale = true;
+
+        [KSPField]
+        public bool scaleMass = false;
+
+        [KSPField]
+        public bool scaleCost = false;
 
         [KSPField]
         public int coreContainerIndex = 0;
@@ -50,65 +65,78 @@ namespace ROLib
         public string mountManagedNodes = string.Empty;
 
         [KSPField]
+        public string noseInterstageNode = "noseinterstage";
+
+        [KSPField]
+        public string mountInterstageNode = "mountinterstage";
+
+        [KSPField]
         public float actualHeight = 0.0f;
+
+        /// <summary>
+        /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
+        /// </summary>
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Diameter", guiUnits = "m", groupDisplayName = "RO-Tanks", groupName = "ModuleROTank"),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
+        public float currentDiameter = 1.0f;
+
+        [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = "ModuleROTank")]
+        public void OpenTankDimensionGUIEvent()
+        {
+            ROLLog.debug("EditDimensions() called");
+            EditDimensions(this);
+        }
+
+        /// <summary>
+        /// Adjustment to the vertical-scale of v-scale compatible models/module-slots.
+        /// </summary>
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "V.ScaleAdj", groupName = "ModuleROTank"),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -1, maxValue = 1, incrementLarge = 0.25f, incrementSmall = 0.05f, incrementSlide = 0.001f)]
+        public float currentVScale = 0f;
 
         /// <summary>
         /// This is the total length of the entire tank with the nose, core and mounts all considered.
         /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Total Length", guiFormat = "F4", guiUnits = "m")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Total Length", guiFormat = "F4", guiUnits = "m", groupName = "ModuleROTank")]
         public float totalTankLength = 0.0f;
 
         /// <summary>
         /// This is the largest diameter of the entire tank.
         /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Largest Diameter", guiFormat = "F4", guiUnits = "m")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Largest Diameter", guiFormat = "F4", guiUnits = "m", groupName = "ModuleROTank")]
         public float largestDiameter = 0.0f;
-
-        /// <summary>
-        /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
-        /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Diameter", guiUnits = "m"),
-         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
-        public float currentDiameter = 1.0f;
-
-        /// <summary>
-        /// Adjustment to the vertical-scale of v-scale compatible models/module-slots.
-        /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "V.ScaleAdj"),
-         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -1, maxValue = 1, incrementLarge = 0.25f, incrementSmall = 0.05f, incrementSlide = 0.001f)]
-        public float currentVScale = 0f;
 
         //------------------------------------------MODEL SELECTION SET PERSISTENCE-----------------------------------------------//
 
         //non-persistent value; initialized to whatever the currently selected core model definition is at time of loading
         //allows for variant names to be updated in the part-config without breaking everything....
-        [KSPField(isPersistant = true, guiName = "Variant", guiActiveEditor = true, guiActive = false),
+        [KSPField(isPersistant = true, guiName = "Variant", guiActiveEditor = true, guiActive = false, groupName = "ModuleROTank"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentVariant = "Default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Nose"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Nose", groupName = "ModuleROTank"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentNose = "Mount-None";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Core"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Core", groupName = "ModuleROTank"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentCore = "Mount-None";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Mount"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Mount", groupName = "ModuleROTank"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentMount = "Mount-None";
 
         //------------------------------------------TEXTURE SET PERSISTENCE-----------------------------------------------//
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Nose Tex"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Nose Tex", groupName = "ModuleROTank"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentNoseTexture = "default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Core Tex"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Core Tex", groupName = "ModuleROTank"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentCoreTexture = "default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Mount Tex"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Mount Tex", groupName = "ModuleROTank"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentMountTexture = "default";
 
@@ -141,33 +169,43 @@ namespace ROLib
         /// <summary>
         /// Has initialization been run?  Set to true the first time init methods are run (OnLoad/OnStart), and ensures that init is only run a single time.
         /// </summary>
-        protected bool initialized = false;
+        private bool initialized = false;
+
+        /// <summary>
+        /// The adjusted modified mass for this part.
+        /// </summary>
+        private float modifiedMass = -1;
+
+        /// <summary>
+        /// The adjusted modified cost for this part.
+        /// </summary>
+        private float modifiedCost = -1;
 
         /// <summary>
         /// Previous diameter value, used for surface attach position updates.
         /// </summary>
-        protected float prevDiameter = -1;
+        private float prevDiameter = -1;
 
-        protected string[] noseNodeNames;
-        protected string[] coreNodeNames;
-        protected string[] mountNodeNames;
+        private string[] noseNodeNames;
+        private string[] coreNodeNames;
+        private string[] mountNodeNames;
 
         //Main module slots for nose/core/mount
-        protected ROLModelModule<ROLModularPart> noseModule;
-        protected ROLModelModule<ROLModularPart> coreModule;
-        protected ROLModelModule<ROLModularPart> mountModule;
+        private ROLModelModule<ModuleROTank> noseModule;
+        private ROLModelModule<ModuleROTank> coreModule;
+        private ROLModelModule<ModuleROTank> mountModule;
 
         /// <summary>
         /// Mapping of all of the variant sets available for this part.  When variant list length > 0, an additional 'variant' UI slider is added to allow for switching between variants.
         /// </summary>
-        protected Dictionary<string, ModelDefinitionVariantSet> variantSets = new Dictionary<string, ModelDefinitionVariantSet>();
+        private Dictionary<string, ModelDefinitionVariantSet> variantSets = new Dictionary<string, ModelDefinitionVariantSet>();
 
         /// <summary>
         /// Helper method to get or create a variant set for the input variant name.  If no set currently exists, a new set is empty set is created and returned.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        protected ModelDefinitionVariantSet getVariantSet(string name)
+        private ModelDefinitionVariantSet getVariantSet(string name)
         {
             ModelDefinitionVariantSet set = null;
             if (!variantSets.TryGetValue(name, out set))
@@ -183,17 +221,24 @@ namespace ROLib
         /// </summary>
         /// <param name="def"></param>
         /// <returns></returns>
-        protected ModelDefinitionVariantSet getVariantSet(ModelDefinitionLayoutOptions def)
+        private ModelDefinitionVariantSet getVariantSet(ModelDefinitionLayoutOptions def)
         {
             //returns the first variant set out of all variants where the variants definitions contains the input definition
             return variantSets.Values.Where((a, b) => { return a.definitions.Contains(def); }).First();
         }
 
+        ModelDefinitionLayoutOptions[] coreDefs;
+        ModelDefinitionLayoutOptions[] noseDefs;
+        ModelDefinitionLayoutOptions[] mountDefs;
+
+        private DimensionWindow dimWindow;
+
+
         #endregion Private Variables
 
         #region Standard KSP Overrides
 
-        //standard KSP lifecyle override
+        // Standard KSP lifecyle override
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
@@ -201,7 +246,7 @@ namespace ROLib
             initialize();
         }
 
-        //standard KSP lifecyle override
+        // Standard KSP lifecyle override
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
@@ -210,14 +255,14 @@ namespace ROLib
             updateDimensions();
         }
 
-        //standard Unity lifecyle override
+        // Standard Unity lifecyle override
         public void Start()
         {
             initializedDefaults = true;
             updateDragCubes();
         }
 
-        //standard Unity lifecyle override
+        // Standard Unity lifecyle override
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -227,20 +272,40 @@ namespace ROLib
         }
 
         //KSP editor modified event callback
-        protected void onEditorVesselModified(ShipConstruct ship)
+        private void onEditorVesselModified(ShipConstruct ship)
         {
             //update available variants for attach node changes
             updateAvailableVariants();
         }
 
+        // IPartMass/CostModifier override
+        public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
+
+        // IPartMass/CostModifier override
+        public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
+
+        // IPartMass/CostModifier override
+        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
+        {
+            if (modifiedMass == -1) { return 0; }
+            return -defaultMass + modifiedMass;
+        }
+
+        // IPartMass/CostModifier override
+        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit)
+        {
+            if (modifiedCost == -1) { return 0; }
+            return -defaultCost + modifiedCost;
+        }
+
         //IRecolorable override
-        public virtual string[] getSectionNames()
+        public string[] getSectionNames()
         {
             return new string[] { "Nose", "Core", "Mount" };
         }
 
         //IRecolorable override
-        public virtual RecoloringData[] getSectionColors(string section)
+        public RecoloringData[] getSectionColors(string section)
         {
             if (section == "Nose")
             {
@@ -258,7 +323,7 @@ namespace ROLib
         }
 
         //IRecolorable override
-        public virtual void setSectionColors(string section, RecoloringData[] colors)
+        public void setSectionColors(string section, RecoloringData[] colors)
         {
             if (section == "Nose")
             {
@@ -275,7 +340,7 @@ namespace ROLib
         }
 
         //IRecolorable override
-        public virtual TextureSet getSectionTexture(string section)
+        public TextureSet getSectionTexture(string section)
         {
             if (section == "Nose")
             {
@@ -293,7 +358,7 @@ namespace ROLib
         }
 
         //IContainerVolumeContributor override
-        public virtual ContainerContribution[] getContainerContributions()
+        public ContainerContribution[] getContainerContributions()
         {
             ContainerContribution[] cts;
             ContainerContribution ct0 = getCC("nose", noseContainerIndex, noseModule.moduleVolume * 1000f);
@@ -303,7 +368,7 @@ namespace ROLib
             return cts;
         }
 
-        protected virtual ContainerContribution getCC(string name, int index, float vol)
+        private ContainerContribution getCC(string name, int index, float vol)
         {
             float contVol = vol;
             return new ContainerContribution(name, index, contVol);
@@ -317,7 +382,7 @@ namespace ROLib
         /// Initialization method.  Sets up model modules, loads their configs from the input config node.  Does all initial linking of part-modules.<para/>
         /// Does NOT set up their UI interaction -- that is all handled during OnStart()
         /// </summary>
-        protected virtual void initialize()
+        private void initialize()
         {
             if (initialized) { return; }
             initialized = true;
@@ -336,7 +401,7 @@ namespace ROLib
             //but must contain no more than a single 'variant' entry.
             //if no variant is specified, they are added to the 'Default' variant.
             ConfigNode[] coreDefNodes = node.GetNodes("CORE");
-            ModelDefinitionLayoutOptions[] coreDefs;
+
             List<ModelDefinitionLayoutOptions> coreDefList = new List<ModelDefinitionLayoutOptions>();
             int coreDefLen = coreDefNodes.Length;
             for (int i = 0; i < coreDefLen; i++)
@@ -350,20 +415,20 @@ namespace ROLib
             coreDefs = coreDefList.ToArray();
 
             //model defs - brought here so we can capture the array rather than the config node+method call
-            ModelDefinitionLayoutOptions[] noseDefs = ROLModelData.getModelDefinitions(node.GetNodes("NOSE"));
-            ModelDefinitionLayoutOptions[] mountDefs = ROLModelData.getModelDefinitions(node.GetNodes("MOUNT"));
+            noseDefs = ROLModelData.getModelDefinitions(node.GetNodes("NOSE"));
+            mountDefs = ROLModelData.getModelDefinitions(node.GetNodes("MOUNT"));
 
-            noseModule = new ROLModelModule<ROLModularPart>(part, this, getRootTransform("ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
+            noseModule = new ROLModelModule<ModuleROTank>(part, this, getRootTransform("ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
             noseModule.name = "ModuleROTank-Nose";
             noseModule.getSymmetryModule = m => m.noseModule;
             noseModule.getValidOptions = () => noseDefs;
 
-            coreModule = new ROLModelModule<ROLModularPart>(part, this, getRootTransform("ModularPart-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, nameof(currentCoreTexture), nameof(coreModulePersistentData));
+            coreModule = new ROLModelModule<ModuleROTank>(part, this, getRootTransform("ModularPart-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, nameof(currentCoreTexture), nameof(coreModulePersistentData));
             coreModule.name = "ModuleROTank-Core";
             coreModule.getSymmetryModule = m => m.coreModule;
             coreModule.getValidOptions = () => getVariantSet(currentVariant).definitions;
 
-            mountModule = new ROLModelModule<ROLModularPart>(part, this, getRootTransform("ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
+            mountModule = new ROLModelModule<ModuleROTank>(part, this, getRootTransform("ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
             mountModule.name = "ModuleROTank-Mount";
             mountModule.getSymmetryModule = m => m.mountModule;
             mountModule.getValidOptions = () => mountDefs;
@@ -384,6 +449,14 @@ namespace ROLib
             updateDimensions();
             updateAttachNodes(false);
             updateAvailableVariants();
+            if (scaleMass)
+            {
+                updateMass();
+            }
+            if (scaleCost)
+            {
+                updateCost();
+            }
             ROLStockInterop.updatePartHighlighting(part);
         }
 
@@ -391,15 +464,23 @@ namespace ROLib
         /// Initialize the UI controls, including default values, and specifying delegates for their 'onClick' methods.<para/>
         /// All UI based interaction code will be defined/run through these delegates.
         /// </summary>
-        protected virtual void initializeUI()
+        public void initializeUI()
         {
-            Action<ROLModularPart> modelChangedAction = (m) =>
+            Action<ModuleROTank> modelChangedAction = (m) =>
             {
                 m.updateModulePositions();
                 m.updateDimensions();
                 m.updateAttachNodes(true);
                 m.updateAvailableVariants();
                 m.updateDragCubes();
+                if (scaleMass)
+                {
+                    m.updateMass();
+                }
+                if (scaleCost)
+                {
+                    m.updateCost();
+                }
                 ROLModInterop.updateResourceVolume(m.part);
             };
 
@@ -490,18 +571,13 @@ namespace ROLib
             {
                 GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(onEditorVesselModified));
             }
-
-            // Force the Textures selection to show up to keep the PAW at the same size
-            Fields[nameof(currentNoseTexture)].guiActiveEditor = true;
-            Fields[nameof(currentCoreTexture)].guiActiveEditor = true;
-            Fields[nameof(currentMountTexture)].guiActiveEditor = true;
         }
 
         /// <summary>
         /// Update the scale and position values for all currently configured models.  Does no validation, only updates positions.<para/>
         /// After calling this method, all models will be scaled and positioned according to their internal position/scale values and the orientations/offsets defined in the models.
         /// </summary>
-        protected virtual void updateModulePositions()
+        public void updateModulePositions()
         {
             //scales for modules depend on the module above/below them
             //first set the scale for the core module -- this depends directly on the UI specified 'diameter' value.
@@ -534,9 +610,29 @@ namespace ROLib
         }
 
         /// <summary>
+        /// Update the cached modifiedMass field values.  Used with stock mass modifier interface.<para/>
+        /// </summary>
+        public void updateMass()
+        {
+            modifiedMass = coreModule.moduleMass;
+            modifiedMass += noseModule.moduleMass;
+            modifiedMass += mountModule.moduleMass;
+        }
+
+        /// <summary>
+        /// Update the cached modifiedCost field values.  Used with stock cost modifier interface.<para/>
+        /// </summary>
+        public void updateCost()
+        {
+            modifiedCost = coreModule.moduleCost;
+            modifiedCost += noseModule.moduleCost;
+            modifiedCost += mountModule.moduleCost;
+        }
+
+        /// <summary>
         /// Updates all dimensions for the PAW and tooling.
         /// </summary>
-        protected virtual void updateDimensions()
+        public void updateDimensions()
         {
             float noseMaxDiam, mountMaxDiam = 0.0f;
             noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
@@ -555,14 +651,14 @@ namespace ROLib
         }
 
         /// <summary>
-        /// Update the attach nodes for the current model-module configuration. 
+        /// Update the attach nodes for the current model-module configuration.
         /// The 'nose' module is responsible for updating of upper attach nodes, while the 'mount' module is responsible for lower attach nodes.
         /// Also includes updating of 'interstage' nose/mount attach nodes.
         /// Also includes updating of surface-attach node position.
         /// Also includes updating of any parts that are surface attached to this part.
         /// </summary>
         /// <param name="userInput"></param>
-        public virtual void updateAttachNodes(bool userInput)
+        public void updateAttachNodes(bool userInput)
         {
             //update the standard top and bottom attach nodes, using the node position(s) defined in the nose and mount modules
             noseModule.updateAttachNodeTop("top", userInput);
@@ -573,8 +669,30 @@ namespace ROLib
             coreModule.updateAttachNodeBody(coreNodeNames, userInput);
             mountModule.updateAttachNodeBody(mountNodeNames, userInput);
 
+            // Update the Nose Interstage Node
+            float y = noseModule.modulePosition + noseModule.moduleVerticalScale;
+            int nodeSize = Mathf.RoundToInt(coreModule.moduleDiameter) + 1;
+            Vector3 pos = new Vector3(0, y, 0);
+            ROLSelectableNodes.updateNodePosition(part, noseInterstageNode, pos);
+            AttachNode noseInterstage = part.FindAttachNode(noseInterstageNode);
+            if (noseInterstage != null)
+            {
+                ROLAttachNodeUtils.updateAttachNodePosition(part, noseInterstage, pos, Vector3.up, userInput, nodeSize);
+            }
+
+            // Update the Mount Interstage Node
+            y = mountModule.modulePosition + mountModule.moduleVerticalScale;
+            nodeSize = Mathf.RoundToInt(coreModule.moduleDiameter) + 1;
+            pos = new Vector3(0, y, 0);
+            ROLSelectableNodes.updateNodePosition(part, mountInterstageNode, pos);
+            AttachNode mountInterstage = part.FindAttachNode(mountInterstageNode);
+            if (mountInterstage != null)
+            {
+                ROLAttachNodeUtils.updateAttachNodePosition(part, mountInterstage, pos, Vector3.down, userInput, nodeSize);
+            }
+
+
             //update surface attach node position, part position, and any surface attached children
-            //TODO -- how to determine how far to offset/move surface attached children?
             AttachNode surfaceNode = part.srfAttachNode;
             if (surfaceNode != null)
             {
@@ -586,7 +704,7 @@ namespace ROLib
         /// Return the total height of this part in its current configuration.  This will be the distance from the bottom attach node to the top attach node, and may not include any 'extra' structure. TOOLING
         /// </summary>
         /// <returns></returns>
-        protected virtual float getTotalHeight()
+        private float getTotalHeight()
         {
             float totalHeight = noseModule.moduleHeight;
             totalHeight += mountModule.moduleHeight;
@@ -605,7 +723,7 @@ namespace ROLib
         /// Return the topmost position in the models relative to the part's origin.
         /// </summary>
         /// <returns></returns>
-        protected float getPartTopY()
+        private float getPartTopY()
         {
             return getTotalHeight() * 0.5f;
         }
@@ -614,7 +732,7 @@ namespace ROLib
         /// Update the UI visibility for the currently available selections.<para/>
         /// Will hide/remove UI fields for slots with only a single option (models, textures, layouts).
         /// </summary>
-        protected void updateAvailableVariants()
+        public void updateAvailableVariants()
         {
             noseModule.updateSelections();
             coreModule.updateSelections();
@@ -624,7 +742,7 @@ namespace ROLib
         /// <summary>
         /// Calls the generic ROT procedural drag-cube updating routines.  Will update the drag cubes for whatever the current model state is.
         /// </summary>
-        protected void updateDragCubes()
+        private void updateDragCubes()
         {
             ROLModInterop.onPartGeometryUpdate(part, true);
         }
@@ -635,7 +753,7 @@ namespace ROLib
         /// <param name="name"></param>
         /// <param name="recreate"></param>
         /// <returns></returns>
-        protected Transform getRootTransform(string name)
+        private Transform getRootTransform(string name)
         {
             Transform root = part.transform.ROLFindRecursive(name);
             if (root != null)
@@ -653,7 +771,7 @@ namespace ROLib
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        protected virtual ROLModelModule<ROLModularPart> getModuleByName(string name)
+        private ROLModelModule<ModuleROTank> getModuleByName(string name)
         {
             switch (name)
             {
@@ -671,6 +789,78 @@ namespace ROLib
         }
 
         #endregion ENDREGION - Custom Update Methods
+
+        #region GUI
+
+        private void OnGUI()
+        {
+            GUI.depth = 0;
+
+            Action windows = delegate { };
+            foreach (var window in AbstractWindow.Windows.Values)
+            {
+                windows += window.Draw;
+            }
+            windows.Invoke();
+        }
+
+        private void HideGUI()
+        {
+            if (dimWindow != null)
+            {
+                dimWindow.Hide();
+                dimWindow = null;
+            }
+        }
+
+        private void OnSceneChange(GameScenes s)
+        {
+            HideGUI();
+        }
+
+        public void EditDimensions(ModuleROTank m)
+        {
+            if (dimWindow != null)
+            {
+                dimWindow.Hide();
+                dimWindow = null;
+                return;
+            }
+            dimWindow = new DimensionWindow(m);
+            dimWindow.Show();
+        }
+
+        //private void openVariantGUI()
+        //{
+        //    if (VariantSelectionGUI.roTank != null)
+        //    {
+        //        VariantSelectionGUI.closeGUI();
+        //        return;
+        //    }
+
+        //    isVariantGUI = true;
+
+        //    VariantSelectionGUI.updateGUI();
+
+        //    EditorLogic editor = EditorLogic.fetch;
+        //    if (editor != null)
+        //    {
+        //        editor.Lock(true, true, true, "ROTankVariantLock");
+        //    }
+        //    VariantSelectionGUI.openGUI(this, coreDefs, noseDefs, mountDefs);
+        //}
+
+        //public void closeVariantGUI()
+        //{
+        //    isVariantGUI = false;
+        //    EditorLogic editor = EditorLogic.fetch;
+        //    if (editor != null)
+        //    {
+        //        editor.Unlock("ROTankVariantLock");
+        //    }
+        //}
+
+        #endregion GUI
 
     }
 
@@ -712,5 +902,4 @@ namespace ROLib
         }
 
     }
-
 }
