@@ -840,5 +840,4 @@ namespace ROLib
             return -1;
         }
     }
-
 }

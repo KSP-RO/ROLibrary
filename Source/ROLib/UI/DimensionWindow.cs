@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 using System.IO;
 using System.Globalization;
@@ -33,13 +31,9 @@ namespace ROLib
 
         private void UpdatePresetList()
         {
-            ROLLog.debug("TankDimensionGUI: UpdatePresetList()");
-            files = Directory.GetFiles(KSPUtil.ApplicationRootPath + "GameData/ROLib/PluginData/", "*.cfg");
-
+            files = Directory.GetFiles($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/", "*.cfg");
             NumericComparer ns = new NumericComparer();
             Array.Sort(files, ns);
-
-            ROLLog.debug("TankDimensionGUI: FILES " + files);
         }
 
         public void CreateNew()
@@ -95,13 +89,13 @@ namespace ROLib
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 0.5f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(0.5f, "1:2 of ");
+                CalculateDiameter(0.5f, "1-2 of ");
             }
             if (GUILayout.Button("1:3 of Current", GUILayout.Width(125)))
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 0.33f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(0.33f, "1:3 of ");
+                CalculateDiameter(0.33f, "1-3 of ");
             }
             GUILayout.EndHorizontal();
 
@@ -110,13 +104,13 @@ namespace ROLib
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 0.66f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(0.66f, "2:3 of ");
+                CalculateDiameter(0.66f, "2-3 of ");
             }
             if (GUILayout.Button("1:4 of Current", GUILayout.Width(125)))
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 0.25f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(0.25f, "1:4 of ");
+                CalculateDiameter(0.25f, "1-4 of ");
             }
             GUILayout.EndHorizontal();
 
@@ -125,13 +119,13 @@ namespace ROLib
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 0.75f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(0.75f, "3:4 of ");
+                CalculateDiameter(0.75f, "3-4 of ");
             }
             if (GUILayout.Button("2:1 of Current", GUILayout.Width(125)))
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 2f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(2f, "2:1 of ");
+                CalculateDiameter(2f, "2-1 of ");
             }
             GUILayout.EndHorizontal();
 
@@ -140,13 +134,13 @@ namespace ROLib
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 3f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(3f, "3:1 of ");
+                CalculateDiameter(3f, "3-1 of ");
             }
             if (GUILayout.Button("3:2 of Current", GUILayout.Width(125)))
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 1.5f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(1.5f, "3:2 of ");
+                CalculateDiameter(1.5f, "3-2 of ");
             }
             GUILayout.EndHorizontal();
 
@@ -155,11 +149,12 @@ namespace ROLib
             {
                 //tempDiameter = (float)Math.Round(curDiameter * 1.33f, 3);
                 //diameterString = tempDiameter.ToString("N3");
-                CalculateDiameter(1.33f, "4:3 of ");
+                CalculateDiameter(1.33f, "4-3 of ");
             }
             if (GUILayout.Button("Set to Current", GUILayout.Width(125)))
             {
                 diameterString = curDiameter.ToString("N3");
+                nameString = "";
             }
             GUILayout.EndHorizontal();
 
@@ -196,9 +191,6 @@ namespace ROLib
                 ScreenMessages.PostScreenMessage("Preset Saved. You can edit the preset later by using the same name in the Tank Dimension UI.", 5, ScreenMessageStyle.UPPER_CENTER);
                 UpdatePresetList();
             }
-            ROLLog.debug("TankDimensionGUI: Through this part");
-            ROLLog.debug("TankDimensionGUI: Files.Length " + files.Length);
-
 
             // If there are no presets, do not activate the Delete button
             if (files.Length == 0)
@@ -215,7 +207,7 @@ namespace ROLib
             // If the button has currently been set for deletion, then toggle it
             if (deleteEnabled)
             {
-                if (GUILayout.Button("Disabled Deletion"))
+                if (GUILayout.Button("Disable Deletion"))
                 {
                     deleteEnabled = false;
                     ROLLog.debug("TankDimensionGUI: UnDelete Not Enabled");
@@ -260,7 +252,7 @@ namespace ROLib
                 // If the player is deleting the files, append the names
                 if (deleteEnabled)
                 {
-                    if (GUILayout.Button("Delete " + config.GetValue("name") + " [" + config.GetValue("diameter") + "m]"))
+                    if (GUILayout.Button($"Delete {config.GetValue("name")} [{config.GetValue("diameter")}m]"))
                     {
                         deleteFile = file;
                         deleteFileName = config.GetValue("name");
@@ -270,25 +262,14 @@ namespace ROLib
                 }
                 else
                 {
-                    if (GUILayout.Button(config.GetValue("name") + " [" + config.GetValue("diameter") + "m]"))
+                    if (GUILayout.Button($"{config.GetValue("name")} [{config.GetValue("diameter")} m]"))
                     {
                         // Set currentDiameter of ROTank
                         ROLLog.debug("TankDimensionGUI: Setting currentDiameter of ROTank");
                         diameter = ROLUtils.safeParseFloat(config.GetValue("diameter"));
                         nameString = config.GetValue("name");
-
-                        if (!feet)
-                        {
-                            diameter = diameterMeters = (float)Math.Round(float.Parse(diameterString, CultureInfo.InvariantCulture.NumberFormat), 3);
-                            diameterFeet = (float)Math.Round(diameterMeters * 3.28084f, 3);
-                        }
-                        else
-                        {
-                            diameterFeet = (float)Math.Round(float.Parse(diameterString, CultureInfo.InvariantCulture.NumberFormat), 3);
-                            diameter = diameterMeters = (float)Math.Round(diameterFeet * 0.3048f, 3);
-                        }
-
                         diameterString = diameter.ToString("N3");
+                        feet = false;
                         SetCurrentDiameter(diameter);
                     }
                 }
@@ -314,10 +295,17 @@ namespace ROLib
                 module.updateCost();
             }
 
-            //BaseField bf = module.Fields[nameof(module.currentDiameter)];
-            //bf.SetValue(f, bf.host);
-            //UIPartActionWindow.UpdateWindow;
+            UpdatePartActionWindow();
             ROLLog.log("ModuleROTank - Diameter set to: " + f);
+        }
+
+        private void UpdatePartActionWindow()
+        {
+            UIPartActionWindow window = UIPartActionController.Instance?.GetItem(module.part, false);
+            if (window is null) return;
+
+            window.ClearList();
+            window.displayDirty = true;
         }
 
         public override void Window(int id)
