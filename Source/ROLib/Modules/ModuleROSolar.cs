@@ -17,7 +17,7 @@ namespace ROLib
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentCore = "Mount-None";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Panel Length", guiFormat = "N3", guiUnits = "m", groupDisplayName = "RO-Solar", groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Panel Length", guiFormat = "N3", guiUnits = "m", groupName = "ModuleROSolar"),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float panelLength = 1.0f;
 
@@ -29,7 +29,7 @@ namespace ROLib
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float panelScale = 1.0f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Tech Level", guiFormat = "N0", groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Tech Level", guiFormat = "N0", groupName = "ModuleROSolar"),
         UI_FloatRange(minValue = 0f, stepIncrement = 1f, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public float TechLevel = -1f;
         public int techLevel => Convert.ToInt32(TechLevel);
@@ -40,7 +40,7 @@ namespace ROLib
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Area", guiFormat = "F4", guiUnits = " m^2", groupName = "ModuleROSolar")]
         public float area = 0.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Mass", guiFormat = "F4", guiUnits = " m", groupName = "ModuleROSolar")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Mass", guiFormat = "F4", guiUnits = " m", groupName = "ModuleROSolar")]
         public float mass = 0.0f;
 
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Cost", guiFormat = "F1", groupName = "ModuleROSolar")]
@@ -386,6 +386,7 @@ namespace ROLib
                         this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
                         this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
                     }
+                    m.ResetModel();
                     modelChangedAction(m);
                 });
             };
