@@ -12,7 +12,7 @@ namespace ROLib
 
         [KSPField(isPersistant = true)]
         public bool flagEnabled = true;
-        
+
         [KSPEvent(guiName = "Toggle Flag Visibility", guiActiveEditor = true)]
         public void toggleFlagEvent()
         {
@@ -64,7 +64,6 @@ namespace ROLib
 
         public void updateFlagTransform()
         {
-            
             String textureName = part.flagURL;
             if (HighLogic.LoadedSceneIsEditor && String.IsNullOrEmpty(textureName)) { textureName = EditorLogic.FlagURL; }
             if (String.IsNullOrEmpty(textureName) && HighLogic.CurrentGame!=null) { textureName = HighLogic.CurrentGame.flagURL; }

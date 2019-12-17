@@ -9,7 +9,6 @@ namespace ROLib
 {
     public class ROLUtils
     {
-
         public static GameObject createJettisonedObject(GameObject toJettison, Vector3 velocity, Vector3 force, float mass)
         {
             GameObject jettisonedObject = new GameObject("JettisonedDebris");
