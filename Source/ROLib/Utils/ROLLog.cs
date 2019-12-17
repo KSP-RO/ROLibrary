@@ -17,11 +17,6 @@ namespace ROLib
             MonoBehaviour.print("ROL-LOG  : " + line);
         }
 
-        public static void log(System.Object obj)
-        {
-            MonoBehaviour.print("ROL-LOG  : " + obj);
-        }
-
         public static void error(string line)
         {
             MonoBehaviour.print("ROL-ERROR: " + line);
@@ -31,12 +26,6 @@ namespace ROLib
         {
             if (!debugMode) { return; }
             MonoBehaviour.print("ROL-DEBUG: " + line);
-        }
-
-        public static void debug(object obj)
-        {
-            if (!debugMode) { return; }
-            MonoBehaviour.print(obj);
         }
 
         public static void exc(Exception e)

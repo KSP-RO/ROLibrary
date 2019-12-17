@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Collections;
+using System.IO;
 
 namespace ROLib
 {
@@ -700,7 +701,6 @@ namespace ROLib
             int wholeBits = (int)Math.Round((value / roundTo), 0);
             return (float)wholeBits * roundTo;
         }
-
     }
 
     public class StringLogicalComparer

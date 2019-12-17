@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace ROLib
 {
-    class ModuleRODecoupler : PartModule
+    public class ModuleRODecoupler : PartModule
     {
 
         #region KSPFields
@@ -48,11 +48,6 @@ namespace ROLib
 
 
         #region Standard KSP Overrides
-
-        public override void OnAwake()
-        {
-            base.OnAwake();
-        }
 
         public override void OnStart(StartState state)
         {

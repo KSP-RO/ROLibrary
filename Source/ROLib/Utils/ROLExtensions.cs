@@ -47,7 +47,7 @@ namespace ROLib
         {
             String[] values = node.GetValues(name);
             int len = values.Length;
-            bool[] vals = new bool[len];            
+            bool[] vals = new bool[len];
             for (int i = 0; i < len; i++)
             {
                 vals[i] = ROLUtils.safeParseBool(values[i]);
@@ -187,7 +187,7 @@ namespace ROLib
             }
             return values;
         }
-        
+
         public static Vector3 ROLGetVector3(this ConfigNode node, String name, Vector3 defaultValue)
         {
             String value = node.GetValue(name);
@@ -577,7 +577,7 @@ namespace ROLib
             if (widget.partActionItem != null)//force widget re-setup for changed values; this will update the GUI value and slider positions/internal cached data
             {
                 UIPartActionFloatEdit ctr = (UIPartActionFloatEdit)widget.partActionItem;
-                var t = widget.onFieldChanged;//temporarily remove the callback; we don't need an event fired when -we- are the ones editing the value...            
+                var t = widget.onFieldChanged;//temporarily remove the callback; we don't need an event fired when -we- are the ones editing the value...
                 widget.onFieldChanged = null;
                 ctr.incSmall.onToggle.RemoveAllListeners();
                 ctr.incLarge.onToggle.RemoveAllListeners();
@@ -631,7 +631,7 @@ namespace ROLib
                 widget.onFieldChanged = t;
             }
         }
-        
+
         public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float[] intervals, float[] increments, bool forceUpdate, float forceValue=0)
         {
             UI_ScaleEdit widget = null;
@@ -685,7 +685,7 @@ namespace ROLib
             {
                 field.guiActive = false;
                 field.guiActiveEditor = false;
-                MonoBehaviour.print("ERROR: Not enough data to create intervals: " + min + " : " + max + " :: " + increment); 
+                MonoBehaviour.print("ERROR: Not enough data to create intervals: " + min + " : " + max + " :: " + increment);
             }
             else
             {
@@ -756,6 +756,40 @@ namespace ROLib
             for (int i = 0; i < len; i++)
             {
                 action((T)module.part.symmetryCounterparts[i].Modules[index]);
+            }
+        }
+
+        public static void ROLupdateUIFloatRangeControl(this PartModule module, string fieldName, float min, float max, float inc, bool forceUpdate)
+        {
+            UI_FloatRange widget = null;
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                widget = (UI_FloatRange)module.Fields[fieldName].uiControlEditor;
+            }
+            else if (HighLogic.LoadedSceneIsFlight)
+            {
+                widget = (UI_FloatRange)module.Fields[fieldName].uiControlFlight;
+            }
+            else
+            {
+                return;
+            }
+            if (widget == null)
+            {
+                return;
+            }
+            widget.minValue = min;
+            widget.maxValue = max;
+            widget.stepIncrement = inc;
+            if (forceUpdate && widget.partActionItem != null)
+            {
+                UIPartActionFloatRange ctr = (UIPartActionFloatRange)widget.partActionItem;
+                var t = widget.onFieldChanged;  // temporarily remove the callback
+                widget.onFieldChanged = null;
+                ctr.slider.onValueChanged.RemoveAllListeners();
+                ctr.inputField.onValueChanged.RemoveAllListeners();
+                ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
+                widget.onFieldChanged = t; // re-seat callback
             }
         }
 

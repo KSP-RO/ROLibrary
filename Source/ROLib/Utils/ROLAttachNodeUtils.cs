@@ -21,6 +21,9 @@ namespace ROLib
         public static void updateAttachNodePosition(Part part, AttachNode node, Vector3 newPos, Vector3 orientation, bool updatePartPosition, int size)
         {
             Vector3 diff = newPos - node.position;
+            ROLLog.debug($"node.position: {node.position}");
+            ROLLog.debug($"node.originalPosition: {node.originalPosition}");
+            ROLLog.debug($"node.originalOrientation: {node.originalOrientation}");
             node.position = node.originalPosition = newPos;
             node.orientation = node.originalOrientation = orientation;
             node.size = size;
@@ -45,6 +48,7 @@ namespace ROLib
                     }
                 }
             }
+            ROLLog.debug($"New Position: {node.position}");
         }
 
         /// <summary>
@@ -75,7 +79,7 @@ namespace ROLib
         /// <param name="part"></param>
         /// <param name="node"></param>
         public static void destroyAttachNode(Part part, AttachNode node)
-        {            
+        {
             if (node == null) { return; }
             if (node.attachedPart != null) { MonoBehaviour.print("ERROR: Deleting attach node: " + node.id + " with attached part: " + node.attachedPart); }
             part.attachNodes.Remove(node);
@@ -121,7 +125,7 @@ namespace ROLib
             }
         }
     }
-    
+
     /// <summary>
     /// Persistent static data for an attach node position for a ModelBaseData.
     /// These instances will be copied into the live model data class into an AttachNodeData instance,

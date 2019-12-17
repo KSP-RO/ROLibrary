@@ -113,7 +113,7 @@ namespace ROLib
         {
             get { return animationData.Count > 0; }
         }
-        
+
         public ROLAnimationModule(Part part, PartModule module, string persistence, string deployLimit, string deploy, string retract)
         {
             this.part = part;
@@ -134,7 +134,7 @@ namespace ROLib
             //initialized with an empty/dummy animation data holder
             modelAnimationData = new AnimationData();
         }
-        
+
         /// <summary>
         /// Internal method to load animation persistent data from the persistent data string.
         /// </summary>
@@ -410,7 +410,7 @@ namespace ROLib
                 retractEvent.externalToEVAOnly = modelAnimationData.activeEVAOnly;
                 retractEvent.guiName = modelAnimationData.retractLabel;
             }
-            
+
             if (deployLimitField != null)
             {
                 deployLimitField.guiActive = deployLimitEnabled;
@@ -488,7 +488,7 @@ namespace ROLib
                 animationData[i].setAnimSpeed(speed);
             }
         }
-        
+
         /// <summary>
         /// Internal method to update AnimationModules for symmetry Part-PartModules
         /// </summary>

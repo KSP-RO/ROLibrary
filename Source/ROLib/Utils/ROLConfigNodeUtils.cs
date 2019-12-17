@@ -7,7 +7,7 @@ namespace ROLib
     public class ROLConfigNodeUtils
     {
         //input is the string output from ConfigNode.ToString()
-        //any other input will result in undefined behavior		
+        //any other input will result in undefined behavior
         public static ConfigNode parseConfigNode(String input)
         {
             ConfigNode baseCfn = ConfigNode.Parse(input);
