@@ -264,7 +264,7 @@ namespace ROLib
 
             module.updateModulePositions();
             module.updateDimensions();
-            module.updateAttachNodes(false);
+            module.updateAttachNodes(true);
             module.updateAvailableVariants();
             if (module.scaleMass)
             {
