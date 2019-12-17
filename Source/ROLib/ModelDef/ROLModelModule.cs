@@ -138,11 +138,15 @@ namespace ROLib
         private float currentVerticalScale = 1f;
         private float currentDiameter;
         private float currentHeight;
+        private float panelLength;
+        private float panelWidth;
         private float currentVerticalPosition;
         private float currentCost;
         private float currentMass;
         private float currentVolume;
         private float actualHeight;
+        private string secondaryTransformName;
+        private string pivotName;
 
         #endregion ENDREGION - Private working data
 
@@ -271,6 +275,8 @@ namespace ROLib
         /// Return the current diameter of the model in this module slot.  This is the base diamter as specified in the model definition, modified by the currently specified scale.
         /// </summary>
         public float moduleDiameter { get { return currentDiameter; } }
+        public float modulePanelLength { get { return panelLength; } }
+        public float modulePanelWidth { get { return panelWidth; } }
 
         /// <summary>
         /// Return the current upper-mounting diamter of the model in this module slot.  This value is to be used for sizing/scaling of any module slot used for an upper-adapter/nose option for this slot.
@@ -309,7 +315,7 @@ namespace ROLib
         public float modulePosition { get { return currentVerticalPosition; } }
 
         /// <summary>
-        /// Return the Y coordinate of the top-most point in the model in part-centric space, as defined by model-height in the model definition and modified by current model scale, 
+        /// Return the Y coordinate of the top-most point in the model in part-centric space, as defined by model-height in the model definition and modified by current model scale,
         /// </summary>
         public float moduleTop
         {
@@ -348,7 +354,7 @@ namespace ROLib
         /// Returns the Y coordinate of the bottom of this model in part-centric space.
         /// </summary>
         public float moduleBottom { get { return moduleTop - moduleHeight; } }
-        
+
         /// <summary>
         /// Return the currently configured custom color data for this module slot.
         /// </summary>
@@ -667,7 +673,7 @@ namespace ROLib
                 layoutField.guiActiveEditor = layoutField.guiActiveEditor && currentLayout.positions.Length > 1;
             }
         }
-        
+
         /// <summary>
         /// NON-symmetry enabled method.
         /// Updates the current models with the current scale and position data.  Includes setup of current layout and its internal scale factors.
@@ -676,6 +682,16 @@ namespace ROLib
         {
             updateModelScalesAndLayoutPositions();
         }
+
+        /// <summary>
+        /// NON-symmetry enabled method.
+        /// Updates the current models with the current scale and position data.  Includes setup of current layout and its internal scale factors.
+        /// </summary>
+        public void updateModelMeshes(bool solar)
+        {
+            updateModelScalesAndLayoutPositions(solar);
+        }
+
 
         /// <summary>
         /// Updates the diamter/scale values so that the upper-diameter of this model matches the input diamter
@@ -722,6 +738,26 @@ namespace ROLib
         }
 
         /// <summary>
+        /// Updates the current internal scale values for the input diameter and height values.
+        /// </summary>
+        /// <param name="newHeight"></param>
+        /// <param name="newDiameter"></param>
+        public void setScaleForHeightAndDiameter(float newHeight, float newDiameter, bool solar)
+        {
+            float newHorizScale, newVertScale = 0.0f;
+            if (solar)
+            {
+                newHorizScale = newDiameter / definition.panelWidth;
+                newVertScale = newHeight / definition.panelLength;
+            }
+            else
+            {
+                newHorizScale = newVertScale = newDiameter;
+            }
+            setScale(newHorizScale, newVertScale, true);
+        }
+
+        /// <summary>
         /// Updates the current internal scale values for the input scale.  Sets x,y,z scale to the input value specified.
         /// </summary>
         /// <param name="newScale"></param>
@@ -746,6 +782,33 @@ namespace ROLib
             actualHeight = newVerticalScale * definition.actualHeight;
             currentDiameter = newHorizontalScale * definition.diameter;
             updateModuleStats();
+        }
+
+        public void setScale(float newHorizontalScale, float newVerticalScale, bool solar)
+        {
+            float min = newHorizontalScale * definition.minVerticalScale;
+            float max = newHorizontalScale * definition.maxVerticalScale;
+            newVerticalScale = Mathf.Clamp(newVerticalScale, min, max);
+            currentHorizontalScale = newHorizontalScale;
+            currentVerticalScale = newVerticalScale;
+            currentHeight = newVerticalScale * definition.height;
+            actualHeight = newVerticalScale * definition.actualHeight;
+            panelLength = newVerticalScale * definition.panelLength;
+            currentDiameter = newHorizontalScale * definition.diameter;
+            panelWidth = newHorizontalScale * definition.panelWidth;
+            updateModuleStats();
+        }
+
+        public string GetSecondaryTransform()
+        {
+            secondaryTransformName = definition.secondaryTransformName;
+            return secondaryTransformName;
+        }
+
+        public string GetPivotName()
+        {
+            pivotName = definition.pivotName;
+            return pivotName;
         }
 
         private float vScaleOffset(float aspectInput)
@@ -780,7 +843,7 @@ namespace ROLib
             partModule.ROLupdateUIChooseOptionControl(textureField.name, names, titles, true, textureSetName);
             textureField.guiActiveEditor = names.Length > 1;
         }
-        
+
         /// <summary>
         /// Updates the position of the model.
         /// </summary>
@@ -908,6 +971,26 @@ namespace ROLib
                 Vector3 ori = surfNodeData.orientation;
                 ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, ori, userInput, size);
                 ROLAttachNodeUtils.updateSurfaceAttachedChildren(part, prevDiameter, currentDiameter);
+            }
+        }
+
+        public void updateSurfaceAttachNode(AttachNode node, float length, float width, bool userInput)
+        {
+            if (node != null)
+            {
+                int size = 1;
+                AttachNodeBaseData surfNodeData = definition.surfaceNode;
+                ROLLog.debug($"SurfaceNode position is: {definition.surfaceNode.position}");
+                float lengthScale = definition.surfaceNodeY * (length / definition.panelLength);
+                ROLLog.debug($"surfaceNodeY: {definition.surfaceNodeY}");
+                ROLLog.debug($"lengthScale: {lengthScale}");
+                float widthScale = definition.surfaceNodeX * (width / definition.panelWidth);
+                ROLLog.debug($"surfaceNodeX: {definition.surfaceNodeX}");
+                ROLLog.debug($"widthScale: {widthScale}");
+                Vector3 pos = new Vector3(widthScale, lengthScale, definition.surfaceNodeZ);
+                ROLLog.debug($"New Vector position is: {pos}");
+                Vector3 ori = surfNodeData.orientation;
+                ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, ori, userInput, size);
             }
         }
 
@@ -1095,6 +1178,33 @@ namespace ROLib
             }
         }
 
+        /// <summary>
+        /// Applies the current module position to the root transform of the ModelModule.  Does not adjust rotation or handle multi-model positioning setup for layouts.  Does not update scales.
+        /// Loops through the individual model instances and updates their position, rotation, and scale, for the currently configured ModelLayoutData.  Does not update 'root' transform for module position.
+        /// </summary>
+        private void updateModelScalesAndLayoutPositions(bool solar)
+        {
+            root.transform.localPosition = new Vector3(0, currentVerticalPosition + getPlacementOffset(), 0);
+            int len = layout.positions.Length;
+            float posScalar = getLayoutPositionScalar();
+            float scaleScalar = getLayoutScaleScalar();
+            for (int i = 0; i < len; i++)
+            {
+                Transform model = models[i];
+                ModelPositionData mpd = layout.positions[i];
+                model.transform.localPosition = mpd.localPosition * posScalar;
+                model.transform.localRotation = Quaternion.Euler(mpd.localRotation);
+                if (solar)
+                {
+                    model.transform.localScale = mult(mpd.localScale, new Vector3(1, currentVerticalScale, currentHorizontalScale)) * scaleScalar;
+                }
+                else
+                {
+                    model.transform.localScale = mult(mpd.localScale, new Vector3(currentHorizontalScale, currentVerticalScale, currentHorizontalScale)) * scaleScalar;
+                }
+            }
+        }
+
         private Vector3 mult(Vector3 a, Vector3 b)
         {
             return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
@@ -1115,10 +1225,10 @@ namespace ROLib
                 constructSubModels(models[i]);
             }
             bool shouldInvert = definition.shouldInvert(orientation);
-            Vector3 rotation = shouldInvert ? definition.invertAxis * 180f : Vector3.zero;            
+            Vector3 rotation = shouldInvert ? definition.invertAxis * 180f : Vector3.zero;
             root.transform.localRotation = Quaternion.Euler(rotation);
         }
-        
+
         /// <summary>
         /// Constructs a single model instance from the model definition, parents it to the input transform.<para/>
         /// Does not position or orient the created model; positionModels() should be called to update its position for the current ModelLayoutData configuration

@@ -7,7 +7,7 @@ namespace ROLib
 {
 
     /// <summary>
-    /// Static loading/management class for ModelBaseData.  This class is responsible for loading ModelBaseData from configs and returning ModelBaseData instances for an input model name. 
+    /// Static loading/management class for ModelBaseData.  This class is responsible for loading ModelBaseData from configs and returning ModelBaseData instances for an input model name.
     /// </summary>
     public static class ROLModelData
     {
@@ -158,56 +158,4 @@ namespace ROLib
         }
 
     }
-    
-    /// <summary>
-    /// Data for an srb nozzle, including gimbal adjustment data and ISP curve adjustment.
-    /// </summary>
-    public class SRBNozzleData
-    {
-        //private Quaternion[] gimbalDefaultOrientations;
-        //private Transform[] thrustTransforms;
-        //private Transform[] gimbalTransforms;
-
-        //public void setupTransforms(string moduleThrustTransformName, string moduleGimbalTransformName, string rcsTransformName)
-        //{
-        //    Transform[] origThrustTransforms = model.transform.FindChildren(this.thrustTransformName);
-        //    int len = origThrustTransforms.Length;
-        //    for (int i = 0; i < len; i++)
-        //    {
-        //        origThrustTransforms[i].name = origThrustTransforms[i].gameObject.name = moduleThrustTransformName;
-        //    }
-        //    Transform[] origGimbalTransforms = model.transform.FindChildren(this.gimbalTransformName);
-        //    len = origGimbalTransforms.Length;
-        //    gimbalDefaultOrientations = new Quaternion[len];
-        //    for (int i = 0; i < len; i++)
-        //    {
-        //        origGimbalTransforms[i].name = origGimbalTransforms[i].gameObject.name = moduleGimbalTransformName;
-        //        gimbalDefaultOrientations[i] = origGimbalTransforms[i].localRotation;
-        //    }
-        //    Transform[] origRcsTransforms = model.transform.FindChildren(this.rcsThrustTransformName);
-        //    len = origRcsTransforms.Length;
-        //    for (int i = 0; i < len; i++)
-        //    {
-        //        origRcsTransforms[i].name = origRcsTransforms[i].gameObject.name = rcsTransformName;
-        //    }
-        //    this.gimbalTransforms = origGimbalTransforms;
-        //    this.thrustTransforms = origThrustTransforms;
-        //}
-
-        ///// <summary>
-        ///// Resets the gimbal to its default orientation, and then applies newRotation to it as a direct rotation around the input world axis
-        ///// </summary>
-        ///// <param name="partGimbalTransform"></param>
-        ///// <param name="newRotation"></param>
-        //public void updateGimbalRotation(Vector3 worldAxis, float newRotation)
-        //{
-        //    int len = gimbalTransforms.Length;
-        //    for (int i = 0; i < len; i++)
-        //    {
-        //        gimbalTransforms[i].localRotation = gimbalDefaultOrientations[i];
-        //        gimbalTransforms[i].Rotate(worldAxis, -newRotation, Space.World);
-        //    }
-        //}
-    }
-
 }

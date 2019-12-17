@@ -53,9 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Modules\ModuleROTAirstreamShield.bak" />
+    <Compile Include="Modules\ModuleROSolar.cs" />
+    <Compile Include="ROSolar\SolarTechLimit.cs" />
     <Compile Include="UI\DimensionWindow.cs" />
     <Compile Include="UI\AbstractWindow.cs" />
-    <None Include="UI\VariantSelectionGUI.cs.bak" />
     <Compile Include="ModelDef\ROLAnimationModule.cs" />
     <Compile Include="ModelDef\ROLAnimState.cs" />
     <Compile Include="Modules\ModuleRODecoupler.cs" />
@@ -65,13 +66,14 @@
     <Compile Include="Modules\ROLFlagDecal.cs" />
     <None Include="Modules\ModuleROTNodeFairing.bak" />
     <Compile Include="Modules\ROLSelectableNodes.cs" />
-    <Compile Include="ModelDef\ROLMeshBuilder.cs" />
-    <Compile Include="ModelDef\ROLMeshGenerators.cs" />
+    <None Include="ModelDef\ROLMeshBuilder.cs.bak" />
+    <None Include="ModelDef\ROLMeshGenerators.cs.bak" />
     <Compile Include="ModelDef\ROLModelData.cs" />
     <Compile Include="ModelDef\ROLModelDefinition.cs" />
     <Compile Include="ModelDef\ROLModelLayout.cs" />
     <Compile Include="ModelDef\ROLModelModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="UI\ModelWindow.cs.bak" />
     <Compile Include="Utils\ROLAttachNodeUtils.cs" />
     <Compile Include="Utils\ROLConfigNodeUtils.cs" />
     <Compile Include="Utils\ROLExtensions.cs" />

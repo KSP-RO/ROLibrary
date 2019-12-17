@@ -10,7 +10,7 @@ namespace ROLib
     /// <summary>
     /// Immutable data storage for persistent data about a single 'model'.<para/>
     /// A 'model' is defined by any number of meshes from models in the GameDatabase, along with any function-specific data for the functions of those meshes -- animations, gimbals, rcs, engine, texture sets<para/>
-    /// Includes height, volume, mass, cost, tech-limitations, attach-node positions, 
+    /// Includes height, volume, mass, cost, tech-limitations, attach-node positions,
     /// texture-set data, and whether the model is intended for top, center, or bottom stack mounting.
     /// </summary>
     public class ROLModelDefinition
@@ -62,7 +62,20 @@ namespace ROLib
         /// <summary>
         /// The core diameter of this model.  If upper/lower diameter are unspecified, assume that the model is cylindrical with this diameter across its entire length.
         /// </summary>
-        public readonly float diameter = 5;
+        public readonly float diameter = 5.0f;
+
+        /// <summary>
+        /// The solar panel information.
+        /// </summary>
+        public readonly float panelLength = 1.0f;
+        public readonly float panelWidth = 1.0f;
+        public readonly float panelArea = 1.0f;
+        public readonly string secondaryTransformName = "suncatcher";
+        public readonly string pivotName = "suncatcher";
+        public readonly float surfaceNodeX = 1.0f;
+        public readonly float surfaceNodeY = 1.0f;
+        public readonly float surfaceNodeZ = 1.0f;
+        public readonly bool lengthWidth = false;
 
         /// <summary>
         /// The diameter of the upper attachment point on this model.  Defaults to 'diameter' if unspecified.  Used during model-scale-chaining to determine the model scale to use for adapter models.
@@ -236,6 +249,15 @@ namespace ROLib
             maxVerticalScale = node.ROLGetFloatValue("maxVerticalScale", maxVerticalScale);
             upperDiameter = node.ROLGetFloatValue("upperDiameter", diameter);
             lowerDiameter = node.ROLGetFloatValue("lowerDiameter", diameter);
+            panelLength = node.ROLGetFloatValue("panelLength", panelLength);
+            panelWidth = node.ROLGetFloatValue("panelWidth", panelWidth);
+            panelArea = node.ROLGetFloatValue("panelArea", panelArea);
+            secondaryTransformName = node.ROLGetStringValue("secondaryTransformName", secondaryTransformName);
+            pivotName = node.ROLGetStringValue("pivotName", pivotName);
+            surfaceNodeX = node.ROLGetFloatValue("surfaceNodeX", surfaceNodeX);
+            surfaceNodeY = node.ROLGetFloatValue("surfaceNodeY", surfaceNodeY);
+            surfaceNodeZ = node.ROLGetFloatValue("surfaceNodeZ", surfaceNodeZ);
+            lengthWidth = node.ROLGetBoolValue("lengthWidth", lengthWidth);
             if (node.HasValue("verticalOffset"))
             {
                 positionOffset = new Vector3(0, node.ROLGetFloatValue("verticalOffset"), 0);
@@ -249,7 +271,7 @@ namespace ROLib
 
             orientation = (ModelOrientation)Enum.Parse(typeof(ModelOrientation), node.ROLGetStringValue("orientation", ModelOrientation.TOP.ToString()));
             invertAxis = node.ROLGetVector3("invertAxis", invertAxis);
-            
+
             //load sub-model definitions
             ConfigNode[] subModelNodes = node.GetNodes("SUBMODEL");
             int len = subModelNodes.Length;
@@ -463,53 +485,6 @@ namespace ROLib
             return (orientation == ModelOrientation.BOTTOM && this.orientation == ModelOrientation.TOP) || (orientation == ModelOrientation.TOP && this.orientation == ModelOrientation.BOTTOM);
         }
 
-        /// <summary>
-        /// Checks to see if this definition can be switched to given the currently occupied attach nodes
-        /// </summary>
-        /// <param name="part"></param>
-        /// <param name="bodyNodeNames"></param>
-        /// <param name="orientation"></param>
-        /// <param name="endNodeName"></param>
-        /// <returns></returns>
-        public bool canSwitchTo(Part part, string[] bodyNodeNames, ModelOrientation orientation, bool top, string endNodeName)
-        {
-            AttachNode node;
-            bool valid = true;
-            if (!string.IsNullOrEmpty(endNodeName))//this def is responsible for top/bottom attach node
-            {
-                //attach node from the part
-                node = part.FindAttachNode(endNodeName);
-                //if attachnode==null or nothing attached, does not currently exist, so it doesn't matter what the model def has setup
-                if (node != null && node.attachedPart != null)
-                {
-                    //node is not null, and has attached part.  Check model def to make sure it has a node data, else set valid to false
-                    //determine if top or bottom from input orientation and def orientation
-                    //if node data==null, it means def does not support that end node
-                    AttachNodeBaseData nodeData = top ? (shouldInvert(orientation) ? bottomNodeData : topNodeData) : (shouldInvert(orientation) ? topNodeData : bottomNodeData);
-                    if (nodeData == null) { valid = false; }
-                }
-            }
-            //if already invalid, or has no body node names to manage, return the current 'valid' value
-            if (!valid || bodyNodeNames==null || bodyNodeNames.Length==0) { return valid; }//break
-            int len = bodyNodeNames.Length;
-            for (int i = 0; i < len; i++)
-            {
-                //attach node from the part
-                node = part.FindAttachNode(bodyNodeNames[i]);
-                //if attachnode==null or nothing attached, does not currently exist, so it doesn't matter what the model def has setup
-                if (node != null && node.attachedPart != null)
-                {
-                    //this is a node with a part attached, so we need at least one node present in model-def body node array,
-                    if (bodyNodeData == null || bodyNodeData.Length==0 || i >= bodyNodeData.Length)
-                    {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-            return valid;
-        }
-        
         public override string ToString()
         {
             return "ModelDef[ " + name + " ]";
@@ -517,7 +492,6 @@ namespace ROLib
 
     }
 
-    //TODO
     /// <summary>
     /// Information for a single model definition that specifies engine thrust transforms -- essentially just transform name(s).
     /// </summary>
@@ -557,15 +531,8 @@ namespace ROLib
                 trs[i].gameObject.name = trs[i].name = destinationName;
             }
         }
-
-        //TODO
-        public void updateGimbalModule(Part part)
-        {
-            //TODO
-        }
-
     }
-    
+
     /// <summary>
     /// Information for a single model definition that specifies engine thrust information<para/>
     /// Min, Max, and per-transform percentages.
@@ -599,7 +566,6 @@ namespace ROLib
             }
             return retCache;
         }
-
     }
 
     /// <summary>
@@ -611,7 +577,7 @@ namespace ROLib
         public ModelConstraintData(ConfigNode node)
         {
             constraintNode = node;
-        }        
+        }
     }
 
     /// <summary>
@@ -896,7 +862,7 @@ namespace ROLib
         public readonly string parentTransform;
 
         /// <summary>
-        /// The name of the transform to merge the specified meshes into.  If this transform is not present, it will be created.  
+        /// The name of the transform to merge the specified meshes into.  If this transform is not present, it will be created.
         /// Will be parented to 'parentTransform' if that field is populated, else it will become the 'root' transform in the model.
         /// </summary>
         public readonly string targetTransform;
@@ -957,7 +923,7 @@ namespace ROLib
                 {
                     //locate mesh filter from specified mesh(es)
                     mm = trs[k].GetComponent<MeshFilter>();
-                    //if mesh did not exist, skip it 
+                    //if mesh did not exist, skip it
                     //TODO log error on missing mesh on specified transform
                     if (mm == null) { continue; }
                     ci = new CombineInstance();
@@ -1016,7 +982,7 @@ namespace ROLib
             Updating the height on a Compound Model will do the following:
             * Inputs - vertical scale, horizontal scale
             * Calculate the desired height from the total model height and input vertical scale factor
-            * Apply horizontal scaling directly to all transforms.  
+            * Apply horizontal scaling directly to all transforms.
             * Apply horizontal scale factor to the vertical scale for non-v-scale enabled meshes (keep aspect ratio of those meshes).
             * From total desired height, subtract the height of non-scaleable meshes.
             * The 'remainderTotalHeight' is then divided proportionately between all remaining scale-able meshes.
