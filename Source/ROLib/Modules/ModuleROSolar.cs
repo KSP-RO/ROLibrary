@@ -34,7 +34,7 @@ namespace ROLib
         public float TechLevel = -1f;
         public int techLevel => Convert.ToInt32(TechLevel);
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Charge Rate", guiFormat = "F4", guiUnits = " kW", groupName = "ModuleROSolar")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Charge Rate", guiFormat = "F4", guiUnits = " kW", groupDisplayName = "RO-Solar", groupName = "ModuleROSolar")]
         public float currentRate = 0.0f;
 
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Area", guiFormat = "F4", guiUnits = " m^2", groupName = "ModuleROSolar")]
@@ -76,7 +76,7 @@ namespace ROLib
         public float costPerM2 = 0.0f;
 
         [KSPField]
-        public int maxTechLevel = -1;
+        public int maxTechLevel = 0;
 
         [KSPField]
         public float largeStep = 1.0f;
@@ -217,7 +217,6 @@ namespace ROLib
             base.OnStart(state);
             ROLLog.debug($"{modName} OnStart calling SetMaxTechLevel()");
             SetMaxTechLevel();
-            ROLLog.debug($"{modName} Initialize() configNodeData: {configNodeData}");
             ROLLog.debug($"{modName} OnStart calling Initialize()");
             Initialize();
             ROLLog.debug($"{modName} OnStart calling InitializeUI()");
@@ -290,7 +289,6 @@ namespace ROLib
             ROLLog.debug($"{modName}: Initialize() Model-Module Initialization");
             // Model-Module Setup / Initialization
             ConfigNode node = ROLConfigNodeUtils.parseConfigNode(configNodeData);
-            ROLLog.debug($"{modName}: Initialize() configNodeData: {configNodeData}");
 
             ROLLog.debug($"{modName}: Initialize() Core Model Nodes");
             // List of CORE model nodes from config
@@ -493,9 +491,25 @@ namespace ROLib
         private void SetMaxTechLevel()
         {
             ROLLog.debug("ModuleROSolar: SetMaxTechLevel() Start");
-            if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER) maxTechLevel = 7;
-            if (Fields[nameof(TechLevel)].uiControlEditor is UI_FloatRange tl) tl.maxValue = maxTechLevel;
-            if (HighLogic.LoadedSceneIsEditor && TechLevel < 0) TechLevel = maxTechLevel;
+            ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
+            if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
+            {
+                ROLLog.debug("Game Mode is Not Career");
+                maxTechLevel = 7;
+                ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
+            }
+            if (Fields[nameof(TechLevel)].uiControlEditor is UI_FloatRange tl)
+            {
+                ROLLog.debug("UI Control Editor Setting");
+                tl.maxValue = maxTechLevel;
+                ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
+            }
+            if (HighLogic.LoadedSceneIsEditor && TechLevel < 0)
+            {
+                ROLLog.debug("Set TechLevel to MaxTechLevel");
+                TechLevel = maxTechLevel;
+                ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
+            }
             ROLLog.debug("ModuleROSolar: SetMaxTechLevel() Finish");
         }
 
