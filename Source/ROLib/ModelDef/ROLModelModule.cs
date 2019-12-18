@@ -147,6 +147,7 @@ namespace ROLib
         private float actualHeight;
         private string secondaryTransformName;
         private string pivotName;
+        private string animationName;
 
         #endregion ENDREGION - Private working data
 
@@ -809,6 +810,12 @@ namespace ROLib
         {
             pivotName = definition.pivotName;
             return pivotName;
+        }
+
+        public string GetAnimationName()
+        {
+            animationName = definition.animationName;
+            return animationName;
         }
 
         private float vScaleOffset(float aspectInput)

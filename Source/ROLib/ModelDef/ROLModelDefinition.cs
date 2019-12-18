@@ -71,11 +71,12 @@ namespace ROLib
         public readonly float panelWidth = 1.0f;
         public readonly float panelArea = 1.0f;
         public readonly string secondaryTransformName = "suncatcher";
-        public readonly string pivotName = "suncatcher";
+        public readonly string pivotName = "fakePivot";
         public readonly float surfaceNodeX = 1.0f;
         public readonly float surfaceNodeY = 1.0f;
         public readonly float surfaceNodeZ = 1.0f;
         public readonly bool lengthWidth = false;
+        public readonly string animationName = "fakeAnimation";
 
         /// <summary>
         /// The diameter of the upper attachment point on this model.  Defaults to 'diameter' if unspecified.  Used during model-scale-chaining to determine the model scale to use for adapter models.
@@ -254,6 +255,7 @@ namespace ROLib
             panelArea = node.ROLGetFloatValue("panelArea", panelArea);
             secondaryTransformName = node.ROLGetStringValue("secondaryTransformName", secondaryTransformName);
             pivotName = node.ROLGetStringValue("pivotName", pivotName);
+            animationName = node.ROLGetStringValue("animationName", animationName);
             surfaceNodeX = node.ROLGetFloatValue("surfaceNodeX", surfaceNodeX);
             surfaceNodeY = node.ROLGetFloatValue("surfaceNodeY", surfaceNodeY);
             surfaceNodeZ = node.ROLGetFloatValue("surfaceNodeZ", surfaceNodeZ);

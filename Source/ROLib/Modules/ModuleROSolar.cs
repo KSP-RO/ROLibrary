@@ -34,13 +34,16 @@ namespace ROLib
         public float TechLevel = -1f;
         public int techLevel => Convert.ToInt32(TechLevel);
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Charge Rate", guiFormat = "F4", guiUnits = " kW", groupDisplayName = "RO-Solar", groupName = "ModuleROSolar")]
+        [KSPField(guiActive = false, guiActiveEditor = false, guiName = "Tech Level", guiFormat = "N0", groupName = "ModuleROSolar")]
+        public int tlText = 0;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Charge Rate", guiFormat = "F4", guiUnits = " kW", groupName = "ModuleROSolar")]
         public float currentRate = 0.0f;
 
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Area", guiFormat = "F4", guiUnits = " m^2", groupName = "ModuleROSolar")]
         public float area = 0.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Mass", guiFormat = "F4", guiUnits = " m", groupName = "ModuleROSolar")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Mass", guiFormat = "F4", guiUnits = " m", groupDisplayName = "RO-Solar", groupName = "ModuleROSolar")]
         public float mass = 0.0f;
 
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Cost", guiFormat = "F1", groupName = "ModuleROSolar")]
@@ -491,27 +494,23 @@ namespace ROLib
 
         private void SetMaxTechLevel()
         {
-            ROLLog.debug("ModuleROSolar: SetMaxTechLevel() Start");
-            ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
             if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
             {
-                ROLLog.debug("Game Mode is Not Career");
                 maxTechLevel = 7;
-                ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
             }
             if (Fields[nameof(TechLevel)].uiControlEditor is UI_FloatRange tl)
             {
-                ROLLog.debug("UI Control Editor Setting");
                 tl.maxValue = maxTechLevel;
-                ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
             }
             if (HighLogic.LoadedSceneIsEditor && TechLevel < 0)
             {
-                ROLLog.debug("Set TechLevel to MaxTechLevel");
                 TechLevel = maxTechLevel;
-                ROLLog.debug($"SetMaxTechLevel() maxTechLevel: {maxTechLevel}");
             }
-            ROLLog.debug("ModuleROSolar: SetMaxTechLevel() Finish");
+            if (maxTechLevel == 0)
+            {
+                Fields[nameof(TechLevel)].guiActiveEditor = false;
+                Fields[nameof(tlText)].guiActiveEditor = true;
+            }
         }
 
         #endregion Custom Update Methods
@@ -552,10 +551,33 @@ namespace ROLib
             }
 
             ROLLog.debug("Setting the rotation information for the solar panel.");
-            this.pivotName = coreModule.GetPivotName();
-            this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
-            this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
-            this.secondaryTransformName = coreModule.GetSecondaryTransform();
+            if(pivotName == "fakePivot")
+            {
+                ROLLog.debug("fakePivot");
+                ROLLog.debug("Set pivotName to null");
+                this.pivotName = null;
+                ROLLog.debug($"this.pivotName: {this.pivotName}");
+                ROLLog.debug("Get the animationName");
+                this.animationName = coreModule.definition.animationName;
+                ROLLog.debug($"this.animationName: {this.animationName}");
+                ROLLog.debug("Set hasPivot to false");
+                this.hasPivot = false;
+                ROLLog.debug($"this.hasPivot: {this.hasPivot}");
+                //ROLLog.debug("Set useAnimation to true");
+                //this.useAnimation = true;
+                //ROLLog.debug($"this.useAnimation: {this.useAnimation}");
+                //ROLLog.debug("Set this.anim to this.animationName");
+                //this.anim.GetClip(this.animationName);
+                //ROLLog.debug($"this.anim: {this.anim}");
+            }
+            else
+            {
+                ROLLog.debug("notFakePivot");
+                this.pivotName = coreModule.GetPivotName();
+                this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
+                this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
+            }
+            this.secondaryTransformName = this.raycastTransformName = coreModule.GetSecondaryTransform();
         }
 
         private void UpdateMassAndCost()
