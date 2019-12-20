@@ -987,15 +987,9 @@ namespace ROLib
             {
                 int size = 1;
                 AttachNodeBaseData surfNodeData = definition.surfaceNode;
-                ROLLog.debug($"SurfaceNode position is: {definition.surfaceNode.position}");
                 float lengthScale = definition.surfaceNodeY * (length / definition.panelLength);
-                ROLLog.debug($"surfaceNodeY: {definition.surfaceNodeY}");
-                ROLLog.debug($"lengthScale: {lengthScale}");
                 float widthScale = definition.surfaceNodeX * (width / definition.panelWidth);
-                ROLLog.debug($"surfaceNodeX: {definition.surfaceNodeX}");
-                ROLLog.debug($"widthScale: {widthScale}");
                 Vector3 pos = new Vector3(widthScale, lengthScale, definition.surfaceNodeZ);
-                ROLLog.debug($"New Vector position is: {pos}");
                 Vector3 ori = surfNodeData.orientation;
                 ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, ori, userInput, size);
             }

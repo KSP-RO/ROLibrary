@@ -21,9 +21,6 @@ namespace ROLib
         public static void updateAttachNodePosition(Part part, AttachNode node, Vector3 newPos, Vector3 orientation, bool updatePartPosition, int size)
         {
             Vector3 diff = newPos - node.position;
-            ROLLog.debug($"node.position: {node.position}");
-            ROLLog.debug($"node.originalPosition: {node.originalPosition}");
-            ROLLog.debug($"node.originalOrientation: {node.originalOrientation}");
             node.position = node.originalPosition = newPos;
             node.orientation = node.originalOrientation = orientation;
             node.size = size;
@@ -48,7 +45,6 @@ namespace ROLib
                     }
                 }
             }
-            ROLLog.debug($"New Position: {node.position}");
         }
 
         /// <summary>
