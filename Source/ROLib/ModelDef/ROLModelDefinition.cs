@@ -71,7 +71,7 @@ namespace ROLib
         public readonly float panelWidth = 1.0f;
         public readonly float panelArea = 1.0f;
         public readonly string secondaryTransformName = "suncatcher";
-        public readonly string pivotName = "fakePivot";
+        public readonly string pivotName = "sunPivot";
         public readonly float surfaceNodeX = 1.0f;
         public readonly float surfaceNodeY = 1.0f;
         public readonly float surfaceNodeZ = 1.0f;

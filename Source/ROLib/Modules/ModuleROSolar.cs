@@ -215,10 +215,15 @@ namespace ROLib
 
         public override void OnStart(StartState state)
         {
-            //ROLLog.debug($"{modName} OnStart Get ModuleDeployableSolarPanel");
-            //SP = GetComponent<ModuleDeployableSolarPanel>();
+            ROLLog.debug($"OnStart(state)");
             base.OnStart(state);
-            ROLLog.debug($"{modName} OnStart calling SetMaxTechLevel()");
+            ROLLog.debug($"this.anim: {this.anim}");
+            ROLLog.debug("Anim loop");
+            foreach (Animation a in this.GetComponentsInChildren<Animation>())
+            {
+                ROLLog.debug($"[AnimDebug] Animation: {a}");
+            }
+            ROLLog.debug("Anim loop done");
             SetMaxTechLevel();
             ROLLog.debug($"{modName} OnStart calling Initialize()");
             Initialize();
@@ -342,7 +347,8 @@ namespace ROLib
         /// </summary>
         public void InitializeUI()
         {
-            ROLLog.debug($"{modName} - InitalizeUI() modelChangedAction");
+            ROLLog.debug($"ModuleDeployablePart.deployState: {this.deployState}");
+            ROLLog.debug($"{modName}InitalizeUI() modelChangedAction");
             Action<ModuleROSolar> modelChangedAction = (m) =>
             {
                 m.stl = SolarTechLimit.GetTechLevel(techLevel);
@@ -521,10 +527,30 @@ namespace ROLib
         private void UpdateModulePositions()
         {
             float height, pos = 0.0f;
+
+            ROLLog.debug("UpdateModulePositions()");
+            lengthWidth = coreModule.definition.lengthWidth;
+            ROLLog.debug($"lengthWidth: {lengthWidth}");
+            if (lengthWidth)
+            {
+                coreModule.setScaleForHeightAndDiameter(panelLength, panelWidth, lengthWidth);
+                height = coreModule.modulePanelLength;
+            }
+            else
+            {
+                coreModule.setScaleForHeightAndDiameter(panelScale, panelScale, lengthWidth);
+                height = coreModule.moduleHeight;
+            }
+            pos = height * 0.5f;
+            coreModule.setPosition(pos);
+            coreModule.updateModelMeshes(lengthWidth);
+
+            /*
             if (fullScale)
             {
                 ROLLog.debug("UpdateModulePositions() fullScale");
-                coreModule.setScaleForDiameter(panelScale, 1);
+                float currentDiameter = coreModule.definition.diameter * panelScale;
+                coreModule.setScaleForDiameter(currentDiameter, 1);
                 height = coreModule.moduleHeight;
                 pos = height * 0.5f;
                 coreModule.setPosition(pos);
@@ -549,14 +575,15 @@ namespace ROLib
                 coreModule.setPosition(pos);
                 coreModule.updateModelMeshes(lengthWidth);
             }
+            */
 
             ROLLog.debug("Setting the rotation information for the solar panel.");
-            if(pivotName == "fakePivot")
+            if (pivotName == "sunPivot")
             {
                 ROLLog.debug("fakePivot");
-                ROLLog.debug("Set pivotName to null");
-                this.pivotName = null;
-                ROLLog.debug($"this.pivotName: {this.pivotName}");
+                //ROLLog.debug("Set pivotName to null");
+                //this.pivotName = null;
+                //ROLLog.debug($"this.pivotName: {this.pivotName}");
                 ROLLog.debug("Get the animationName");
                 this.animationName = coreModule.definition.animationName;
                 ROLLog.debug($"this.animationName: {this.animationName}");
@@ -569,6 +596,17 @@ namespace ROLib
                 //ROLLog.debug("Set this.anim to this.animationName");
                 //this.anim.GetClip(this.animationName);
                 //ROLLog.debug($"this.anim: {this.anim}");
+                //this.pivotName = coreModule.GetPivotName();
+                //this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
+                //this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
+                FindAnimations();
+                ROLLog.debug($"this.anim: {this.anim}");
+                ROLLog.debug("Anim loop");
+                foreach (Animation a in this.GetComponentsInChildren<Animation>())
+                {
+                    ROLLog.debug($"[AnimDebug] Animation: {a}");
+                }
+                ROLLog.debug("Anim loop done");
             }
             else
             {
@@ -697,6 +735,33 @@ namespace ROLib
             this.timeEfficCurve.ROLloadSingleLine(stl.key20);
             this.timeEfficCurve.ROLloadSingleLine(stl.key80);
             this.timeEfficCurve.ROLloadSingleLine(stl.key99);
+        }
+
+        private void FindAnimations()
+        {
+            Animation[] componentsInChildren = part.transform.ROLFindRecursive("model").GetComponentsInChildren<Animation>();
+            foreach (Animation a in componentsInChildren)
+            {
+                if (a.GetClip(this.animationName) != null)
+                {
+                    ROLLog.debug($"[AnimDebug] Animation: {a}");
+                    this.anim = a;
+                    ROLLog.debug($"a.GetClip(this.animationName) this.anim: {this.anim}");
+                }
+            }
+            if (componentsInChildren.Length > 0 && this.anim == null)
+            {
+                this.anim = componentsInChildren[0];
+                ROLLog.debug($"componentsInChildren.Length > 0 - this.anim: {this.anim}");
+            }
+            if (this.anim == null)
+            {
+                this.useAnimation = false;
+            }
+            else
+            {
+                this.useAnimation = true;
+            }
         }
 
         #endregion Custom Methods
