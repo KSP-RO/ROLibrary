@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KSPShaderTools;
+using static ROLib.ROLLog;
 
 namespace ROLib
 {
@@ -29,7 +30,13 @@ namespace ROLib
         public float minDiameter = 0.1f;
 
         [KSPField]
-        public float maxDiameter = 5.0f;
+        public float maxDiameter = 100.0f;
+
+        [KSPField]
+        public float minLength = 0.1f;
+
+        [KSPField]
+        public float maxLength = 100.0f;
 
         [KSPField]
         public float volumeScalingPower = 3f;
@@ -73,12 +80,19 @@ namespace ROLib
         [KSPField]
         public float actualHeight = 0.0f;
 
+        [KSPField]
+        public bool lengthWidth = false;
+
         /// <summary>
         /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
         /// </summary>
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Diameter", guiUnits = "m", groupDisplayName = "RO-Tanks", groupName = "ModuleROTank"),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float currentDiameter = 1.0f;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Length", guiUnits = "m", groupName = "ModuleROTank"),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
+        public float currentLength = 1.0f;
 
         [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = "ModuleROTank")]
         public void OpenTankDimensionGUIEvent()
@@ -185,6 +199,7 @@ namespace ROLib
         /// Previous diameter value, used for surface attach position updates.
         /// </summary>
         private float prevDiameter = -1;
+        private float prevLength = -1;
 
         private string[] noseNodeNames;
         private string[] coreNodeNames;
@@ -388,6 +403,10 @@ namespace ROLib
             initialized = true;
 
             prevDiameter = currentDiameter;
+            if (lengthWidth)
+            {
+                prevLength = currentLength;
+            }
 
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
@@ -504,7 +523,14 @@ namespace ROLib
                 this.ROLactionWithSymmetry(m =>
                 {
                     m.currentVariant = currentVariant;
-                    m.coreModule.modelSelected(newCoreDef.definition.name);
+                    if (lengthWidth)
+                    {
+                        m.SetModelFromDimensions();
+                    }
+                    else
+                    {
+                        m.coreModule.modelSelected(newCoreDef.definition.name);
+                    }
                     modelChangedAction(m);
                 });
             };
@@ -514,8 +540,24 @@ namespace ROLib
                 this.ROLactionWithSymmetry(m =>
                 {
                     if (m != this) { m.currentDiameter = this.currentDiameter; }
+                    if (lengthWidth)
+                    {
+                        m.SetModelFromDimensions();
+                    }
                     modelChangedAction(m);
                     m.prevDiameter = m.currentDiameter;
+                });
+                ROLStockInterop.fireEditorUpdate();
+            };
+
+            Fields[nameof(currentLength)].uiControlEditor.onFieldChanged = (a, b) =>
+            {
+                this.ROLactionWithSymmetry(m =>
+                {
+                    if (m != this) { m.currentLength = this.currentLength; }
+                    m.SetModelFromDimensions();
+                    modelChangedAction(m);
+                    m.prevLength = m.currentLength;
                 });
                 ROLStockInterop.fireEditorUpdate();
             };
@@ -551,7 +593,7 @@ namespace ROLib
                 ROLStockInterop.fireEditorUpdate();
             };
 
-            //------------------MODEL DIAMETER SWITCH UI INIT---------------------//
+            //------------------MODEL DIAMETER / LENGTH SWITCH UI INIT---------------------//
             if (maxDiameter == minDiameter)
             {
                 Fields[nameof(currentDiameter)].guiActiveEditor = false;
@@ -560,7 +602,20 @@ namespace ROLib
             {
                 this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentDiameter);
             }
-            Fields[nameof(currentVScale)].guiActiveEditor = enableVScale;
+
+            if (maxLength == minLength || !lengthWidth)
+            {
+                Fields[nameof(currentLength)].guiActiveEditor = false;
+            }
+            else
+            {
+                this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentLength);
+            }
+
+            if (!lengthWidth)
+            {
+                Fields[nameof(currentVScale)].guiActiveEditor = enableVScale;
+            }
 
             //------------------MODULE TEXTURE SWITCH UI INIT---------------------//
             Fields[nameof(currentNoseTexture)].uiControlEditor.onFieldChanged = noseModule.textureSetSelected;
@@ -579,9 +634,20 @@ namespace ROLib
         /// </summary>
         public void updateModulePositions()
         {
+            ROLLog.debug($"UpdateModulePositions()");
             //scales for modules depend on the module above/below them
             //first set the scale for the core module -- this depends directly on the UI specified 'diameter' value.
-            coreModule.setScaleForDiameter(currentDiameter, currentVScale);
+            if (lengthWidth)
+            {
+                debug($"UpdateModulePositions(): setScaleForHeightAndDiameter");
+                coreModule.setScaleForHeightAndDiameter(currentLength, currentDiameter);
+            }
+            else
+            {
+                debug($"UpdateModulePositions(): setScaleForDiameter");
+                coreModule.setScaleForDiameter(currentDiameter, currentVScale);
+            }
+            ROLLog.debug($"UpdateModulePositions(): currentDiameter: {currentDiameter}, currentVScale: {currentVScale}");
 
             //next, set nose scale values
             noseModule.setDiameterFromBelow(coreModule.moduleUpperDiameter, currentVScale);
@@ -708,7 +774,6 @@ namespace ROLib
         {
             float totalHeight = noseModule.moduleHeight;
             totalHeight += mountModule.moduleHeight;
-            ROLLog.debug("currentCore: " + currentCore);
             if (currentCore.Contains("Booster"))
             {
                 ROLLog.debug("currentCore: " + currentCore);
@@ -786,6 +851,158 @@ namespace ROLib
                 default:
                     return null;
             }
+        }
+
+        private void SetModelFromDimensions()
+        {
+            if (!lengthWidth)
+            {
+                currentVScale = 0.0f;
+                return;
+            }
+
+            Action<ModuleROTank> modelChangedAction = (m) =>
+            {
+                m.updateModulePositions();
+                m.updateDimensions();
+                m.updateAttachNodes(true);
+                m.updateAvailableVariants();
+                m.updateDragCubes();
+                if (scaleMass)
+                {
+                    m.updateMass();
+                }
+                if (scaleCost)
+                {
+                    m.updateCost();
+                }
+                ROLModInterop.updateResourceVolume(m.part);
+            };
+
+            float dimRatio, modelRatio = 0.0f;
+            string s = "1.0x-Kerolox";
+            dimRatio = currentLength / currentDiameter;
+
+            ROLLog.debug($"<color=green>dimRatio: {dimRatio}</color>");
+
+            //if (dimRatio < 0.375)
+            //{
+            //    modelRatio = 0.25f;
+            //    s = $"{modelRatio}x-{currentVariant}";
+            //    ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            //}
+            if (dimRatio < 0.625)
+            {
+                modelRatio = 0.5f;
+            }
+            //else if (dimRatio < 0.875)
+            //{
+            //    modelRatio = 0.75f;
+            //    s = $"{modelRatio}x-{currentVariant}";
+            //    ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            //}
+            else if (dimRatio < 1.25)
+            {
+                modelRatio = 1.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 1.75)
+            {
+                modelRatio = 1.5f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 2.25)
+            {
+                modelRatio = 2.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 2.75)
+            {
+                modelRatio = 2.5f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 3.25)
+            {
+                modelRatio = 3.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 3.75)
+            {
+                modelRatio = 3.5f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 4.25)
+            {
+                modelRatio = 4.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 4.75)
+            {
+                modelRatio = 4.5f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 5.25)
+            {
+                modelRatio = 5.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 5.75)
+            {
+                modelRatio = 5.5f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 6.25)
+            {
+                modelRatio = 6.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 6.75)
+            {
+                modelRatio = 6.5f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 7.25)
+            {
+                modelRatio = 7.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else if (dimRatio < 7.75)
+            {
+                modelRatio = 7.5f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+            else
+            {
+                modelRatio = 8.0f;
+                //s = $"{modelRatio}x-{currentVariant}";
+                //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            }
+
+            string ratioName = string.Format("{0:0.0}", modelRatio);
+            s = $"{ratioName}x-{currentVariant}";
+            ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+
+            currentVScale = modelRatio * dimRatio;
+
+            ROLLog.debug($"currentVScale: {currentVScale}");
+            coreModule.modelSelected(s);
+            ROLLog.debug($"coreModule.name: {coreModule.definition.modelName}, currentDiameter: {currentDiameter}, currentVScale: {currentVScale}");
+            this.ROLactionWithSymmetry(modelChangedAction);
+            ROLStockInterop.fireEditorUpdate();
         }
 
         #endregion ENDREGION - Custom Update Methods
