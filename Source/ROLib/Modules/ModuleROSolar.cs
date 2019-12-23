@@ -577,16 +577,63 @@ namespace ROLib
             }
             */
 
-            ROLLog.debug("Setting the rotation information for the solar panel.");
+            ROLLog.debug("Setting the rotation and animation for the solar panel.");
+
+            this.animationName = coreModule.definition.animationName;
+            if (!this.animationName.Equals("fakeAnimation"))
+            {
+                ROLLog.debug("Get the animations");
+                FindAnimations();
+                this.anim[this.animationName].wrapMode = WrapMode.ClampForever;
+                switch (this.deployState)
+                {
+                    case DeployState.RETRACTED:
+                        this.anim[this.animationName].normalizedTime = 0.0f;
+                        this.anim[this.animationName].enabled = true;
+                        this.anim[this.animationName].weight = 1f;
+                        this.anim.Stop(this.animationName);
+                        this.Events["Retract"].active = false;
+                        this.Events["Extend"].active = true;
+                        break;
+                    case DeployState.EXTENDED:
+                        this.anim[this.animationName].normalizedTime = 1f;
+                        this.anim[this.animationName].enabled = true;
+                        this.anim[this.animationName].speed = 0.0f;
+                        this.anim[this.animationName].weight = 1f;
+                        this.Events["Extend"].active = false;
+                        this.Events["Retract"].active = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (pivotName.Equals("sunPivot"))
+            {
+                ROLLog.debug("Set hasPivot to false");
+                this.hasPivot = false;
+                ROLLog.debug($"this.hasPivot: {this.hasPivot}");
+            }
+
+            this.pivotName = coreModule.GetPivotName();
+            this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
+            this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
+            this.secondaryTransformName = this.raycastTransformName = coreModule.GetSecondaryTransform();
+
+            /*
             if (pivotName == "sunPivot")
             {
-                ROLLog.debug("fakePivot");
+                ROLLog.debug("sunPivot");
+                this.deployState = DeployState.RETRACTED;
+                FindAnimations();
+                this.animationName = coreModule.definition.animationName;
+                this.anim[this.animationName].wrapMode = WrapMode.ClampForever;
                 //ROLLog.debug("Set pivotName to null");
                 //this.pivotName = null;
                 //ROLLog.debug($"this.pivotName: {this.pivotName}");
-                ROLLog.debug("Get the animationName");
-                this.animationName = coreModule.definition.animationName;
-                ROLLog.debug($"this.animationName: {this.animationName}");
+                //ROLLog.debug("Get the animationName");
+                //this.animationName = coreModule.definition.animationName;
+                //ROLLog.debug($"this.animationName: {this.animationName}");
                 ROLLog.debug("Set hasPivot to false");
                 this.hasPivot = false;
                 ROLLog.debug($"this.hasPivot: {this.hasPivot}");
@@ -596,26 +643,23 @@ namespace ROLib
                 //ROLLog.debug("Set this.anim to this.animationName");
                 //this.anim.GetClip(this.animationName);
                 //ROLLog.debug($"this.anim: {this.anim}");
-                //this.pivotName = coreModule.GetPivotName();
-                //this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
-                //this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
-                FindAnimations();
-                ROLLog.debug($"this.anim: {this.anim}");
-                ROLLog.debug("Anim loop");
-                foreach (Animation a in this.GetComponentsInChildren<Animation>())
-                {
-                    ROLLog.debug($"[AnimDebug] Animation: {a}");
-                }
-                ROLLog.debug("Anim loop done");
-            }
-            else
-            {
-                ROLLog.debug("notFakePivot");
                 this.pivotName = coreModule.GetPivotName();
                 this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
                 this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
+                //FindAnimations();
+                //ROLLog.debug($"this.anim: {this.anim}");
+                //ROLLog.debug("Anim loop");
+                //foreach (Animation a in this.GetComponentsInChildren<Animation>())
+                //{
+                //    ROLLog.debug($"[AnimDebug] Animation: {a}");
+                //}
+                //ROLLog.debug("Anim loop done");
             }
+            this.pivotName = coreModule.GetPivotName();
+            this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
+            this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
             this.secondaryTransformName = this.raycastTransformName = coreModule.GetSecondaryTransform();
+            */
         }
 
         private void UpdateMassAndCost()
