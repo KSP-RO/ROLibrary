@@ -1002,6 +1002,15 @@ namespace ROLib
             coreEffectiveLength = currentLength - domeLength;
             effectiveLength = noseEffectiveLength + mountEffectiveLength + coreEffectiveLength;
 
+            /*
+            debug("================================================");
+            debug("<color=green>EFFECTIVE LENGTH INFORMATION</color>");
+            debug($"horScale: {horScale}, domeLength: {domeLength}");
+            debug($"noseEffectiveLength: {noseEffectiveLength}, mountEffectiveLength: {mountEffectiveLength}, coreEffectiveLength: {coreEffectiveLength}");
+            debug($"effectiveLength: {effectiveLength}");
+            debug("================================================");
+            */
+
             // Set the minimum length based on domeLength
             minLength = Math.Max(0.1f, domeLength - (noseEffectiveLength + mountEffectiveLength));
 
@@ -1016,15 +1025,31 @@ namespace ROLib
 
             // Calculate the new volume
             // First, get the additional volume from the nose and mounts
-            float avgScale = (horScale + horScale + 1) / 3;
-            float volScale = Mathf.Pow(avgScale, 3);
-            noseAdditionalVol = volScale * noseModule.definition.additionalVolume * 1000f;
-            mountAdditionalVol = volScale * mountModule.definition.additionalVolume * 1000f;
+            float noseDiameter = noseModule.definition.shouldInvert(noseModule.definition.orientation) ? noseModule.definition.upperDiameter : noseModule.definition.lowerDiameter;
+            float noseScale = currentDiameter / noseDiameter;
+            noseScale = Mathf.Pow(noseScale, 3);
+
+            float mountDiameter = mountModule.definition.shouldInvert(mountModule.definition.orientation) ? mountModule.definition.lowerDiameter : mountModule.definition.upperDiameter;
+            float mountScale = currentDiameter / mountDiameter;
+            mountScale = Mathf.Pow(mountScale, 3);
+
+            noseAdditionalVol = noseScale * noseModule.definition.additionalVolume * 1000f;
+            mountAdditionalVol = mountScale * mountModule.definition.additionalVolume * 1000f;
 
             // Calculate the volume of the main tank
             float r = currentDiameter / 2;
             effectiveVolume = (EllipsoidVolume(r, r, r/2) + CylinderVolume(r, effectiveLength)) * 1000f;
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
+
+            /*
+            debug("================================================");
+            debug("<color=blue>EFFECTIVE VOLUME INFORMATION</color>");
+            debug($"noseScale: {noseScale}, mountScale: {mountScale}");
+            debug($"noseAdditionalOrig: {noseModule.definition.additionalVolume}, noseAdditionalVol: {noseAdditionalVol}, coreAdditionalOrig: {mountModule.definition.additionalVolume}, mountAdditionalVol: {mountAdditionalVol}");
+            debug($"origEffectiveVolume: {effectiveVolume - noseAdditionalVol - mountAdditionalVol}");
+            debug($"effectiveVolume: {effectiveVolume}");
+            debug("================================================");
+            */
 
             this.ROLactionWithSymmetry(modelChangedAction);
             ROLStockInterop.fireEditorUpdate();
