@@ -155,6 +155,35 @@ namespace ROLib
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentMountTexture = "default";
 
+        //-------------------------------------RESETTING MODEL TO ORIGINAL SIZE------------------------------------------//
+        [KSPEvent(guiActiveEditor = true, guiName = "Reset Model to Original", groupName = "ModuleROTank")]
+        public void ResetModel()
+        {
+            if (lengthWidth) return;
+
+            currentDiameter = coreModule.definition.diameter;
+            currentVScale = 0;
+
+            this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentDiameter);
+            this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f, true, currentVScale);
+
+            updateModulePositions();
+            updateAttachNodes(true);
+            updateAvailableVariants();
+            updateDragCubes();
+
+            if (scaleMass)
+            {
+                updateMass();
+            }
+            if (scaleCost)
+            {
+                updateCost();
+            }
+            ROLStockInterop.updatePartHighlighting(part);
+            UpdateTankVolume(lengthWidth);
+        }
+
         //------------------------------------------RECOLORING PERSISTENCE-----------------------------------------------//
 
         //persistent data for modules; stores colors
@@ -510,7 +539,7 @@ namespace ROLib
                 {
                     m.updateCost();
                 }
-                ROLModInterop.updateResourceVolume(m.part);
+                //ROLModInterop.updateResourceVolume(m.part);
                 m.UpdateTankVolume(lengthWidth);
             };
 
@@ -626,6 +655,13 @@ namespace ROLib
             if (!lengthWidth)
             {
                 Fields[nameof(currentVScale)].guiActiveEditor = enableVScale;
+                Events[nameof(ResetModel)].guiActiveEditor = true;
+            }
+
+            if (lengthWidth)
+            {
+                Fields[nameof(currentVScale)].guiActiveEditor = false;
+                Events[nameof(ResetModel)].guiActiveEditor = false;
             }
 
             //------------------MODULE TEXTURE SWITCH UI INIT---------------------//
@@ -975,6 +1011,8 @@ namespace ROLib
         {
             if (!lw)
             {
+                float totalVol = noseModule.moduleVolume + coreModule.moduleVolume + mountModule.moduleVolume;
+                SendVolumeChangedEvent(totalVol);
                 return;
             }
 
@@ -1053,6 +1091,14 @@ namespace ROLib
 
             this.ROLactionWithSymmetry(modelChangedAction);
             ROLStockInterop.fireEditorUpdate();
+        }
+
+        public void SendVolumeChangedEvent(float newVol)
+        {
+            var data = new BaseEventDetails(BaseEventDetails.Sender.USER);
+            data.Set<string>("volName", "Tankage");
+            data.Set<double>("newTotalVolume", newVol);
+            part.SendEvent("OnPartVolumeChanged", data, 0);
         }
 
         #endregion ENDREGION - Custom Update Methods

@@ -534,7 +534,7 @@ namespace ROLib
             if (lengthWidth)
             {
                 coreModule.setScaleForHeightAndDiameter(panelLength, panelWidth, lengthWidth);
-                height = coreModule.modulePanelLength;
+                height =panelLength;
             }
             else
             {
