@@ -4,7 +4,7 @@ using System.Reflection;
 using KSPShaderTools;
 
 namespace ROLib
-{ 
+{
     public static class ROLModInterop
     {
         private static bool checkedFar = false;
@@ -112,7 +112,7 @@ namespace ROLib
             MonoBehaviour.print("-------------------------------------------------------------------------");
         }
 
-        private static bool realFuelsVolumeUpdate(Part part, float liters)
+        public static bool realFuelsVolumeUpdate(Part part, float liters)
         {
             Type moduleFuelTank = null;
             if (isRFInstalled())
@@ -146,7 +146,7 @@ namespace ROLib
             }
             MethodInfo mi = moduleFuelTank.GetMethod("ChangeTotalVolume");
             double volumeLiters = liters;
-            mi.Invoke(pm, new System.Object[] { volumeLiters, false });            
+            mi.Invoke(pm, new System.Object[] { volumeLiters, false });
             MethodInfo mi2 = moduleFuelTank.GetMethod("CalculateMass");
             mi2.Invoke(pm, new System.Object[] { });
             updatePartResourceDisplay(part);
@@ -213,7 +213,7 @@ namespace ROLib
                 checkedRF = true;
                 installedRF = isAssemblyLoaded("RealFuels");
             }
-            return installedRF;    
+            return installedRF;
         }
 
         public static bool isMFTInstalled()
@@ -221,7 +221,7 @@ namespace ROLib
             if (!checkedMFT)
             {
                 checkedMFT = true;
-                installedMFT = isAssemblyLoaded("modularFuelTanks");               
+                installedMFT = isAssemblyLoaded("modularFuelTanks");
             }
             return installedMFT;
         }

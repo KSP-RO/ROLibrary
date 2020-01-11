@@ -65,13 +65,13 @@ namespace ROLib
         public readonly float diameter = 5.0f;
 
         /// <summary>
-        /// The solar panel information.
+        /// Solar panel information.
         /// </summary>
         public readonly float panelLength = 1.0f;
         public readonly float panelWidth = 1.0f;
         public readonly float panelArea = 1.0f;
         public readonly string secondaryTransformName = "suncatcher";
-        public readonly string pivotName = "fakePivot";
+        public readonly string pivotName = "sunPivot";
         public readonly float surfaceNodeX = 1.0f;
         public readonly float surfaceNodeY = 1.0f;
         public readonly float surfaceNodeZ = 1.0f;
@@ -132,6 +132,16 @@ namespace ROLib
         /// The 'cost' of this model-definition.  Modular part modules may use this value to adjust the config-specified cost of the part based on what models are currently selected.
         /// </summary>
         public readonly float cost = 0;
+
+        /// <summary>
+        /// The effective size of the nose or mount. This is the amount of space that you can use for additional dome length.
+        /// </summary>
+        public readonly float effectiveLength = 0;
+
+        /// <summary>
+        /// Additional volume that needs to be added to the space for the additional dome length.
+        /// </summary>
+        public readonly float additionalVolume = 0;
 
         /// <summary>
         /// The orientation that this model module is defined in.  Calls to 'setPosition' take this into account to position the model properly.  The model setup/origin MUST be setup properly to match the orientation as specified in the model definition.<para/>
@@ -260,6 +270,8 @@ namespace ROLib
             surfaceNodeY = node.ROLGetFloatValue("surfaceNodeY", surfaceNodeY);
             surfaceNodeZ = node.ROLGetFloatValue("surfaceNodeZ", surfaceNodeZ);
             lengthWidth = node.ROLGetBoolValue("lengthWidth", lengthWidth);
+            effectiveLength = node.ROLGetFloatValue("effectiveLength", effectiveLength);
+            additionalVolume = node.ROLGetFloatValue("additionalVolume", additionalVolume);
             if (node.HasValue("verticalOffset"))
             {
                 positionOffset = new Vector3(0, node.ROLGetFloatValue("verticalOffset"), 0);

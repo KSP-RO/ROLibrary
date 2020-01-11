@@ -700,6 +700,21 @@ namespace ROLib
             int wholeBits = (int)Math.Round((value / roundTo), 0);
             return (float)wholeBits * roundTo;
         }
+
+        public static float SphereVolume(float r)
+        {
+            return 4f / 3f * (float)Math.PI * (r * r * r);
+        }
+
+        public static float CylinderVolume(float r, float h)
+        {
+            return (float)Math.PI * r * r * h;
+        }
+
+        public static float EllipsoidVolume(float a, float b, float c)
+        {
+            return 4f / 3f * (float)Math.PI * (a * b * c);
+        }
     }
 
     public class StringLogicalComparer
