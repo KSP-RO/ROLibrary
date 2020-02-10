@@ -42,19 +42,17 @@ namespace ROLib
         public static void onPartGeometryUpdate(Part part, bool createDefaultCube)
         {
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) { return; }//noop on prefabs
-            //MonoBehaviour.print(System.Environment.StackTrace);
             ROLStockInterop.updatePartHighlighting(part);
             part.airlock = locateAirlock(part);
             partGeometryUpdate(part);
+            if (createDefaultCube && (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight))
+            {
+                ROLStockInterop.updatePartDragCube(part);
+            }
             if (isFARInstalled())
             {
-                ROLStockInterop.addFarUpdatePart(part);
                 //FARdebug(part);
-                //part.SendMessage("GeometryPartModuleRebuildMeshData");
-            }
-            else if (createDefaultCube && (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight))
-            {
-                ROLStockInterop.addDragUpdatePart(part);
+                part.SendMessage("GeometryPartModuleRebuildMeshData");
             }
             if (HighLogic.LoadedSceneIsEditor && part.parent==null && part!=EditorLogic.RootPart)//likely the part under the cursor; this fixes problems with modular parts not wanting to attach to stuff
             {
