@@ -17,7 +17,6 @@ namespace ROLib
         SortedList<string, float> sortedFiles = new SortedList<string, float>();
         string file;
         string deleteFile = "";
-        string deleteFileName = "";
 
         public DimensionWindow (ModuleROTank m) :
             base (new Guid(), "ROTanks Dimension Selection", new Rect (300, 300, 400, 600))
@@ -32,8 +31,7 @@ namespace ROLib
         private void UpdatePresetList()
         {
             files = Directory.GetFiles($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/", "*.cfg");
-            NumericComparer ns = new NumericComparer();
-            Array.Sort(files, ns);
+            Array.Sort(files, new NumericComparer());
         }
 
         public void CreateNew()
@@ -75,14 +73,7 @@ namespace ROLib
             //ROLLog.debug("TankDimensionGUI: CreateNew() Feet: " + diameterFeet.ToString("N3"));
             GUILayout.EndHorizontal();
 
-            if (feet)
-            {
-                curDiameter = module.currentDiameter * 3.281f;
-            }
-            else
-            {
-                curDiameter = module.currentDiameter;
-            }
+            curDiameter = feet ? module.currentDiameter * 3.281f : module.currentDiameter;
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("1:2 of Current", GUILayout.Width(125)))
@@ -174,48 +165,22 @@ namespace ROLib
             }
 
             // If there are no presets, do not activate the Delete button
-            if (files.Length == 0)
-            {
-                GUI.enabled = false;
-                //ROLLog.debug("TankDimensionGUI: No Files - Delete Not Enabled");
-            }
-            else
-            {
-                GUI.enabled = true;
-                //ROLLog.debug("TankDimensionGUI: Delete Enabled");
-            }
+            GUI.enabled = !(files.Length == 0);
 
-            // If the button has currently been set for deletion, then toggle it
-            if (deleteEnabled)
+            if (GUILayout.Button(deleteEnabled ? "Disable Deletion" : "Enable Deletion"))
             {
-                if (GUILayout.Button("Disable Deletion"))
-                {
-                    deleteEnabled = false;
-                    //ROLLog.debug("TankDimensionGUI: UnDelete Not Enabled");
-                }
+                deleteEnabled = !deleteEnabled;
+                //ROLLog.debug($"TankDimensionGUI: Toggled deleteEnabled to {deleteEnabled}");
             }
-            else
-            {
-                if (GUILayout.Button("Enable Deletion"))
-                {
-                    deleteEnabled = true;
-                    //ROLLog.debug("TankDimensionGUI: Delete Enabled");
-                }
-            }
-
             //ROLLog.debug("TankDimensionGUI: End CreateNew()");
         }
 
         private void CalculateDiameter(float f, string s)
         {
             tempDiameter = (float)Math.Round(curDiameter * f, 3);
-            diameterString = tempDiameter.ToString("N3");
-            string feetOrInches = "m";
-            if (feet)
-            {
-                feetOrInches = " ft";
-            }
-            nameString = s + diameterString + feetOrInches;
+            diameterString = $"{tempDiameter:N3}";
+            string units = feet ? "ft" : " m";
+            nameString = $"{s}{diameterString} {units}";
         }
 
         public void CreatePresets()
@@ -236,7 +201,6 @@ namespace ROLib
                     if (GUILayout.Button($"Delete {config.GetValue("name")} [{config.GetValue("diameter")}m]"))
                     {
                         deleteFile = file;
-                        deleteFileName = config.GetValue("name");
                         File.Delete(deleteFile);
                         UpdatePresetList();
                     }
@@ -260,32 +224,13 @@ namespace ROLib
 
         public void SetCurrentDiameter(float f)
         {
+            float oldDiameter = module.currentDiameter;
             module.currentDiameter = f;
+            BaseField fld = module.Fields[nameof(module.currentDiameter)];
+            fld.uiControlEditor.onFieldChanged.Invoke(fld, oldDiameter);
 
-            module.updateModulePositions();
-            module.updateDimensions();
-            module.updateAttachNodes(true);
-            module.updateAvailableVariants();
-            if (module.scaleMass)
-            {
-                module.updateMass();
-            }
-            if (module.scaleCost)
-            {
-                module.updateCost();
-            }
-
-            UpdatePartActionWindow();
+            MonoUtilities.RefreshContextWindows(module.part);
             ROLLog.log("ModuleROTank - Diameter set to: " + f);
-        }
-
-        private void UpdatePartActionWindow()
-        {
-            UIPartActionWindow window = UIPartActionController.Instance?.GetItem(module.part, false);
-            if (window is null) return;
-
-            window.ClearList();
-            window.displayDirty = true;
         }
 
         public override void Window(int id)
