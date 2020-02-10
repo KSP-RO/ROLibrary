@@ -123,14 +123,11 @@ namespace ROLib
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) { return; }//noop on prefabs
             if (part.HighlightRenderer != null)
             {
+                part.HighlightRenderer.Clear();
                 if (part.transform.ROLFindRecursive("model") is Transform model)
                 {
                     Renderer[] renders = model.GetComponentsInChildren<Renderer>(false);
-                    part.HighlightRenderer = new List<Renderer>(renders);
-                }
-                else
-                {
-                    part.HighlightRenderer = new List<Renderer>();
+                    part.HighlightRenderer.AddRange(renders);
                 }
                 part.RefreshHighlighter();
             }
