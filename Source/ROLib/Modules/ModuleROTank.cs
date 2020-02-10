@@ -167,21 +167,8 @@ namespace ROLib
             this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentDiameter);
             this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f, true, currentVScale);
 
-            updateModulePositions();
-            updateAttachNodes(true);
-            updateAvailableVariants();
-            updateDragCubes();
+            this.ROLactionWithSymmetry(modelChangedAction);
 
-            if (scaleMass)
-            {
-                updateMass();
-            }
-            if (scaleCost)
-            {
-                updateCost();
-            }
-            ROLStockInterop.updatePartHighlighting(part);
-            UpdateTankVolume(lengthWidth);
         }
 
         //------------------------------------------RECOLORING PERSISTENCE-----------------------------------------------//
@@ -243,7 +230,7 @@ namespace ROLib
         /// <summary>
         /// Mapping of all of the variant sets available for this part.  When variant list length > 0, an additional 'variant' UI slider is added to allow for switching between variants.
         /// </summary>
-        private Dictionary<string, ModelDefinitionVariantSet> variantSets = new Dictionary<string, ModelDefinitionVariantSet>();
+        private readonly Dictionary<string, ModelDefinitionVariantSet> variantSets = new Dictionary<string, ModelDefinitionVariantSet>();
 
         /// <summary>
         /// Helper method to get or create a variant set for the input variant name.  If no set currently exists, a new set is empty set is created and returned.
@@ -252,8 +239,7 @@ namespace ROLib
         /// <returns></returns>
         private ModelDefinitionVariantSet getVariantSet(string name)
         {
-            ModelDefinitionVariantSet set = null;
-            if (!variantSets.TryGetValue(name, out set))
+            if (!variantSets.TryGetValue(name, out ModelDefinitionVariantSet set))
             {
                 set = new ModelDefinitionVariantSet(name);
                 variantSets.Add(name, set);
@@ -286,8 +272,24 @@ namespace ROLib
         private float noseAdditionalVol = 0f;
         private float mountAdditionalVol = 0f;
 
-
         #endregion Private Variables
+
+        internal readonly Action<ModuleROTank> modelChangedAction = (m) =>
+        {
+            m.updateModulePositions();
+            m.UpdateTankVolume(m.lengthWidth);
+            m.updateDimensions();
+            m.UpdateModelMeshes();
+            m.updateAttachNodes(HighLogic.LoadedSceneIsEditor);     // Only push nodes in the Editor
+            m.updateAvailableVariants();
+            m.updateDragCubes();
+            if (m.scaleMass)
+                m.UpdateMass();
+            if (m.scaleCost)
+                m.UpdateCost();
+            ROLStockInterop.updatePartHighlighting(m.part);
+            ROLStockInterop.fireEditorUpdate();
+        };
 
         #region Standard KSP Overrides
 
@@ -304,15 +306,12 @@ namespace ROLib
         {
             base.OnStart(state);
             initialize();
+            modelChangedAction(this);
+            ROLStockInterop.updatePartHighlighting(part);
             initializeUI();
-            updateDimensions();
-        }
-
-        // Standard Unity lifecyle override
-        public void Start()
-        {
+            if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
+                GameEvents.onFlightReady.Add(updateDragCubes);
             initializedDefaults = true;
-            updateDragCubes();
         }
 
         // Standard Unity lifecyle override
@@ -322,6 +321,7 @@ namespace ROLib
             {
                 GameEvents.onEditorShipModified.Remove(new EventData<ShipConstruct>.OnEvent(onEditorVesselModified));
             }
+            GameEvents.onFlightReady.Remove(updateDragCubes);
         }
 
         //KSP editor modified event callback
@@ -457,14 +457,11 @@ namespace ROLib
             //each one may contain multiple 'model=modelDefinitionName' entries
             //but must contain no more than a single 'variant' entry.
             //if no variant is specified, they are added to the 'Default' variant.
-            ConfigNode[] coreDefNodes = node.GetNodes("CORE");
-
             List<ModelDefinitionLayoutOptions> coreDefList = new List<ModelDefinitionLayoutOptions>();
-            int coreDefLen = coreDefNodes.Length;
-            for (int i = 0; i < coreDefLen; i++)
+            foreach (ConfigNode n in node.GetNodes("CORE"))
             {
-                string variantName = coreDefNodes[i].ROLGetStringValue("variant", "Default");
-                coreDefs = ROLModelData.getModelDefinitionLayouts(coreDefNodes[i].ROLGetStringValues("model"));
+                string variantName = n.ROLGetStringValue("variant", "Default");
+                coreDefs = ROLModelData.getModelDefinitionLayouts(n.ROLGetStringValues("model"));
                 coreDefList.AddUniqueRange(coreDefs);
                 ModelDefinitionVariantSet mdvs = getVariantSet(variantName);
                 mdvs.addModels(coreDefs);
@@ -501,21 +498,6 @@ namespace ROLib
             coreModule.setupModel();
             noseModule.setupModel();
             mountModule.setupModel();
-
-            updateModulePositions();
-            updateDimensions();
-            updateAttachNodes(false);
-            updateAvailableVariants();
-            if (scaleMass)
-            {
-                updateMass();
-            }
-            if (scaleCost)
-            {
-                updateCost();
-            }
-            ROLStockInterop.updatePartHighlighting(part);
-            UpdateTankVolume(lengthWidth);
         }
 
         /// <summary>
@@ -524,25 +506,6 @@ namespace ROLib
         /// </summary>
         public void initializeUI()
         {
-            Action<ModuleROTank> modelChangedAction = (m) =>
-            {
-                m.updateModulePositions();
-                m.updateDimensions();
-                m.updateAttachNodes(true);
-                m.updateAvailableVariants();
-                m.updateDragCubes();
-                if (scaleMass)
-                {
-                    m.updateMass();
-                }
-                if (scaleCost)
-                {
-                    m.updateCost();
-                }
-                //ROLModInterop.updateResourceVolume(m.part);
-                m.UpdateTankVolume(lengthWidth);
-            };
-
             //set up the core variant UI control
             string[] variantNames = ROLUtils.getNames(variantSets.Values, m => m.variantName);
             this.ROLupdateUIChooseOptionControl(nameof(currentVariant), variantNames, variantNames, true, currentVariant);
@@ -587,7 +550,6 @@ namespace ROLib
                     modelChangedAction(m);
                     m.prevDiameter = m.currentDiameter;
                 });
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(currentLength)].uiControlEditor.onFieldChanged = (a, b) =>
@@ -599,7 +561,6 @@ namespace ROLib
                     modelChangedAction(m);
                     m.prevLength = m.currentLength;
                 });
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(currentVScale)].uiControlEditor.onFieldChanged = (a, b) =>
@@ -609,28 +570,24 @@ namespace ROLib
                     if (m != this) { m.currentVScale = this.currentVScale; }
                     modelChangedAction(m);
                 });
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(currentNose)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 noseModule.modelSelected(a, b);
                 this.ROLactionWithSymmetry(modelChangedAction);
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(currentCore)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 coreModule.modelSelected(a, b);
                 this.ROLactionWithSymmetry(modelChangedAction);
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(currentMount)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 mountModule.modelSelected(a, b);
                 this.ROLactionWithSymmetry(modelChangedAction);
-                ROLStockInterop.fireEditorUpdate();
             };
 
             //------------------MODEL DIAMETER / LENGTH SWITCH UI INIT---------------------//
@@ -652,17 +609,8 @@ namespace ROLib
                 this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentLength);
             }
 
-            if (!lengthWidth)
-            {
-                Fields[nameof(currentVScale)].guiActiveEditor = enableVScale;
-                Events[nameof(ResetModel)].guiActiveEditor = true;
-            }
-
-            if (lengthWidth)
-            {
-                Fields[nameof(currentVScale)].guiActiveEditor = false;
-                Events[nameof(ResetModel)].guiActiveEditor = false;
-            }
+            Fields[nameof(currentVScale)].guiActiveEditor = enableVScale && !lengthWidth;
+            Events[nameof(ResetModel)].guiActiveEditor = !lengthWidth;
 
             //------------------MODULE TEXTURE SWITCH UI INIT---------------------//
             Fields[nameof(currentNoseTexture)].uiControlEditor.onFieldChanged = noseModule.textureSetSelected;
@@ -715,31 +663,31 @@ namespace ROLib
             coreModule.setPosition(pos);
             pos -= coreModule.moduleHeight * 0.5f;//bottom of 'core' model
             mountModule.setPosition(pos);
+        }
 
+        public void UpdateModelMeshes()
+        {
             //update actual model positions and scales
             noseModule.updateModelMeshes();
             coreModule.updateModelMeshes();
             mountModule.updateModelMeshes();
         }
 
+
         /// <summary>
         /// Update the cached modifiedMass field values.  Used with stock mass modifier interface.<para/>
         /// </summary>
-        public void updateMass()
+        public void UpdateMass()
         {
-            modifiedMass = coreModule.moduleMass;
-            modifiedMass += noseModule.moduleMass;
-            modifiedMass += mountModule.moduleMass;
+            modifiedMass = coreModule.moduleMass + noseModule.moduleMass + mountModule.moduleMass;
         }
 
         /// <summary>
         /// Update the cached modifiedCost field values.  Used with stock cost modifier interface.<para/>
         /// </summary>
-        public void updateCost()
+        public void UpdateCost()
         {
-            modifiedCost = coreModule.moduleCost;
-            modifiedCost += noseModule.moduleCost;
-            modifiedCost += mountModule.moduleCost;
+            modifiedCost = coreModule.moduleCost + noseModule.moduleCost + mountModule.moduleCost;
         }
 
         /// <summary>
@@ -747,20 +695,12 @@ namespace ROLib
         /// </summary>
         public void updateDimensions()
         {
-            float noseMaxDiam, mountMaxDiam = 0.0f;
-            noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
-            ROLLog.debug("currentMount: " + currentMount);
-            if (currentMount.Contains("Mount"))
-            {
-                ROLLog.debug("currentMount: " + currentMount);
-                mountMaxDiam = mountModule.moduleUpperDiameter;
-            }
-            else
-                mountMaxDiam = Math.Max(mountModule.moduleLowerDiameter, mountModule.moduleUpperDiameter);
-
+            float mountMaxDiam = currentMount.Contains("Mount") ? mountModule.moduleUpperDiameter : Math.Max(mountModule.moduleLowerDiameter, mountModule.moduleUpperDiameter);
+            float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = getTotalHeight();
-            ROLLog.debug("The Total Tank Length is: " + totalTankLength);
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
+            ROLLog.debug("currentMount: " + currentMount);
+            ROLLog.debug("The Total Tank Length is: " + totalTankLength);
         }
 
         /// <summary>
@@ -856,6 +796,7 @@ namespace ROLib
         /// </summary>
         private void updateDragCubes()
         {
+            UnityEngine.Debug.Log("[ROLibrary] ModuleROTank updateDragCubes()");
             ROLModInterop.onPartGeometryUpdate(part, true);
         }
 
@@ -904,32 +845,9 @@ namespace ROLib
         {
             currentVScale = 0.0f;
 
-            if (!lengthWidth)
-            {
-                return;
-            }
+            if (!lengthWidth) return;
 
-            Action<ModuleROTank> modelChangedAction = (m) =>
-            {
-                m.updateModulePositions();
-                m.updateDimensions();
-                m.updateAttachNodes(true);
-                m.updateAvailableVariants();
-                m.updateDragCubes();
-                if (scaleMass)
-                {
-                    m.updateMass();
-                }
-                if (scaleCost)
-                {
-                    m.updateCost();
-                }
-                m.UpdateTankVolume(lengthWidth);
-            };
-
-            float dimRatio, modelRatio = 0.0f;
-            string s = "1.0x-Kerolox";
-            dimRatio = currentLength / currentDiameter;
+            float modelRatio, dimRatio = currentLength / currentDiameter;
 
             if (dimRatio < 0.625)
             {
@@ -997,14 +915,13 @@ namespace ROLib
             }
 
             string ratioName = string.Format("{0:0.0}", modelRatio);
-            s = $"{ratioName}x-{currentVariant}";
+            string s = $"{ratioName}x-{currentVariant}";
             ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
 
             currentVScale = (dimRatio / modelRatio) - 1;
 
             coreModule.modelSelected(s);
             this.ROLactionWithSymmetry(modelChangedAction);
-            ROLStockInterop.fireEditorUpdate();
         }
 
         private void UpdateTankVolume(bool lw)
@@ -1015,23 +932,6 @@ namespace ROLib
                 SendVolumeChangedEvent(totalVol);
                 return;
             }
-
-            Action<ModuleROTank> modelChangedAction = (m) =>
-            {
-                m.updateModulePositions();
-                m.updateDimensions();
-                m.updateAttachNodes(true);
-                m.updateDragCubes();
-                if (scaleMass)
-                {
-                    m.updateMass();
-                }
-                if (scaleCost)
-                {
-                    m.updateCost();
-                }
-                ROLModInterop.realFuelsVolumeUpdate(m.part, m.effectiveVolume);
-            };
 
             float horScale = currentDiameter / coreModule.definition.diameter;
             float domeLength = currentDiameter / 2;
@@ -1089,8 +989,7 @@ namespace ROLib
             debug("================================================");
             */
 
-            this.ROLactionWithSymmetry(modelChangedAction);
-            ROLStockInterop.fireEditorUpdate();
+            ROLModInterop.realFuelsVolumeUpdate(part, effectiveVolume);
         }
 
         public void SendVolumeChangedEvent(float newVol)
@@ -1126,7 +1025,7 @@ namespace ROLib
             }
         }
 
-        private void OnSceneChange(GameScenes s)
+        private void OnSceneChange(GameScenes _)
         {
             HideGUI();
         }
