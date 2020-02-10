@@ -276,13 +276,13 @@ namespace ROLib
 
         internal readonly Action<ModuleROTank> modelChangedAction = (m) =>
         {
-            m.updateModulePositions();
+            m.UpdateModulePositions();
             m.UpdateTankVolume(m.lengthWidth);
-            m.updateDimensions();
+            m.UpdateDimensions();
             m.UpdateModelMeshes();
-            m.updateAttachNodes(HighLogic.LoadedSceneIsEditor);     // Only push nodes in the Editor
-            m.updateAvailableVariants();
-            m.updateDragCubes();
+            m.UpdateAttachNodes(HighLogic.LoadedSceneIsEditor);     // Only push nodes in the Editor
+            m.UpdateAvailableVariants();
+            m.UpdateDragCubes();
             if (m.scaleMass)
                 m.UpdateMass();
             if (m.scaleCost)
@@ -310,7 +310,7 @@ namespace ROLib
             ROLStockInterop.updatePartHighlighting(part);
             initializeUI();
             if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
-                GameEvents.onFlightReady.Add(updateDragCubes);
+                GameEvents.onFlightReady.Add(UpdateDragCubes);
             initializedDefaults = true;
         }
 
@@ -321,14 +321,14 @@ namespace ROLib
             {
                 GameEvents.onEditorShipModified.Remove(new EventData<ShipConstruct>.OnEvent(onEditorVesselModified));
             }
-            GameEvents.onFlightReady.Remove(updateDragCubes);
+            GameEvents.onFlightReady.Remove(UpdateDragCubes);
         }
 
         //KSP editor modified event callback
         private void onEditorVesselModified(ShipConstruct ship)
         {
             //update available variants for attach node changes
-            updateAvailableVariants();
+            UpdateAvailableVariants();
         }
 
         // IPartMass/CostModifier override
@@ -627,7 +627,7 @@ namespace ROLib
         /// Update the scale and position values for all currently configured models.  Does no validation, only updates positions.<para/>
         /// After calling this method, all models will be scaled and positioned according to their internal position/scale values and the orientations/offsets defined in the models.
         /// </summary>
-        public void updateModulePositions()
+        public void UpdateModulePositions()
         {
             ROLLog.debug($"UpdateModulePositions()");
             //scales for modules depend on the module above/below them
@@ -693,7 +693,7 @@ namespace ROLib
         /// <summary>
         /// Updates all dimensions for the PAW and tooling.
         /// </summary>
-        public void updateDimensions()
+        public void UpdateDimensions()
         {
             float mountMaxDiam = currentMount.Contains("Mount") ? mountModule.moduleUpperDiameter : Math.Max(mountModule.moduleLowerDiameter, mountModule.moduleUpperDiameter);
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
@@ -711,7 +711,7 @@ namespace ROLib
         /// Also includes updating of any parts that are surface attached to this part.
         /// </summary>
         /// <param name="userInput"></param>
-        public void updateAttachNodes(bool userInput)
+        public void UpdateAttachNodes(bool userInput)
         {
             //update the standard top and bottom attach nodes, using the node position(s) defined in the nose and mount modules
             noseModule.updateAttachNodeTop("top", userInput);
@@ -784,7 +784,7 @@ namespace ROLib
         /// Update the UI visibility for the currently available selections.<para/>
         /// Will hide/remove UI fields for slots with only a single option (models, textures, layouts).
         /// </summary>
-        public void updateAvailableVariants()
+        public void UpdateAvailableVariants()
         {
             noseModule.updateSelections();
             coreModule.updateSelections();
@@ -794,7 +794,7 @@ namespace ROLib
         /// <summary>
         /// Calls the generic ROT procedural drag-cube updating routines.  Will update the drag cubes for whatever the current model state is.
         /// </summary>
-        private void updateDragCubes()
+        private void UpdateDragCubes()
         {
             UnityEngine.Debug.Log("[ROLibrary] ModuleROTank updateDragCubes()");
             ROLModInterop.onPartGeometryUpdate(part, true);
