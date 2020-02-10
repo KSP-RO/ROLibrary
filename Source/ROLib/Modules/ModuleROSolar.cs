@@ -58,12 +58,7 @@ namespace ROLib
             this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
             this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
             this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
-            UpdateModulePositions();
-            UpdateAttachNodes(true);
-            UpdateAvailableVariants();
-            UpdateDragCubes();
-            UpdateMassAndCost();
-            RecalculateStats();
+            modelChangedAction(this);
         }
 
         [KSPField]
@@ -205,9 +200,8 @@ namespace ROLib
             base.OnLoad(node);
             if (string.IsNullOrEmpty(configNodeData))
             {
-                ROLLog.debug($"{modName}: OnLoad loading configNodeData");
                 configNodeData = node.ToString();
-                ROLLog.debug($"{modName}: OnLoad() configNodeData: {configNodeData}");
+                ROLLog.debug($"{modName}: OnLoad() loaded configNodeData: {configNodeData}");
             }
             ROLLog.debug($"{modName}: OnLoad calling Initialize()");
             Initialize();
@@ -217,35 +211,26 @@ namespace ROLib
         {
             ROLLog.debug($"OnStart(state)");
             base.OnStart(state);
-            ROLLog.debug($"this.anim: {this.anim}");
-            ROLLog.debug("Anim loop");
-            foreach (Animation a in this.GetComponentsInChildren<Animation>())
-            {
-                ROLLog.debug($"[AnimDebug] Animation: {a}");
-            }
-            ROLLog.debug("Anim loop done");
             SetMaxTechLevel();
             ROLLog.debug($"{modName} OnStart calling Initialize()");
             Initialize();
+            modelChangedAction(this);
+            ROLStockInterop.updatePartHighlighting(part);
             ROLLog.debug($"{modName} OnStart calling InitializeUI()");
             InitializeUI();
-        }
 
-        public void Start()
-        {
             initializedDefaults = true;
-            UpdateDragCubes();
         }
 
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
             {
-                GameEvents.onEditorShipModified.Remove(new EventData<ShipConstruct>.OnEvent(onEditorVesselModified));
+                GameEvents.onEditorShipModified.Remove(new EventData<ShipConstruct>.OnEvent(OnEditorVesselModified));
             }
         }
 
-        private void onEditorVesselModified(ShipConstruct ship)
+        private void OnEditorVesselModified(ShipConstruct ship)
         {
             //update available variants for attach node changes
             UpdateAvailableVariants();
@@ -330,16 +315,21 @@ namespace ROLib
             {
                 SolarTechLimit.Init(ROSconfig);
             }
-
-            stl = SolarTechLimit.GetTechLevel(techLevel);
-
             UpdateModulePositions();
-            UpdateAttachNodes(false);
-            UpdateAvailableVariants();
-            UpdateMassAndCost();
-            RecalculateStats();
-            ROLStockInterop.updatePartHighlighting(part);
         }
+
+        internal readonly Action<ModuleROSolar> modelChangedAction = (m) =>
+        {
+            m.stl = SolarTechLimit.GetTechLevel(m.techLevel);
+            m.UpdateModulePositions();
+            m.UpdateAttachNodes(HighLogic.LoadedSceneIsEditor);     // Only push nodes in the Editor
+            m.UpdateAvailableVariants();
+            m.UpdateDragCubes();
+            m.UpdateMassAndCost();
+            m.RecalculateStats();
+            ROLStockInterop.updatePartHighlighting(m.part);
+            ROLStockInterop.fireEditorUpdate();
+        };
 
         /// <summary>
         /// Initialize the UI controls, including default values, and specifying delegates for their 'onClick' methods.<para/>
@@ -349,16 +339,6 @@ namespace ROLib
         {
             ROLLog.debug($"ModuleDeployablePart.deployState: {this.deployState}");
             ROLLog.debug($"{modName}InitalizeUI() modelChangedAction");
-            Action<ModuleROSolar> modelChangedAction = (m) =>
-            {
-                m.stl = SolarTechLimit.GetTechLevel(techLevel);
-                m.UpdateModulePositions();
-                m.UpdateAttachNodes(true);
-                m.UpdateAvailableVariants();
-                m.UpdateDragCubes();
-                m.UpdateMassAndCost();
-                m.RecalculateStats();
-            };
 
             // Set up the core variant UI control
             string[] variantNames = ROLUtils.getNames(variantSets.Values, m => m.variantName);
@@ -380,23 +360,19 @@ namespace ROLib
                     m.currentVariant = currentVariant;
                     m.coreModule.modelSelected(newCoreDef.definition.name);
                     lengthWidth = coreModule.definition.lengthWidth;
+                    Fields[nameof(panelLength)].guiActiveEditor = lengthWidth;
+                    Fields[nameof(panelWidth)].guiActiveEditor = lengthWidth;
+                    Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
                     if (!lengthWidth)
                     {
-                        Fields[nameof(panelLength)].guiActiveEditor = false;
-                        Fields[nameof(panelWidth)].guiActiveEditor = false;
-                        Fields[nameof(panelScale)].guiActiveEditor = true;
                         this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
                     }
                     else
                     {
-                        Fields[nameof(panelLength)].guiActiveEditor = true;
-                        Fields[nameof(panelWidth)].guiActiveEditor = true;
-                        Fields[nameof(panelScale)].guiActiveEditor = false;
                         this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
                         this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
                     }
                     m.ResetModel();
-                    modelChangedAction(m);
                 });
             };
 
@@ -404,23 +380,19 @@ namespace ROLib
             {
                 coreModule.modelSelected(a, b);
                 lengthWidth = coreModule.definition.lengthWidth;
+                Fields[nameof(panelLength)].guiActiveEditor = lengthWidth;
+                Fields[nameof(panelWidth)].guiActiveEditor = lengthWidth;
+                Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
                 if (!lengthWidth)
                 {
-                    Fields[nameof(panelLength)].guiActiveEditor = false;
-                    Fields[nameof(panelWidth)].guiActiveEditor = false;
-                    Fields[nameof(panelScale)].guiActiveEditor = true;
                     this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
                 }
                 else
                 {
-                    Fields[nameof(panelLength)].guiActiveEditor = true;
-                    Fields[nameof(panelWidth)].guiActiveEditor = true;
-                    Fields[nameof(panelScale)].guiActiveEditor = false;
                     this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
                     this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
                 }
                 this.ROLactionWithSymmetry(modelChangedAction);
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(panelLength)].uiControlEditor.onFieldChanged = (a, b) =>
@@ -431,7 +403,6 @@ namespace ROLib
                     modelChangedAction(m);
                     m.prevLength = m.panelLength;
                 });
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(panelWidth)].uiControlEditor.onFieldChanged = (a, b) =>
@@ -442,7 +413,6 @@ namespace ROLib
                     modelChangedAction(m);
                     m.prevWidth = m.panelWidth;
                 });
-                ROLStockInterop.fireEditorUpdate();
             };
 
             Fields[nameof(panelScale)].uiControlEditor.onFieldChanged = (a, b) =>
@@ -453,7 +423,6 @@ namespace ROLib
                     modelChangedAction(m);
                     m.prevScale = m.panelScale;
                 });
-                ROLStockInterop.fireEditorUpdate();
             };
 
             if (maxLength == minLength || !lengthWidth)
@@ -474,27 +443,18 @@ namespace ROLib
                 this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
             }
 
-            if (lengthWidth)
-            {
-                Fields[nameof(panelScale)].guiActiveEditor = false;
-            }
-            else
-            {
-                Fields[nameof(panelScale)].guiActiveEditor = true;
+            Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
+            if (!lengthWidth)
                 this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
-            }
 
             if (HighLogic.LoadedSceneIsEditor)
             {
-                GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(onEditorVesselModified));
+                GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(OnEditorVesselModified));
             }
 
             Fields[nameof(TechLevel)].uiControlEditor.onFieldChanged = (a, b) =>
             {
-                UpdateMassAndCost();
-                RecalculateStats();
                 this.ROLactionWithSymmetry(modelChangedAction);
-                ROLStockInterop.fireEditorUpdate();
             };
         }
 
@@ -619,71 +579,27 @@ namespace ROLib
             this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
             this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
             this.secondaryTransformName = this.raycastTransformName = coreModule.GetSecondaryTransform();
-
-            /*
-            if (pivotName == "sunPivot")
-            {
-                ROLLog.debug("sunPivot");
-                this.deployState = DeployState.RETRACTED;
-                FindAnimations();
-                this.animationName = coreModule.definition.animationName;
-                this.anim[this.animationName].wrapMode = WrapMode.ClampForever;
-                //ROLLog.debug("Set pivotName to null");
-                //this.pivotName = null;
-                //ROLLog.debug($"this.pivotName: {this.pivotName}");
-                //ROLLog.debug("Get the animationName");
-                //this.animationName = coreModule.definition.animationName;
-                //ROLLog.debug($"this.animationName: {this.animationName}");
-                ROLLog.debug("Set hasPivot to false");
-                this.hasPivot = false;
-                ROLLog.debug($"this.hasPivot: {this.hasPivot}");
-                //ROLLog.debug("Set useAnimation to true");
-                //this.useAnimation = true;
-                //ROLLog.debug($"this.useAnimation: {this.useAnimation}");
-                //ROLLog.debug("Set this.anim to this.animationName");
-                //this.anim.GetClip(this.animationName);
-                //ROLLog.debug($"this.anim: {this.anim}");
-                this.pivotName = coreModule.GetPivotName();
-                this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
-                this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
-                //FindAnimations();
-                //ROLLog.debug($"this.anim: {this.anim}");
-                //ROLLog.debug("Anim loop");
-                //foreach (Animation a in this.GetComponentsInChildren<Animation>())
-                //{
-                //    ROLLog.debug($"[AnimDebug] Animation: {a}");
-                //}
-                //ROLLog.debug("Anim loop done");
-            }
-            this.pivotName = coreModule.GetPivotName();
-            this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
-            this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
-            this.secondaryTransformName = this.raycastTransformName = coreModule.GetSecondaryTransform();
-            */
         }
 
         private void UpdateMassAndCost()
         {
             lengthWidth = coreModule.definition.lengthWidth;
+            ROLLog.debug($"UpdateMassAndCost() lengthWidth {lengthWidth}");
+            ROLLog.debug($"coreModule.definition.panelArea: {coreModule.definition.panelArea}");
             if (!lengthWidth)
             {
-                ROLLog.debug($"UpdateMassAndCost() lengthWidth false");
                 area = coreModule.definition.panelArea * panelScale * panelScale;
-                ROLLog.debug($"coreModule.definition.panelArea: {coreModule.definition.panelArea}");
                 ROLLog.debug($"panelScale: {panelScale}");
-                ROLLog.debug($"area: {area}");
             }
             else
             {
-                ROLLog.debug($"UpdateMassAndCost() lengthWidth true");
                 float lengthScale = panelLength / coreModule.definition.panelLength;
                 float widthScale = panelWidth / coreModule.definition.panelWidth;
                 area = coreModule.definition.panelArea * lengthScale * widthScale;
-                ROLLog.debug($"coreModule.definition.panelArea: {coreModule.definition.panelArea}");
                 ROLLog.debug($"lengthScale: {lengthScale}");
                 ROLLog.debug($"widthScale: {widthScale}");
-                ROLLog.debug($"area: {area}");
             }
+            ROLLog.debug($"area: {area}");
 
             kgPerM2 = stl.kgPerM2;
             costPerM2 = stl.costPerM2;
@@ -788,24 +704,14 @@ namespace ROLib
             {
                 if (a.GetClip(this.animationName) != null)
                 {
-                    ROLLog.debug($"[AnimDebug] Animation: {a}");
                     this.anim = a;
-                    ROLLog.debug($"a.GetClip(this.animationName) this.anim: {this.anim}");
                 }
             }
             if (componentsInChildren.Length > 0 && this.anim == null)
             {
                 this.anim = componentsInChildren[0];
-                ROLLog.debug($"componentsInChildren.Length > 0 - this.anim: {this.anim}");
             }
-            if (this.anim == null)
-            {
-                this.useAnimation = false;
-            }
-            else
-            {
-                this.useAnimation = true;
-            }
+            this.useAnimation = (this.anim != null);
         }
 
         #endregion Custom Methods
