@@ -9,11 +9,11 @@ namespace ROLib
     {
         #region KSPFields
 
-        [KSPField(isPersistant = true, guiName = "Variant", guiActiveEditor = true, guiActive = false, groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiName = "Variant", guiActiveEditor = true, guiActive = false, groupName = "ModuleROSolar", groupDisplayName = "RO-Solar"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentVariant = "Default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Design", groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Design", groupName = "ModuleROSolar", groupDisplayName = "RO-Solar"),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentCore = "Mount-None";
 
