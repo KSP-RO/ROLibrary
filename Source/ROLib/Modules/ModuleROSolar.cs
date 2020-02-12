@@ -58,7 +58,7 @@ namespace ROLib
             this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
             this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
             this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
-            modelChangedAction(this);
+            ModelChangedHandlerWithSymmetry(true, true);
         }
 
         [KSPField]
@@ -214,8 +214,7 @@ namespace ROLib
             SetMaxTechLevel();
             ROLLog.debug($"{modName} OnStart calling Initialize()");
             Initialize();
-            modelChangedAction(this);
-            ROLStockInterop.updatePartHighlighting(part);
+            ModelChangedHandler(false);
             ROLLog.debug($"{modName} OnStart calling InitializeUI()");
             InitializeUI();
 
@@ -318,18 +317,32 @@ namespace ROLib
             UpdateModulePositions();
         }
 
-        internal readonly Action<ModuleROSolar> modelChangedAction = (m) =>
+        internal void ModelChangedHandler(bool pushNodes)
         {
-            m.stl = SolarTechLimit.GetTechLevel(m.techLevel);
-            m.UpdateModulePositions();
-            m.UpdateAttachNodes(HighLogic.LoadedSceneIsEditor);     // Only push nodes in the Editor
-            m.UpdateAvailableVariants();
-            m.UpdateDragCubes();
-            m.UpdateMassAndCost();
-            m.RecalculateStats();
-            ROLStockInterop.updatePartHighlighting(m.part);
-            ROLStockInterop.fireEditorUpdate();
-        };
+            stl = SolarTechLimit.GetTechLevel(techLevel);
+            UpdateModulePositions();
+            UpdateAttachNodes(pushNodes);
+            UpdateAvailableVariants();
+            if (!HighLogic.LoadedSceneIsEditor)
+                UpdateDragCubes();
+            UpdateMassAndCost();
+            RecalculateStats();
+            ROLStockInterop.updatePartHighlighting(part);
+            if (HighLogic.LoadedSceneIsEditor)
+                ROLStockInterop.fireEditorUpdate();
+        }
+
+        internal void ModelChangedHandlerWithSymmetry(bool pushNodes, bool symmetry)
+        {
+            ModelChangedHandler(pushNodes);
+            if (symmetry)
+            {
+                foreach (Part p in part.symmetryCounterparts.Where(x => x != part))
+                {
+                    p.FindModuleImplementing<ModuleROSolar>().ModelChangedHandler(pushNodes);
+                }
+            }
+        }
 
         /// <summary>
         /// Initialize the UI controls, including default values, and specifying delegates for their 'onClick' methods.<para/>
@@ -357,7 +370,6 @@ namespace ROLib
                 // Now, call model-selected on the core model to update for the changes, including symmetry counterpart updating.
                 this.ROLactionWithSymmetry(m =>
                 {
-                    m.currentVariant = currentVariant;
                     m.coreModule.modelSelected(newCoreDef.definition.name);
                     lengthWidth = coreModule.definition.lengthWidth;
                     Fields[nameof(panelLength)].guiActiveEditor = lengthWidth;
@@ -374,6 +386,7 @@ namespace ROLib
                     }
                     m.ResetModel();
                 });
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
             Fields[nameof(currentCore)].uiControlEditor.onFieldChanged = (a, b) =>
@@ -392,37 +405,46 @@ namespace ROLib
                     this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
                     this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
                 }
-                this.ROLactionWithSymmetry(modelChangedAction);
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
-            Fields[nameof(panelLength)].uiControlEditor.onFieldChanged = (a, b) =>
+            Fields[nameof(panelLength)].uiControlEditor.onFieldChanged =
+            Fields[nameof(panelLength)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
-                this.ROLactionWithSymmetry(m =>
+                if ((float) a.GetValue(this) != prevLength)
                 {
-                    if (m != this) { m.panelLength = this.panelLength; }
-                    modelChangedAction(m);
-                    m.prevLength = m.panelLength;
-                });
+                    ModelChangedHandler(true);
+                    prevLength = panelLength;
+                }
             };
 
-            Fields[nameof(panelWidth)].uiControlEditor.onFieldChanged = (a, b) =>
+            Fields[nameof(panelWidth)].uiControlEditor.onFieldChanged =
+            Fields[nameof(panelWidth)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
-                this.ROLactionWithSymmetry(m =>
+                if ((float) a.GetValue(this) != prevWidth)
                 {
-                    if (m != this) { m.panelWidth = this.panelWidth; }
-                    modelChangedAction(m);
-                    m.prevWidth = m.panelWidth;
-                });
+                    ModelChangedHandler(true);
+                    prevWidth = panelWidth;
+                }
             };
 
-            Fields[nameof(panelScale)].uiControlEditor.onFieldChanged = (a, b) =>
+            Fields[nameof(panelScale)].uiControlEditor.onFieldChanged =
+            Fields[nameof(panelScale)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
-                this.ROLactionWithSymmetry(m =>
+                if ((float)a.GetValue(this) != prevScale)
                 {
-                    if (m != this) { m.panelScale = this.panelScale; }
-                    modelChangedAction(m);
-                    m.prevScale = m.panelScale;
-                });
+                    ModelChangedHandler(true);
+                    prevScale = panelScale;
+                }
+            };
+
+            Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
+            if (!lengthWidth)
+                this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
+
+            Fields[nameof(TechLevel)].uiControlEditor.onFieldChanged = (a, b) =>
+            {
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
             if (maxLength == minLength || !lengthWidth)
@@ -443,19 +465,10 @@ namespace ROLib
                 this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
             }
 
-            Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
-            if (!lengthWidth)
-                this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
-
             if (HighLogic.LoadedSceneIsEditor)
             {
                 GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(OnEditorVesselModified));
             }
-
-            Fields[nameof(TechLevel)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                this.ROLactionWithSymmetry(modelChangedAction);
-            };
         }
 
         private void SetMaxTechLevel()
@@ -570,9 +583,7 @@ namespace ROLib
 
             if (pivotName.Equals("sunPivot"))
             {
-                ROLLog.debug("Set hasPivot to false");
                 this.hasPivot = false;
-                ROLLog.debug($"this.hasPivot: {this.hasPivot}");
             }
 
             this.pivotName = coreModule.GetPivotName();

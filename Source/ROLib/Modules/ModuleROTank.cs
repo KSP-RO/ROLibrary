@@ -166,9 +166,7 @@ namespace ROLib
 
             this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentDiameter);
             this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f, true, currentVScale);
-
-            this.ROLactionWithSymmetry(modelChangedAction);
-
+            ModelChangedHandlerWithSymmetry(true, true);
         }
 
         //------------------------------------------RECOLORING PERSISTENCE-----------------------------------------------//
@@ -274,22 +272,35 @@ namespace ROLib
 
         #endregion Private Variables
 
-        internal readonly Action<ModuleROTank> modelChangedAction = (m) =>
+        internal void ModelChangedHandler(bool pushNodes)
         {
-            m.UpdateModulePositions();
-            m.UpdateTankVolume(m.lengthWidth);
-            m.UpdateDimensions();
-            m.UpdateModelMeshes();
-            m.UpdateAttachNodes(HighLogic.LoadedSceneIsEditor);     // Only push nodes in the Editor
-            m.UpdateAvailableVariants();
-            m.UpdateDragCubes();
-            if (m.scaleMass)
-                m.UpdateMass();
-            if (m.scaleCost)
-                m.UpdateCost();
-            ROLStockInterop.updatePartHighlighting(m.part);
-            ROLStockInterop.fireEditorUpdate();
-        };
+            UpdateModulePositions();
+            UpdateTankVolume(lengthWidth);
+            UpdateDimensions();
+            UpdateModelMeshes();
+            UpdateAttachNodes(pushNodes);
+            UpdateAvailableVariants();
+            if (!HighLogic.LoadedSceneIsEditor)
+                UpdateDragCubes();
+            if (scaleMass)
+                UpdateMass();
+            if (scaleCost)
+                UpdateCost();
+            ROLStockInterop.updatePartHighlighting(part);
+            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+        }
+
+        internal void ModelChangedHandlerWithSymmetry(bool pushNodes, bool symmetry)
+        {
+            ModelChangedHandler(pushNodes);
+            if (symmetry)
+            {
+                foreach (Part p in part.symmetryCounterparts.Where(x => x != part))
+                {
+                    p.FindModuleImplementing<ModuleROTank>().ModelChangedHandler(pushNodes);
+                }
+            }
+        }
 
         #region Standard KSP Overrides
 
@@ -306,8 +317,7 @@ namespace ROLib
         {
             base.OnStart(state);
             initialize();
-            modelChangedAction(this);
-            ROLStockInterop.updatePartHighlighting(part);
+            ModelChangedHandler(false);
             initializeUI();
             if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
                 GameEvents.onFlightReady.Add(UpdateDragCubes);
@@ -332,30 +342,19 @@ namespace ROLib
         }
 
         // IPartMass/CostModifier override
-        public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
+        public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
         // IPartMass/CostModifier override
-        public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
+        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
         // IPartMass/CostModifier override
-        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
-        {
-            if (modifiedMass == -1) { return 0; }
-            return -defaultMass + modifiedMass;
-        }
+        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => modifiedMass == -1 ? 0 : defaultMass + modifiedMass;
 
         // IPartMass/CostModifier override
-        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit)
-        {
-            if (modifiedCost == -1) { return 0; }
-            return -defaultCost + modifiedCost;
-        }
+        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => modifiedCost == -1 ? 0 : defaultCost + modifiedCost;
 
         //IRecolorable override
-        public string[] getSectionNames()
-        {
-            return new string[] { "Nose", "Core", "Mount" };
-        }
+        public string[] getSectionNames() => new string[] { "Nose", "Core", "Mount" };
 
         //IRecolorable override
         public RecoloringData[] getSectionColors(string section)
@@ -525,7 +524,6 @@ namespace ROLib
                 //now, call model-selected on the core model to update for the changes, including symmetry counterpart updating.
                 this.ROLactionWithSymmetry(m =>
                 {
-                    m.currentVariant = currentVariant;
                     if (lengthWidth)
                     {
                         m.SetModelFromDimensions();
@@ -534,60 +532,37 @@ namespace ROLib
                     {
                         m.coreModule.modelSelected(newCoreDef.definition.name);
                     }
-                    modelChangedAction(m);
                 });
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
-            Fields[nameof(currentDiameter)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                this.ROLactionWithSymmetry(m =>
-                {
-                    if (m != this) { m.currentDiameter = this.currentDiameter; }
-                    if (lengthWidth)
-                    {
-                        m.SetModelFromDimensions();
-                    }
-                    modelChangedAction(m);
-                    m.prevDiameter = m.currentDiameter;
-                });
-            };
+            Fields[nameof(currentDiameter)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentDiameter)].uiControlEditor.onSymmetryFieldChanged = OnDiameterChanged;
 
-            Fields[nameof(currentLength)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                this.ROLactionWithSymmetry(m =>
-                {
-                    if (m != this) { m.currentLength = this.currentLength; }
-                    m.SetModelFromDimensions();
-                    modelChangedAction(m);
-                    m.prevLength = m.currentLength;
-                });
-            };
+            Fields[nameof(currentLength)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentLength)].uiControlEditor.onSymmetryFieldChanged = OnLengthChanged;
 
             Fields[nameof(currentVScale)].uiControlEditor.onFieldChanged = (a, b) =>
             {
-                this.ROLactionWithSymmetry(m =>
-                {
-                    if (m != this) { m.currentVScale = this.currentVScale; }
-                    modelChangedAction(m);
-                });
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
             Fields[nameof(currentNose)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 noseModule.modelSelected(a, b);
-                this.ROLactionWithSymmetry(modelChangedAction);
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
             Fields[nameof(currentCore)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 coreModule.modelSelected(a, b);
-                this.ROLactionWithSymmetry(modelChangedAction);
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
             Fields[nameof(currentMount)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 mountModule.modelSelected(a, b);
-                this.ROLactionWithSymmetry(modelChangedAction);
+                ModelChangedHandlerWithSymmetry(true, true);
             };
 
             //------------------MODEL DIAMETER / LENGTH SWITCH UI INIT---------------------//
@@ -623,13 +598,30 @@ namespace ROLib
             }
         }
 
-        /// <summary>
-        /// Update the scale and position values for all currently configured models.  Does no validation, only updates positions.<para/>
-        /// After calling this method, all models will be scaled and positioned according to their internal position/scale values and the orientations/offsets defined in the models.
-        /// </summary>
-        public void UpdateModulePositions()
+        private void OnDiameterChanged(BaseField f, object o)
         {
-            ROLLog.debug($"UpdateModulePositions()");
+            // KSP 1.7.3 bug, symmetry invocations will have o=newValue instead of previousValue
+            if ((float)f.GetValue(this) == prevDiameter) return;
+            if (lengthWidth)
+                SetModelFromDimensions();
+            ModelChangedHandler(true);
+            prevDiameter = currentDiameter;
+        }
+
+        private void OnLengthChanged(BaseField f, object o) 
+        {
+            if ((float)f.GetValue(this) == prevLength) return;
+            SetModelFromDimensions();
+            ModelChangedHandler(true);
+            prevLength = currentLength;
+        }
+
+    /// <summary>
+    /// Update the scale and position values for all currently configured models.  Does no validation, only updates positions.<para/>
+    /// After calling this method, all models will be scaled and positioned according to their internal position/scale values and the orientations/offsets defined in the models.
+    /// </summary>
+    public void UpdateModulePositions()
+        {
             //scales for modules depend on the module above/below them
             //first set the scale for the core module -- this depends directly on the UI specified 'diameter' value.
             if (lengthWidth)
@@ -744,10 +736,8 @@ namespace ROLib
                 ROLAttachNodeUtils.updateAttachNodePosition(part, mountInterstage, pos, Vector3.down, userInput, nodeSize);
             }
 
-
             //update surface attach node position, part position, and any surface attached children
-            AttachNode surfaceNode = part.srfAttachNode;
-            if (surfaceNode != null)
+            if (part.srfAttachNode is AttachNode surfaceNode)
             {
                 coreModule.updateSurfaceAttachNode(surfaceNode, prevDiameter, userInput);
             }
@@ -796,7 +786,6 @@ namespace ROLib
         /// </summary>
         private void UpdateDragCubes()
         {
-            UnityEngine.Debug.Log("[ROLibrary] ModuleROTank updateDragCubes()");
             ROLModInterop.onPartGeometryUpdate(part, true);
         }
 
@@ -921,7 +910,6 @@ namespace ROLib
             currentVScale = (dimRatio / modelRatio) - 1;
 
             coreModule.modelSelected(s);
-            this.ROLactionWithSymmetry(modelChangedAction);
         }
 
         private void UpdateTankVolume(bool lw)
