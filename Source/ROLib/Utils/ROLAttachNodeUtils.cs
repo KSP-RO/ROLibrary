@@ -95,28 +95,22 @@ namespace ROLib
         /// <param name="newDiameter"></param>
         public static void updateSurfaceAttachedChildren(Part part, float oldDiameter, float newDiameter)
         {
-            float delta = newDiameter - oldDiameter;
-            delta *= 0.5f;
-            Vector3 parentPosWorldSpace = part.transform.position;
-            Vector3 parentPosChildSpace;
-            Vector3 diff;
-            float originalLen;
-            float newLen;
-            float newX, newY, newZ;
+            float delta = (newDiameter - oldDiameter) / 2;
+            Vector3 parentLS = part.transform.localPosition;
             foreach (Part child in part.children)
             {
-                if (child.srfAttachNode != null && child.srfAttachNode.attachedPart == part)//has surface attach node, and surface attach node is attached to the input part
+                if (child.srfAttachNode is AttachNode n && n.attachedPart == part)//has surface attach node, and surface attach node is attached to the input part
                 {
-                    parentPosChildSpace = child.transform.InverseTransformPoint(parentPosWorldSpace);
-                    diff = child.transform.localPosition - parentPosChildSpace;
-                    originalLen = new Vector2(parentPosChildSpace.x, parentPosChildSpace.z).magnitude;
-                    newLen = originalLen + delta;
-                    float dp = newLen / originalLen;
-                    newX = child.transform.localPosition.x * dp;
-                    newY = child.transform.localPosition.y;
-                    newZ = child.transform.localPosition.z * dp;
-                    child.transform.localPosition = new Vector3(newX, newY, newZ);
-                    child.attPos0 = new Vector3(newX, newY, newZ);
+                    // The child must displace radially in the coordinate system of the parent
+                    // Work in the parent coordinate space, then translate in world.
+                    Vector3 childInParentSpace = part.transform.InverseTransformPoint(child.transform.position);
+                    Vector3 dir = childInParentSpace - parentLS;
+                    dir.y = 0;
+                    dir.Normalize();
+                    // Debug.Log($"[ROLAttachNode] Moving surface-attached children by {delta} in dir {dir} in parent space");
+                    Vector3 worldXlate = part.transform.TransformVector(dir);
+                    child.transform.Translate(dir * delta, Space.World);
+                    child.attPos0 = child.transform.localPosition;
                 }
             }
         }
