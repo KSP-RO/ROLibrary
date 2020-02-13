@@ -323,8 +323,7 @@ namespace ROLib
             UpdateModulePositions();
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
-            if (!HighLogic.LoadedSceneIsEditor)
-                UpdateDragCubes();
+            UpdateDragCubes();
             UpdateMassAndCost();
             RecalculateStats();
             ROLStockInterop.updatePartHighlighting(part);

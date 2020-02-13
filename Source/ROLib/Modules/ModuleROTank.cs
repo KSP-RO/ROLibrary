@@ -280,8 +280,7 @@ namespace ROLib
             UpdateModelMeshes();
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
-            if (!HighLogic.LoadedSceneIsEditor)
-                UpdateDragCubes();
+            UpdateDragCubes();
             if (scaleMass)
                 UpdateMass();
             if (scaleCost)
