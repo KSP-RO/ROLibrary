@@ -14,88 +14,51 @@ namespace ROLib
         public bool flagEnabled = true;
 
         [KSPEvent(guiName = "Toggle Flag Visibility", guiActiveEditor = true)]
-        public void toggleFlagEvent()
-        {
-            onFlagToggled(true);
-        }
+        public void ToggleFlagEvent() => OnFlagToggled(true);
 
-        private void onFlagToggled(bool updateSymmetry)
+        private void OnFlagToggled(bool updateSymmetry)
         {
             flagEnabled = !flagEnabled;
-            updateFlagTransform();
+            UpdateFlagTransform();
             if (updateSymmetry)
             {
                 int index = part.Modules.IndexOf(this);
-                foreach (Part p in part.symmetryCounterparts) { ((ROLFlagDecal)p.Modules[index]).onFlagToggled(false); }
+                foreach (Part p in part.symmetryCounterparts) { ((ROLFlagDecal)p.Modules[index]).OnFlagToggled(false); }
             }
         }
 
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
-            updateFlagTransform();
-            GameEvents.onMissionFlagSelect.Add(new EventData<string>.OnEvent(this.onFlagChanged));
+            UpdateFlagTransform();
+            GameEvents.onMissionFlagSelect.Add(OnFlagChanged);
         }
 
-        public override void OnLoad(ConfigNode node)
-        {
-            base.OnLoad(node);
-            updateFlagTransform();
-        }
+        private void OnDestroy() => GameEvents.onMissionFlagSelect.Remove(OnFlagChanged);
 
-        private void OnDestroy()
-        {
-            GameEvents.onMissionFlagSelect.Remove(new EventData<string>.OnEvent(this.onFlagChanged));
-        }
-
-        public void onFlagChanged(String flagUrl)
-        {
-            updateFlagTransform();
-        }
+        public void OnFlagChanged(string flagUrl) => UpdateFlagTransform();
 
         //IPartGeometryUpdated callback method
         public void geometryUpdated(Part part)
         {
             if (part == this.part)
             {
-                updateFlagTransform();
+                UpdateFlagTransform();
             }
         }
 
-        public void updateFlagTransform()
+        public void UpdateFlagTransform()
         {
-            String textureName = part.flagURL;
-            if (HighLogic.LoadedSceneIsEditor && String.IsNullOrEmpty(textureName)) { textureName = EditorLogic.FlagURL; }
-            if (String.IsNullOrEmpty(textureName) && HighLogic.CurrentGame!=null) { textureName = HighLogic.CurrentGame.flagURL; }
-            Transform[] trs = part.FindModelTransforms(transformName);
-            if (String.IsNullOrEmpty(textureName) || !flagEnabled)
+            string textureName = part.flagURL;
+            if (HighLogic.LoadedSceneIsEditor && string.IsNullOrEmpty(textureName)) { textureName = EditorLogic.FlagURL; }
+            if (string.IsNullOrEmpty(textureName) && HighLogic.CurrentGame!=null) { textureName = HighLogic.CurrentGame.flagURL; }
+            foreach (Transform t in part.FindModelTransforms(transformName))
             {
-                Renderer r;
-                Transform t;
-                int len = trs.Length;
-                for (int i = 0; i < len; i++)
+                if (t.GetComponent<Renderer>() is Renderer r)
                 {
-                    t = trs[i];
-                    if ((r = t.GetComponent<Renderer>()) != null)
-                    {
-                        r.enabled = false;
-                    }
-                }
-            }
-            else
-            {
-                Texture texture = GameDatabase.Instance.GetTexture(textureName, false);
-                Renderer r;
-                Transform t;
-                int len = trs.Length;
-                for (int i = 0; i < len; i++)
-                {
-                    t = trs[i];
-                    if ((r = t.GetComponent<Renderer>()) != null)
-                    {
-                        r.material.mainTexture = texture;
-                        r.enabled = true;
-                    }
+                    r.enabled = flagEnabled && !string.IsNullOrEmpty(textureName);
+                    if (r.enabled)
+                        r.material.mainTexture = GameDatabase.Instance.GetTexture(textureName, false);
                 }
             }
         }

@@ -6,7 +6,6 @@ namespace ROLib
     [KSPAddon(KSPAddon.Startup.Instantly, true)]
     public class ROLStockInterop : MonoBehaviour
     {
-
         private static List<Part> dragCubeUpdateParts = new List<Part>();
         private static List<Part> delayedUpdateDragCubeParts = new List<Part>();
         private static List<Part> FARUpdateParts = new List<Part>();
@@ -23,22 +22,6 @@ namespace ROLib
             MonoBehaviour.print("ROTStockInterop Start");
         }
 
-        public static void addFarUpdatePart(Part part)
-        {
-            if (part != null && !FARUpdateParts.Contains(part))
-            {
-                FARUpdateParts.Add(part);
-            }
-        }
-
-        public static void addDragUpdatePart(Part part)
-        {
-            if(part != null && HighLogic.LoadedSceneIsFlight && !dragCubeUpdateParts.Contains(part))
-            {
-                dragCubeUpdateParts.Add(part);
-            }
-        }
-
         public static void fireEditorUpdate()
         {
             fireEditorEvent = HighLogic.LoadedSceneIsEditor;
@@ -51,24 +34,17 @@ namespace ROLib
                 return;
             }
 
-            int len = dragCubeUpdateParts.Count;
-            Part p;
-            for (int i = 0; i < len; i++)
+            foreach (Part p in dragCubeUpdateParts)
             {
-                p = dragCubeUpdateParts[i];
-                if (p == null) { continue; }
+                Debug.LogWarning("[ROLibrary] ROLStockInterop.FixedUpdate() found legacy request to update drag cubes!");
                 updatePartDragCube(p);
-                if (p.collider == null) { seatFirstCollider(p); }
             }
-            dragCubeUpdateParts.Clear();
-
-            len = FARUpdateParts.Count;
-            for (int i = 0; i < len; i++)
+            foreach (Part p in FARUpdateParts)
             {
-                p = FARUpdateParts[i];
-                if (p == null) { continue; }
+                Debug.LogWarning("[ROLibrary] ROLStockInterop.FixedUpdate() found legacy request to update FAR!");
                 p.SendMessage("GeometryPartModuleRebuildMeshData");
             }
+            dragCubeUpdateParts.Clear();
             FARUpdateParts.Clear();
         }
 
@@ -119,14 +95,17 @@ namespace ROLib
             }
         }
 
-        private static void updatePartDragCube(Part part)
+        public static void updatePartDragCube(Part part)
         {
+            Debug.Log($"[ROLibrary] ROLStockInterop updating drag cube for part {part}");
             DragCube newDefaultCube = DragCubeSystem.Instance.RenderProceduralDragCube(part);
             newDefaultCube.Weight = 1f;
             newDefaultCube.Name = "Default";
             part.DragCubes.ClearCubes();
             part.DragCubes.Cubes.Add(newDefaultCube);
             part.DragCubes.ResetCubeWeights();
+            part.DragCubes.ForceUpdate(true, true, false);
+            if (part.collider == null) seatFirstCollider(part);
         }
 
         public static void updateEngineThrust(ModuleEngines engine, float minThrust, float maxThrust)
@@ -144,20 +123,14 @@ namespace ROLib
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) { return; }//noop on prefabs
             if (part.HighlightRenderer != null)
             {
-                part.HighlightRenderer = null;
-                Transform model = part.transform.ROLFindRecursive("model");
-                if (model != null)
+                part.HighlightRenderer.Clear();
+                if (part.transform.ROLFindRecursive("model") is Transform model)
                 {
                     Renderer[] renders = model.GetComponentsInChildren<Renderer>(false);
-                    part.HighlightRenderer = new List<Renderer>(renders);
-                }
-                else
-                {
-                    part.HighlightRenderer = new List<Renderer>();
+                    part.HighlightRenderer.AddRange(renders);
                 }
                 part.RefreshHighlighter();
             }
         }
-
     }
 }

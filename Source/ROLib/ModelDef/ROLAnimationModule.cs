@@ -428,7 +428,7 @@ namespace ROLib
             persistentData = newState.ToString();
             if (updateDragCube)
             {
-                ROLStockInterop.addDragUpdatePart(part);
+                ROLStockInterop.updatePartDragCube(part);
             }
             if (updateExternal && onAnimStateChangeCallback!=null)
             {

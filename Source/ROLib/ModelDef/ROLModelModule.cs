@@ -977,7 +977,8 @@ namespace ROLib
                 Vector3 pos = surfNodeData.position * hScale;
                 Vector3 ori = surfNodeData.orientation;
                 ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, ori, userInput, size);
-                ROLAttachNodeUtils.updateSurfaceAttachedChildren(part, prevDiameter, currentDiameter);
+                if (userInput)
+                    ROLAttachNodeUtils.updateSurfaceAttachedChildren(part, prevDiameter, currentDiameter);
             }
         }
 
