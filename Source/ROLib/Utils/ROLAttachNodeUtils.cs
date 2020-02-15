@@ -108,8 +108,8 @@ namespace ROLib
                     dir.y = 0;
                     dir.Normalize();
                     // Debug.Log($"[ROLAttachNode] Moving surface-attached children by {delta} in dir {dir} in parent space");
-                    Vector3 worldXlate = part.transform.TransformVector(dir);
-                    child.transform.Translate(dir * delta, Space.World);
+                    Vector3 dir_w = part.transform.TransformDirection(dir);
+                    child.transform.Translate(dir_w * delta, Space.World);
                     child.attPos0 = child.transform.localPosition;
                 }
             }
