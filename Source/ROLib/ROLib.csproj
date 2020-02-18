@@ -32,28 +32,29 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\KSP DLL\1.6.1\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\..\..\KSP 1.7 Testing\KSP_x64_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="TexturesUnlimited">
-      <HintPath>..\..\..\..\KSP DLL\1.6.1\TexturesUnlimited.dll</HintPath>
+      <HintPath>..\..\..\..\KSP 1.7 RO RP-1\GameData\000_TexturesUnlimited\Plugins\TexturesUnlimited.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\KSP DLL\1.6.1\UnityEngine.dll</HintPath>
+      <HintPath>..\..\..\..\KSP 1.7 Testing\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\..\..\KSP DLL\1.6.1\UnityEngine.UI.dll</HintPath>
+      <HintPath>..\..\..\..\KSP 1.7 Testing\KSP_x64_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Modules\ModuleROTAirstreamShield.bak" />
     <Compile Include="Modules\ModuleROSolar.cs" />
+    <Compile Include="Modules\ROLDeployableEngine.cs" />
     <Compile Include="ROSolar\SolarTechLimit.cs" />
     <Compile Include="UI\DimensionWindow.cs" />
     <Compile Include="UI\AbstractWindow.cs" />
