@@ -205,6 +205,10 @@ namespace ROLib
             }
             ROLLog.debug($"{modName}: OnLoad calling Initialize()");
             Initialize();
+            // OnStart() appears to be too late for setting the TimeEfficCurve for Kerbalism.
+            // SolarPanelFixer is possibly getting this field too soon.
+            stl = SolarTechLimit.GetTechLevel(techLevel);
+            ReloadTimeCurve();
         }
 
         public override void OnStart(StartState state)
@@ -212,12 +216,9 @@ namespace ROLib
             ROLLog.debug($"OnStart(state)");
             base.OnStart(state);
             SetMaxTechLevel();
-            ROLLog.debug($"{modName} OnStart calling Initialize()");
             Initialize();
             ModelChangedHandler(false);
-            ROLLog.debug($"{modName} OnStart calling InitializeUI()");
             InitializeUI();
-
             initializedDefaults = true;
         }
 
@@ -696,15 +697,20 @@ namespace ROLib
         public void RecalculateStats()
         {
             kwPerM2 = stl.kwPerM2;
-            this.chargeRate = currentRate = area * kwPerM2;
-
+            chargeRate = currentRate = area * kwPerM2;
             var outResource = resHandler.outputResources.First(x => x.id == PartResourceLibrary.ElectricityHashcode);
-            outResource.rate = (double)this.chargeRate;
+            outResource.rate = chargeRate;
 
-            this.timeEfficCurve.ROLloadSingleLine(stl.key1);
-            this.timeEfficCurve.ROLloadSingleLine(stl.key20);
-            this.timeEfficCurve.ROLloadSingleLine(stl.key80);
-            this.timeEfficCurve.ROLloadSingleLine(stl.key99);
+            ReloadTimeCurve();
+        }
+
+        public void ReloadTimeCurve()
+        {
+            timeEfficCurve = new FloatCurve();
+            timeEfficCurve.ROLloadSingleLine(stl.key1);
+            timeEfficCurve.ROLloadSingleLine(stl.key20);
+            timeEfficCurve.ROLloadSingleLine(stl.key80);
+            timeEfficCurve.ROLloadSingleLine(stl.key99);
         }
 
         private void FindAnimations()
