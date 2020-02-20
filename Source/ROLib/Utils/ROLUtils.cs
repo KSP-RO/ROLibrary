@@ -9,6 +9,14 @@ namespace ROLib
 {
     public class ROLUtils
     {
+        public static ConfigNode parseConfigNode(String input)
+        {
+            ConfigNode baseCfn = ConfigNode.Parse(input);
+            if (baseCfn == null) { MonoBehaviour.print("ERROR: Base config node was null!!\n" + input); }
+            else if (baseCfn.nodes.Count <= 0) { MonoBehaviour.print("ERROR: Base config node has no nodes!!\n" + input); }
+            return baseCfn.nodes[0];
+        }
+
         public static GameObject createJettisonedObject(GameObject toJettison, Vector3 velocity, Vector3 force, float mass)
         {
             GameObject jettisonedObject = new GameObject("JettisonedDebris");
