@@ -12,6 +12,7 @@ namespace ROLib
         [Persistent] public float kwPerM2;
         [Persistent] public float kgPerM2;
         [Persistent] public float costPerM2;
+        [Persistent] public bool retractable = false;
         [Persistent] public float massMultHinged;
         [Persistent] public float massMultFolded;
         [Persistent] public float massMultTrack;
@@ -27,7 +28,7 @@ namespace ROLib
 
         private static readonly Dictionary<int, SolarTechLimit> allTL = new Dictionary<int, SolarTechLimit>();
         private static int maxTL = -1;
-        private static readonly string modTag = "[ModuleROSolar.SolarTechLimit]";
+        private const string modTag = "[ModuleROSolar.SolarTechLimit]";
 
         public SolarTechLimit() { }
 
@@ -38,26 +39,29 @@ namespace ROLib
 
         public static void Init(ConfigNode config)
         {
-            ROLLog.debug($"{modTag}: Init() Started");
-            allTL.Clear();
-            foreach (ConfigNode node in config.GetNodes("ROS_TECH"))
+            if (!isInitialized)
             {
-                SolarTechLimit obj = ConfigNode.CreateObjectFromConfig<SolarTechLimit>(node);
-                ROLLog.debug($"{modTag}: Adding ROSTL {obj}");
-                allTL.Add(obj.level, obj);
-                maxTL = Math.Max(maxTL, obj.level);
+                ROLLog.debug($"{modTag}: Init()");
+                allTL.Clear();
+                foreach (ConfigNode node in config.GetNodes("ROS_TECH"))
+                {
+                    SolarTechLimit obj = ConfigNode.CreateObjectFromConfig<SolarTechLimit>(node);
+                    ROLLog.debug($"{modTag}: Adding ROSTL {obj}");
+                    allTL.Add(obj.level, obj);
+                    maxTL = Math.Max(maxTL, obj.level);
+                }
+                isInitialized = true;
             }
-            isInitialized = true;
         }
 
         public static SolarTechLimit GetTechLevel(int lvl)
         {
             if (!isInitialized)
             {
-                Init(GameDatabase.Instance.GetConfigNode("ROSOLAR_CONFIG"));
+                Init(GameDatabase.Instance.GetConfigNode("ROSolar/TechLimits/ROSOLAR_CONFIG"));
             }
-            lvl = (lvl < 0) ? 0 : lvl;
-            lvl = (lvl > maxTL) ? maxTL : lvl;
+            lvl = Math.Max(0, lvl);
+            lvl = Math.Min(maxTL, lvl);
             if (allTL.TryGetValue(lvl, out SolarTechLimit info))
             {
                 return info;
