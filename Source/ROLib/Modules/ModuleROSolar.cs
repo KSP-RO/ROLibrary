@@ -7,50 +7,63 @@ namespace ROLib
 {
     public class ModuleROSolar : ModuleDeployableSolarPanel, IPartCostModifier, IPartMassModifier
     {
+        public const string GroupName = "ROSolarGroup";
+        public const string GroupDisplayName = "RO-Solar";
+
         #region KSPFields
 
-        [KSPField(isPersistant = true, guiName = "Variant", guiActiveEditor = true, guiActive = false, groupName = "ModuleROSolar", groupDisplayName = "RO-Solar"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Variant", groupName = GroupName, groupDisplayName = GroupDisplayName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentVariant = "Default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Design", groupName = "ModuleROSolar", groupDisplayName = "RO-Solar"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Design", groupName = GroupName, groupDisplayName = GroupDisplayName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentCore = "Mount-None";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Panel Length", guiFormat = "N3", guiUnits = "m", groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Panel Length", guiFormat = "N3", guiUnits = "m", groupName = GroupName),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float panelLength = 1.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Panel Width", guiFormat = "N3", guiUnits = "m", groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Panel Width", guiFormat = "N3", guiUnits = "m", groupName = GroupName),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float panelWidth = 1.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "Panel Scale", guiFormat = "N3", guiUnits = "x", groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiName = "Panel Scale", guiFormat = "N3", guiUnits = "x", groupName = GroupName),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float panelScale = 1.0f;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Tech Level", guiFormat = "N0", groupName = "ModuleROSolar"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Tech Level", guiFormat = "N0", groupName = GroupName),
         UI_FloatRange(minValue = 0f, stepIncrement = 1f, scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public float TechLevel = -1f;
         public int techLevel => Convert.ToInt32(TechLevel);
 
-        [KSPField(guiActive = false, guiActiveEditor = false, guiName = "Tech Level", guiFormat = "N0", groupName = "ModuleROSolar")]
+        [KSPField(guiName = "Tech Level", guiFormat = "N0", groupName = GroupName)]
         public int tlText = 0;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Charge Rate", guiFormat = "F4", guiUnits = " kW", groupName = "ModuleROSolar")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Charge Rate (1AU)", guiFormat = "F4", guiUnits = " kW", groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public float currentRate = 0.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Area", guiFormat = "F4", guiUnits = " m^2", groupName = "ModuleROSolar")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Area", guiFormat = "F4", guiUnits = " m^2", groupName = GroupName)]
         public float area = 0.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Mass", guiFormat = "F4", guiUnits = " m", groupDisplayName = "RO-Solar", groupName = "ModuleROSolar")]
+        [KSPField(guiActiveEditor = true, guiName = "Mass", guiFormat = "F4", guiUnits = " m", groupName = GroupName)]
         public float mass = 0.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Cost", guiFormat = "F1", groupName = "ModuleROSolar")]
+        [KSPField(guiActiveEditor = true, guiName = "Cost", guiFormat = "F1", groupName = GroupName)]
         public float cost = 0.0f;
 
-        [KSPEvent(guiActiveEditor = true, guiName = "Reset Model to Original", groupName = "ModuleROSolar")]
+        [KSPEvent(guiActiveEditor = true, guiName = "Reset Model to Original", groupName = GroupName)]
         public void ResetModel()
+        {
+            _ResetModel();
+            foreach (Part p in part.symmetryCounterparts)
+            {
+                if (p.FindModuleImplementing<ModuleROSolar>() is ModuleROSolar m)
+                    m._ResetModel();
+            }
+        }
+
+        private void _ResetModel()
         {
             panelLength = coreModule.definition.panelLength;
             panelWidth = coreModule.definition.panelWidth;
@@ -58,73 +71,40 @@ namespace ROLib
             this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
             this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
             this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
-            ModelChangedHandlerWithSymmetry(true, true);
+            ModelChangedHandler(true);
+            prevLength = panelLength;
+            prevWidth = panelWidth;
+            prevScale = panelScale;
         }
 
-        [KSPField]
-        public string solarPanelType = "static";
+        [KSPField] public string solarPanelType = "static";
+        [KSPField] public float largeStep = 1.0f;
+        [KSPField] public float smallStep = 0.1f;
+        [KSPField] public float slideStep = 0.001f;
+        [KSPField] public float minWidth = 0.1f;
+        [KSPField] public float maxWidth = 100.0f;
+        [KSPField] public float minLength = 0.1f;
+        [KSPField] public float maxLength = 100.0f;
 
-        [KSPField]
-        public float kwPerM2 = 0.0f;
-
-        [KSPField]
-        public float kgPerM2 = 0.0f;
-
-        [KSPField]
-        public float costPerM2 = 0.0f;
-
-        [KSPField]
-        public int maxTechLevel = 0;
-
-        [KSPField]
-        public float largeStep = 1.0f;
-
-        [KSPField]
-        public float smallStep = 0.1f;
-
-        [KSPField]
-        public float slideStep = 0.001f;
-
-        [KSPField]
-        public string solarCore = "Mount-None";
-
-        [KSPField]
-        public float minWidth = 0.1f;
-
-        [KSPField]
-        public float maxWidth = 100.0f;
-
-        [KSPField]
-        public float minLength = 0.1f;
-
-        [KSPField]
-        public float maxLength = 100.0f;
-
-        [KSPField]
-        public float addMass = 0.0f;
-
-        [KSPField]
-        public float addCost = 0.0f;
-
-        [KSPField]
-        public string coreManagedNodes = string.Empty;
-
-        [KSPField]
-        public float surfaceNodeX = -0.1f;
-
-        [KSPField(isPersistant = true)]
-        public bool initializedDefaults = false;
-
-        [KSPField]
-        public bool fullScale = true;
-
+        [KSPField] public string solarCore = "Mount-None";
+        [KSPField] public float addMass = 0.0f;
+        [KSPField] public float addCost = 0.0f;
+        [KSPField] public string coreManagedNodes = string.Empty;
+        [KSPField] public bool fullScale = true;
 
         #endregion KSPFields
 
-
         #region Custom Fields
 
-        private string modName = "ModuleROSOlar - ";
+        private const string modName = "[ROSOlar]";
+
+        public int maxTechLevel = 0;
+
+
+        // Previous length/width/scale values for change detection
+        private float prevLength = -1;
+        private float prevWidth = -1;
+        private float prevScale = -1;
 
         /// <summary>
         /// Standard work-around for lack of config-node data being passed consistently and lack of support for mod-added serializable classes.
@@ -136,31 +116,6 @@ namespace ROLib
         /// Has initialization been run?  Set to true the first time init methods are run (OnLoad/OnStart), and ensures that init is only run a single time.
         /// </summary>
         private bool initialized = false;
-
-        /// <summary>
-        /// The adjusted modified mass for this part.
-        /// </summary>
-        private float modifiedMass = -1;
-
-        /// <summary>
-        /// The adjusted modified cost for this part.
-        /// </summary>
-        private float modifiedCost = -1;
-
-        /// <summary>
-        /// Previous length value
-        /// </summary>
-        private float prevLength = -1;
-
-        /// <summary>
-        /// Previous length value
-        /// </summary>
-        private float prevWidth = -1;
-
-        /// <summary>
-        /// Previous length value
-        /// </summary>
-        private float prevScale = -1;
 
         private string[] coreNodeNames;
         private ROLModelModule<ModuleROSolar> coreModule;
@@ -192,7 +147,6 @@ namespace ROLib
 
         #endregion Custom Fields
 
-
         #region Standard KSP Overrides
 
         public override void OnLoad(ConfigNode node)
@@ -201,9 +155,7 @@ namespace ROLib
             if (string.IsNullOrEmpty(configNodeData))
             {
                 configNodeData = node.ToString();
-                ROLLog.debug($"{modName}: OnLoad() loaded configNodeData: {configNodeData}");
             }
-            ROLLog.debug($"{modName}: OnLoad calling Initialize()");
             Initialize();
             // OnStart() appears to be too late for setting the TimeEfficCurve for Kerbalism.
             // SolarPanelFixer is possibly getting this field too soon.
@@ -213,21 +165,17 @@ namespace ROLib
 
         public override void OnStart(StartState state)
         {
-            ROLLog.debug($"OnStart(state)");
-            base.OnStart(state);
+            Debug.Log($"{modName}: {part} OnStart({state})");
             SetMaxTechLevel();
             Initialize();
             ModelChangedHandler(false);
+            base.OnStart(state);
             InitializeUI();
-            initializedDefaults = true;
         }
 
         public void OnDestroy()
         {
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Remove(new EventData<ShipConstruct>.OnEvent(OnEditorVesselModified));
-            }
+            GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
         }
 
         private void OnEditorVesselModified(ShipConstruct ship)
@@ -236,29 +184,13 @@ namespace ROLib
             UpdateAvailableVariants();
         }
 
-        // IPartMass/CostModifier override
-        public ModifierChangeWhen GetModuleMassChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
-
-        // IPartMass/CostModifier override
-        public ModifierChangeWhen GetModuleCostChangeWhen() { return ModifierChangeWhen.CONSTANTLY; }
-
-        // IPartMass/CostModifier override
-        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
-        {
-            if (modifiedMass == -1) { return 0; }
-            return -defaultMass + modifiedMass;
-        }
-
-        // IPartMass/CostModifier override
-        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit)
-        {
-            if (modifiedCost == -1) { return 0; }
-            return -defaultCost + modifiedCost;
-        }
-
+        // IPartMass/CostModifier overrides
+        public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
+        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
+        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => Mathf.Max(mass, 0.0001f);
+        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => Mathf.Max(cost, 0);
 
         #endregion Standard KSP Overrides
-
 
         #region Custom Update Methods
 
@@ -268,42 +200,36 @@ namespace ROLib
         /// </summary>
         private void Initialize()
         {
-            if (initialized) { return; }
-            ROLLog.debug($"{modName}: Initialize Starting");
+            if (initialized) return;
             initialized = true;
 
             prevLength = panelLength;
             prevWidth = panelWidth;
             prevScale = panelScale;
 
-            ROLLog.debug($"{modName}: Initialize() parseCSV");
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
 
-            ROLLog.debug($"{modName}: Initialize() Model-Module Initialization");
             // Model-Module Setup / Initialization
             ConfigNode node = ROLConfigNodeUtils.parseConfigNode(configNodeData);
 
-            ROLLog.debug($"{modName}: Initialize() Core Model Nodes");
             // List of CORE model nodes from config
             // each one may contain multiple 'model=modelDefinitionName' entries
             // but must contain no more than a single 'variant' entry.
             // If no variant is specified, they are added to the 'Default' variant.
             ConfigNode[] coreDefNodes = node.GetNodes("CORE");
 
-            ROLLog.debug($"{modName}: Initialize() MDLO");
             List<ModelDefinitionLayoutOptions> coreDefList = new List<ModelDefinitionLayoutOptions>();
-            int coreDefLen = coreDefNodes.Length;
-            for (int i = 0; i < coreDefLen; i++)
+            foreach (ConfigNode cn in coreDefNodes)
             {
-                string variantName = coreDefNodes[i].ROLGetStringValue("variant", "Default");
-                coreDefs = ROLModelData.getModelDefinitionLayouts(coreDefNodes[i].ROLGetStringValues("model"));
+                string variantName = cn.ROLGetStringValue("variant", "Default");
+                coreDefs = ROLModelData.getModelDefinitionLayouts(cn.ROLGetStringValues("model"));
                 coreDefList.AddUniqueRange(coreDefs);
                 ModelDefinitionVariantSet mdvs = getVariantSet(variantName);
                 mdvs.addModels(coreDefs);
             }
             coreDefs = coreDefList.ToArray();
 
-            coreModule = new ROLModelModule<ModuleROSolar>(part, this, getRootTransform("ModuleROSolar-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, null, null);
+            coreModule = new ROLModelModule<ModuleROSolar>(part, this, GetRootTransform("ModuleROSolar-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, null, null);
             coreModule.name = "ModuleROSolar-Core";
             coreModule.getSymmetryModule = m => m.coreModule;
             coreModule.getValidOptions = () => getVariantSet(currentVariant).definitions;
@@ -311,17 +237,15 @@ namespace ROLib
             coreModule.setupModelList(coreDefs);
             coreModule.setupModel();
 
-            if (GameDatabase.Instance.GetConfigNode("ROSolar/TechLimits/ROSOLAR_CONFIG") is ConfigNode ROSconfig)
-            {
-                SolarTechLimit.Init(ROSconfig);
-            }
             UpdateModulePositions();
         }
 
         internal void ModelChangedHandler(bool pushNodes)
         {
             stl = SolarTechLimit.GetTechLevel(techLevel);
+            retractable = stl.retractable && solarPanelType != "static";
             UpdateModulePositions();
+            startFSM();
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
             UpdateDragCubes();
@@ -350,9 +274,6 @@ namespace ROLib
         /// </summary>
         public void InitializeUI()
         {
-            ROLLog.debug($"ModuleDeployablePart.deployState: {this.deployState}");
-            ROLLog.debug($"{modName}InitalizeUI() modelChangedAction");
-
             // Set up the core variant UI control
             string[] variantNames = ROLUtils.getNames(variantSets.Values, m => m.variantName);
             this.ROLupdateUIChooseOptionControl(nameof(currentVariant), variantNames, variantNames, true, currentVariant);
@@ -448,39 +369,25 @@ namespace ROLib
             };
 
             if (maxLength == minLength || !lengthWidth)
-            {
                 Fields[nameof(panelLength)].guiActiveEditor = false;
-            }
             else
-            {
                 this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
-            }
 
             if (maxWidth == minWidth || !lengthWidth)
-            {
                 Fields[nameof(panelWidth)].guiActiveEditor = false;
-            }
             else
-            {
                 this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
-            }
 
             if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(OnEditorVesselModified));
-            }
+                GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
         }
 
         private void SetMaxTechLevel()
         {
             if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
-            {
                 maxTechLevel = 7;
-            }
-            if (Fields[nameof(TechLevel)].uiControlEditor is UI_FloatRange tl)
-            {
-                tl.maxValue = maxTechLevel;
-            }
+
+            (Fields[nameof(TechLevel)].uiControlEditor as UI_FloatRange).maxValue = maxTechLevel;
             if (HighLogic.LoadedSceneIsEditor && TechLevel < 0)
             {
                 TechLevel = maxTechLevel;
@@ -492,30 +399,16 @@ namespace ROLib
             }
         }
 
-        #endregion Custom Update Methods
-
-
-        #region Custom Methods
-
         private void UpdateModulePositions()
         {
-            float height, pos = 0.0f;
-
-            ROLLog.debug("UpdateModulePositions()");
             lengthWidth = coreModule.definition.lengthWidth;
-            ROLLog.debug($"lengthWidth: {lengthWidth}");
+            float height = lengthWidth ? panelLength : coreModule.moduleHeight;
             if (lengthWidth)
-            {
                 coreModule.setScaleForHeightAndDiameter(panelLength, panelWidth, lengthWidth);
-                height =panelLength;
-            }
             else
-            {
                 coreModule.setScaleForHeightAndDiameter(panelScale, panelScale, lengthWidth);
-                height = coreModule.moduleHeight;
-            }
-            pos = height * 0.5f;
-            coreModule.setPosition(pos);
+
+            coreModule.setPosition(height / 2);
             coreModule.updateModelMeshes(lengthWidth);
 
             /*
@@ -550,72 +443,41 @@ namespace ROLib
             }
             */
 
-            ROLLog.debug("Setting the rotation and animation for the solar panel.");
+            animationName = coreModule.definition.animationName;
+            FindAnimations();
 
-            this.animationName = coreModule.definition.animationName;
-            if (!this.animationName.Equals("fakeAnimation"))
-            {
-                ROLLog.debug("Get the animations");
-                FindAnimations();
-                this.anim[this.animationName].wrapMode = WrapMode.ClampForever;
-                switch (this.deployState)
-                {
-                    case DeployState.RETRACTED:
-                        this.anim[this.animationName].normalizedTime = 0.0f;
-                        this.anim[this.animationName].enabled = true;
-                        this.anim[this.animationName].weight = 1f;
-                        this.anim.Stop(this.animationName);
-                        this.Events["Retract"].active = false;
-                        this.Events["Extend"].active = true;
-                        break;
-                    case DeployState.EXTENDED:
-                        this.anim[this.animationName].normalizedTime = 1f;
-                        this.anim[this.animationName].enabled = true;
-                        this.anim[this.animationName].speed = 0.0f;
-                        this.anim[this.animationName].weight = 1f;
-                        this.Events["Extend"].active = false;
-                        this.Events["Retract"].active = true;
-                        break;
-                    default:
-                        break;
-                }
-            }
+            // Allow StartFSM() to configure the animation state (time/speed/weight)
+            // Change handler will need to re-call StartFSM() to properly reset a model.
 
             if (pivotName.Equals("sunPivot"))
-            {
-                this.hasPivot = false;
-            }
+                hasPivot = false;
 
-            this.pivotName = coreModule.GetPivotName();
-            this.panelRotationTransform = this.part.FindModelTransform(this.pivotName);
-            this.originalRotation = this.currentRotation = this.panelRotationTransform.localRotation;
-            this.secondaryTransformName = this.raycastTransformName = coreModule.GetSecondaryTransform();
+            pivotName = coreModule.GetPivotName();
+            panelRotationTransform = part.FindModelTransform(pivotName);
+            originalRotation = currentRotation = panelRotationTransform.localRotation;
+            secondaryTransformName = raycastTransformName = coreModule.GetSecondaryTransform();
         }
 
         private void UpdateMassAndCost()
         {
             lengthWidth = coreModule.definition.lengthWidth;
-            ROLLog.debug($"UpdateMassAndCost() lengthWidth {lengthWidth}");
-            ROLLog.debug($"coreModule.definition.panelArea: {coreModule.definition.panelArea}");
+            string s;
             if (!lengthWidth)
             {
                 area = coreModule.definition.panelArea * panelScale * panelScale;
-                ROLLog.debug($"panelScale: {panelScale}");
+                s = $"panelScale: {panelScale:F2}";
             }
             else
             {
                 float lengthScale = panelLength / coreModule.definition.panelLength;
                 float widthScale = panelWidth / coreModule.definition.panelWidth;
                 area = coreModule.definition.panelArea * lengthScale * widthScale;
-                ROLLog.debug($"lengthScale: {lengthScale}");
-                ROLLog.debug($"widthScale: {widthScale}");
+                s = $"lengthScale: {lengthScale:F2} widthScale: {widthScale:F2}";
             }
-            ROLLog.debug($"area: {area}");
+            //Debug.Log($"{modName}: {part} UpdateMassAndCost() Area: {area:F2} from panelArea: {coreModule.definition.panelArea:F2} {s}");
 
-            kgPerM2 = stl.kgPerM2;
-            costPerM2 = stl.costPerM2;
-            mass = area * kgPerM2;
-            cost = area * costPerM2;
+            mass = area * stl.kgPerM2;
+            cost = area * stl.costPerM2;
             switch (solarPanelType)
             {
                 case "hinged":
@@ -633,24 +495,16 @@ namespace ROLib
                 default:
                     break;
             }
-            if (addMass > 0)
-            {
-                mass += addMass;
-            }
-            if (addCost > 0)
-            {
-                cost += addCost;
-            }
-            modifiedMass = mass = Math.Max(mass, 0.0001f);
-            modifiedCost = cost = Math.Max(cost, 0.1f);
+            mass += addMass;
+            cost += addCost;
+            mass = Math.Max(mass, 0.0001f);
+            cost = Math.Max(cost, 0.1f);
         }
 
         private void UpdateAttachNodes(bool userInput)
         {
             coreModule.updateAttachNodeBody(coreNodeNames, userInput);
-            AttachNode surfaceNode = part.srfAttachNode;
-            ROLLog.debug($"part.srfAttachNode: {part.srfAttachNode}");
-            coreModule.updateSurfaceAttachNode(surfaceNode, panelLength, panelWidth, userInput);
+            coreModule.updateSurfaceAttachNode(part.srfAttachNode, panelLength, panelWidth, userInput);
         }
 
         /// <summary>
@@ -670,34 +524,32 @@ namespace ROLib
             ROLModInterop.onPartGeometryUpdate(part, true);
         }
 
+        #endregion Custom Update Methods
+
+        #region Custom Methods
+
         /// <summary>
         /// Return the root transform for the specified name.  If does not exist, will create it and parent it to the parts' 'model' transform.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="recreate"></param>
         /// <returns></returns>
-        private Transform getRootTransform(string name)
+        private Transform GetRootTransform(string name)
         {
-            Transform root = part.transform.ROLFindRecursive(name);
-            if (root != null)
-            {
-                GameObject.DestroyImmediate(root.gameObject);
-                root = null;
-            }
-            root = new GameObject(name).transform;
+            // This code used to always destroy the root transform no matter what it was, and then make a new.
+            // Doing what the description says instead...
+            if (part.transform.ROLFindRecursive(name) is Transform t)
+                return t;
+            Transform root = new GameObject(name).transform;
             root.NestToParent(part.transform.ROLFindRecursive("model"));
             return root;
         }
 
-        private ROLModelModule<ModuleROSolar> getModuleByName(string name)
-        {
-            return coreModule;
-        }
+        private ROLModelModule<ModuleROSolar> getModuleByName(string name) => coreModule;
 
         public void RecalculateStats()
         {
-            kwPerM2 = stl.kwPerM2;
-            chargeRate = currentRate = area * kwPerM2;
+            chargeRate = currentRate = area * stl.kwPerM2;
             var outResource = resHandler.outputResources.First(x => x.id == PartResourceLibrary.ElectricityHashcode);
             outResource.rate = chargeRate;
 
@@ -715,19 +567,22 @@ namespace ROLib
 
         private void FindAnimations()
         {
+            if (animationName.Equals("fakeAnimation"))
+            {
+                anim = null;
+                useAnimation = false;
+                return;
+            }
+
             Animation[] componentsInChildren = part.transform.ROLFindRecursive("model").GetComponentsInChildren<Animation>();
             foreach (Animation a in componentsInChildren)
             {
-                if (a.GetClip(this.animationName) != null)
-                {
-                    this.anim = a;
-                }
+                if (a.GetClip(animationName) != null)
+                    anim = a;
             }
-            if (componentsInChildren.Length > 0 && this.anim == null)
-            {
-                this.anim = componentsInChildren[0];
-            }
-            this.useAnimation = (this.anim != null);
+            if (componentsInChildren.Length > 0 && anim == null)
+                anim = componentsInChildren[0];
+            useAnimation = anim != null;
         }
 
         #endregion Custom Methods
