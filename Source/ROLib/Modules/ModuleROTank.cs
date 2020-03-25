@@ -16,6 +16,11 @@ namespace ROLib
     /// </summary>
     public class ModuleROTank : PartModule, IPartCostModifier, IPartMassModifier, IRecolorable, IContainerVolumeContributor
     {
+        private const string GroupDisplayName = "RO-Tanks";
+        private const string GroupName = "ModuleROTank";
+        private const float minModelRatio = 0.5f;
+        private const float maxModelRatio = 8;
+
         #region KSPFields
 
         [KSPField]
@@ -87,15 +92,15 @@ namespace ROLib
         /// <summary>
         /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
         /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Diameter", guiUnits = "m", groupDisplayName = "RO-Tanks", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Diameter", guiUnits = "m", groupName = GroupName, groupDisplayName = GroupDisplayName),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float currentDiameter = 1.0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Length", guiUnits = "m", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Length", guiUnits = "m", groupName = GroupName),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
         public float currentLength = 1.0f;
 
-        [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = "ModuleROTank")]
+        [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = GroupName)]
         public void OpenTankDimensionGUIEvent()
         {
             ROLLog.debug("EditDimensions() called");
@@ -105,58 +110,58 @@ namespace ROLib
         /// <summary>
         /// Adjustment to the vertical-scale of v-scale compatible models/module-slots.
         /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiActive = false, guiName = "V.ScaleAdj", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiName = "V.ScaleAdj", groupName = GroupName),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -1, maxValue = 1, incrementLarge = 0.25f, incrementSmall = 0.05f, incrementSlide = 0.001f)]
         public float currentVScale = 0f;
 
         /// <summary>
         /// This is the total length of the entire tank with the nose, core and mounts all considered.
         /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Total Length", guiFormat = "F4", guiUnits = "m", groupName = "ModuleROTank")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Total Length", guiFormat = "F4", guiUnits = "m", groupName = GroupName)]
         public float totalTankLength = 0.0f;
 
         /// <summary>
         /// This is the largest diameter of the entire tank.
         /// </summary>
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Largest Diameter", guiFormat = "F4", guiUnits = "m", groupName = "ModuleROTank")]
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Largest Diameter", guiFormat = "F4", guiUnits = "m", groupName = GroupName)]
         public float largestDiameter = 0.0f;
 
         //------------------------------------------MODEL SELECTION SET PERSISTENCE-----------------------------------------------//
 
         //non-persistent value; initialized to whatever the currently selected core model definition is at time of loading
         //allows for variant names to be updated in the part-config without breaking everything....
-        [KSPField(isPersistant = true, guiName = "Variant", guiActiveEditor = true, guiActive = false, groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiName = "Variant", guiActiveEditor = true, groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentVariant = "Default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Nose", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Nose", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentNose = "Mount-None";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Core", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Core", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentCore = "Mount-None";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Mount", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Mount", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentMount = "Mount-None";
 
         //------------------------------------------TEXTURE SET PERSISTENCE-----------------------------------------------//
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Nose Tex", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Nose Tex", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentNoseTexture = "default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Core Tex", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Core Tex", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentCoreTexture = "default";
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Mount Tex", groupName = "ModuleROTank"),
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Mount Tex", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentMountTexture = "default";
 
         //-------------------------------------RESETTING MODEL TO ORIGINAL SIZE------------------------------------------//
-        [KSPEvent(guiActiveEditor = true, guiName = "Reset Model to Original", groupName = "ModuleROTank")]
+        [KSPEvent(guiActiveEditor = true, guiName = "Reset Model to Original", groupName = GroupName)]
         public void ResetModel()
         {
             if (lengthWidth) return;
@@ -327,9 +332,7 @@ namespace ROLib
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Remove(new EventData<ShipConstruct>.OnEvent(onEditorVesselModified));
-            }
+                GameEvents.onEditorShipModified.Remove(onEditorVesselModified);
             GameEvents.onFlightReady.Remove(UpdateDragCubes);
         }
 
@@ -347,10 +350,10 @@ namespace ROLib
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
 
         // IPartMass/CostModifier override
-        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => modifiedMass == -1 ? 0 : defaultMass + modifiedMass;
+        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => Mathf.Max(0, modifiedMass);
 
         // IPartMass/CostModifier override
-        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => modifiedCost == -1 ? 0 : defaultCost + modifiedCost;
+        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => Mathf.Max(0, modifiedCost);
 
         //IRecolorable override
         public string[] getSectionNames() => new string[] { "Nose", "Core", "Mount" };
@@ -835,79 +838,16 @@ namespace ROLib
 
             if (!lengthWidth) return;
 
-            float modelRatio, dimRatio = currentLength / currentDiameter;
+            // Round to nearest 0.5: Multiply by 2, round to nearest int, divide by 2.
+            float dimRatio = currentLength / currentDiameter;
+            float modelRatio = Mathf.Round(dimRatio * 2) / 2;
+            modelRatio = Mathf.Clamp(modelRatio, minModelRatio, maxModelRatio);
 
-            if (dimRatio < 0.625)
-            {
-                modelRatio = 0.5f;
-            }
-            else if (dimRatio < 1.25)
-            {
-                modelRatio = 1.0f;
-            }
-            else if (dimRatio < 1.75)
-            {
-                modelRatio = 1.5f;
-            }
-            else if (dimRatio < 2.25)
-            {
-                modelRatio = 2.0f;
-            }
-            else if (dimRatio < 2.75)
-            {
-                modelRatio = 2.5f;
-            }
-            else if (dimRatio < 3.25)
-            {
-                modelRatio = 3.0f;
-            }
-            else if (dimRatio < 3.75)
-            {
-                modelRatio = 3.5f;
-            }
-            else if (dimRatio < 4.25)
-            {
-                modelRatio = 4.0f;
-            }
-            else if (dimRatio < 4.75)
-            {
-                modelRatio = 4.5f;
-            }
-            else if (dimRatio < 5.25)
-            {
-                modelRatio = 5.0f;
-            }
-            else if (dimRatio < 5.75)
-            {
-                modelRatio = 5.5f;
-            }
-            else if (dimRatio < 6.25)
-            {
-                modelRatio = 6.0f;
-            }
-            else if (dimRatio < 6.75)
-            {
-                modelRatio = 6.5f;
-            }
-            else if (dimRatio < 7.25)
-            {
-                modelRatio = 7.0f;
-            }
-            else if (dimRatio < 7.75)
-            {
-                modelRatio = 7.5f;
-            }
-            else
-            {
-                modelRatio = 8.0f;
-            }
-
-            string ratioName = string.Format("{0:0.0}", modelRatio);
+            string ratioName = $"{modelRatio:0.0}";
             string s = $"{ratioName}x-{currentVariant}";
-            ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, string: {s}");
+            ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, {ratioName}x-{currentVariant}");
 
             currentVScale = (dimRatio / modelRatio) - 1;
-
             coreModule.modelSelected(s);
         }
 
@@ -1012,21 +952,17 @@ namespace ROLib
             }
         }
 
-        private void OnSceneChange(GameScenes _)
-        {
-            HideGUI();
-        }
+        private void OnSceneChange(GameScenes _) => HideGUI();
 
         public void EditDimensions(ModuleROTank m)
         {
             if (dimWindow != null)
+                HideGUI();
+            else 
             {
-                dimWindow.Hide();
-                dimWindow = null;
-                return;
+                dimWindow = new DimensionWindow(m);
+                dimWindow.Show();
             }
-            dimWindow = new DimensionWindow(m);
-            dimWindow.Show();
         }
 
         //private void openVariantGUI()
@@ -1076,8 +1012,8 @@ namespace ROLib
         {
             get
             {
-                if (index < 0) { index = 0; }
-                if (index >= definitions.Length) { index = definitions.Length - 1; }
+                index = Math.Max(0, index);
+                index = Math.Min(definitions.Length - 1, index);
                 return definitions[index];
             }
         }

@@ -2,31 +2,25 @@
 using UnityEngine;
 using System.Reflection;
 using KSPShaderTools;
+using System.Linq;
 
 namespace ROLib
 {
     public static class ROLModInterop
     {
-        private static bool checkedFar = false;
-        private static bool checkedRF = false;
-        private static bool checkedMFT = false;
+        private static bool initialized = false;
         private static bool installedFAR = false;
         private static bool installedRF = false;
         private static bool installedMFT = false;
 
         public static void updateResourceVolume(Part part)
         {
-            IContainerVolumeContributor[] contributors = part.FindModulesImplementing<IContainerVolumeContributor>().ToArray();
-            ContainerContribution[] cts;
-            int len = contributors.Length;
             float totalVolume = 0;
-            for (int i = 0; i < len; i++)
+            foreach (IContainerVolumeContributor contrib in part.FindModulesImplementing<IContainerVolumeContributor>())
             {
-                cts = contributors[i].getContainerContributions();
-                int len2 = cts.Length;
-                for (int k = 0; k < len2; k++)
+                foreach (ContainerContribution c in contrib.getContainerContributions())
                 {
-                    totalVolume += cts[k].containerVolume;
+                    totalVolume += c.containerVolume;
                 }
             }
             realFuelsVolumeUpdate(part, totalVolume);
@@ -78,13 +72,11 @@ namespace ROLib
 
         private static Transform locateAirlock(Part part)
         {
-            Collider[] componentsInChildren = part.GetComponentsInChildren<Collider>();
-            int len = componentsInChildren.Length;
-            for (int i = 0; i < len; i++)
+            foreach (Collider coll in part.GetComponentsInChildren<Collider>())
             {
-                if (componentsInChildren[i].gameObject.tag == "Airlock")
+                if (coll.gameObject.tag == "Airlock")
                 {
-                    return componentsInChildren[i].transform;
+                    return coll.transform;
                 }
             }
             return null;
@@ -92,149 +84,83 @@ namespace ROLib
 
         private static void FARdebug(Part part)
         {
-            MonoBehaviour.print("FAR DEBUG FOR PART: " + part);
-            GameObject go;
-            Mesh m;
-            Mesh m2;
-            MeshFilter[] mfs = part.GetComponentsInChildren<MeshFilter>();
-            MeshFilter mf;
-            int len = mfs.Length;
-            for (int i = 0; i < len; i++)
+            MonoBehaviour.print($"FAR DEBUG FOR PART: {part}");
+            foreach (MeshFilter mf in part.GetComponentsInChildren<MeshFilter>())
             {
-                mf = mfs[i];
-                m = mf.mesh;
-                m2 = mf.sharedMesh;
-                go = mf.gameObject;
-                MonoBehaviour.print("FAR debug data || go: " + go + " || mf: " + mf + " || mesh: " + m + " || sharedMesh" + m2);
+                MonoBehaviour.print($"FAR debug data || go: {mf.gameObject} || mf: {mf} || mesh: {mf.mesh} || sharedMesh: {mf.sharedMesh}");
             }
             MonoBehaviour.print("-------------------------------------------------------------------------");
         }
 
         public static bool realFuelsVolumeUpdate(Part part, float liters)
         {
-            Type moduleFuelTank = null;
-            if (isRFInstalled())
+            if (!isRFInstalled() && !isMFTInstalled())
             {
-                moduleFuelTank = Type.GetType("RealFuels.Tanks.ModuleFuelTanks,RealFuels");
-                if (moduleFuelTank == null)
-                {
-                    MonoBehaviour.print("ERROR: Set to use RealFuels, and RealFuels is installed, but no RealFuels-ModuleFuelTank PartModule found.");
-                    return false;
-                }
-            }
-            else if (isMFTInstalled())
-            {
-                moduleFuelTank = Type.GetType("RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks");
-                if (moduleFuelTank == null)
-                {
-                    MonoBehaviour.print("ERROR: Set to use ModularFuelTanks, and ModularFuelTanks is installed, but no ModularFuelTanks-ModuleFuelTank PartModule found.");
-                    return false;
-                }
-            }
-            else
-            {
-                MonoBehaviour.print("ERROR: Config is for part: "+part+" is set to use RF/MFT, but neither RF nor MFT is installed, cannot update part volumes through them.  Please check your configs and/or patches for errors.");
+                MonoBehaviour.print($"ERROR: Config for {part} is set to use RF/MFT, but neither RF nor MFT is installed, cannot update part volumes through them.  Please check your configs and/or patches for errors.");
                 return false;
             }
-            PartModule pm = (PartModule)part.GetComponent(moduleFuelTank);
-            if (pm == null)
+            string targ = isRFInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,RealFuels" : "RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks";
+            if (Type.GetType(targ) is Type moduleFuelTank && getModuleFuelTanks(part) is PartModule pm)
             {
-                MonoBehaviour.print("ERROR! Could not find ModuleFuelTank in part for RealFuels/MFT for type: "+moduleFuelTank);
+                MethodInfo mi = moduleFuelTank.GetMethod("ChangeTotalVolume");
+                double volumeLiters = liters;
+                mi.Invoke(pm, new object[] { volumeLiters, false });
+                MethodInfo mi2 = moduleFuelTank.GetMethod("CalculateMass");
+                mi2.Invoke(pm, new object[] { });
+                updatePartResourceDisplay(part);
+                MonoBehaviour.print($"ROTModInterop - Set RF/MFT total tank volume to: {volumeLiters} Liters for part: {part.name}");
+                return true;
+            } else
+            {
+                MonoBehaviour.print($"ERROR! Could not find ModuleFuelTank in part {part} for RealFuels/MFT");
                 return false;
             }
-            MethodInfo mi = moduleFuelTank.GetMethod("ChangeTotalVolume");
-            double volumeLiters = liters;
-            mi.Invoke(pm, new System.Object[] { volumeLiters, false });
-            MethodInfo mi2 = moduleFuelTank.GetMethod("CalculateMass");
-            mi2.Invoke(pm, new System.Object[] { });
-            updatePartResourceDisplay(part);
-            String message = "ROTModInterop - Set RF/MFT total tank volume to: " + volumeLiters + " Liters for part: " + part.name;
-            MonoBehaviour.print(message);
-            return true;
         }
 
         public static PartModule getModuleFuelTanks(Part part)
         {
-            Type moduleFuelTank = null;
-            if (isRFInstalled())
+            string targ = isRFInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,RealFuels" :
+                          isMFTInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks" :
+                          string.Empty;
+            if (Type.GetType(targ) is Type moduleFuelTank)
             {
-                moduleFuelTank = Type.GetType("RealFuels.Tanks.ModuleFuelTanks,RealFuels");
-                if (moduleFuelTank == null)
-                {
-                    MonoBehaviour.print("ERROR: Set to use RealFuels, and RealFuels is installed, but no RealFuels-ModuleFuelTank PartModule found.");
-                    return null;
-                }
-            }
-            else if (isMFTInstalled())
+                return part.GetComponent(moduleFuelTank) as PartModule;
+            } else
             {
-                moduleFuelTank = Type.GetType("RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks");
-                if (moduleFuelTank == null)
-                {
-                    MonoBehaviour.print("ERROR: Set to use ModularFuelTanks, and ModularFuelTanks is installed, but no ModularFuelTanks-ModuleFuelTank PartModule found.");
-                    return null;
-                }
+                MonoBehaviour.print($"ERROR: getModuleFuelTanks for {part} looking for {targ} but failed to find the PartModule.");
+                return null;
             }
-            PartModule pm = (PartModule)part.GetComponent(moduleFuelTank);
-            return pm;
         }
 
-        public static bool hasModuleFuelTanks(Part part)
-        {
-            return getModuleFuelTanks(part) != null;
-        }
+        public static bool hasModuleFuelTanks(Part part) => getModuleFuelTanks(part) != null;
 
-        public static bool hasModuleEngineConfigs(Part part)
+        public static bool hasModuleEngineConfigs(Part part) =>
+            Type.GetType("RealFuels.ModuleEngineConfigs,RealFuels") is Type type && part.GetComponent(type) is PartModule;
+
+        private static void Init()
         {
-            Type type = Type.GetType("RealFuels.ModuleEngineConfigs,RealFuels");
-            PartModule module = null;
-            if (type != null)
-            {
-                module = (PartModule)part.GetComponent(type);
-            }
-            return module != null;
+            initialized = true;
+            installedFAR = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "FerramAerospaceResearch");
+            installedRF = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "RealFuels");
+            installedMFT = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "modularFuelTanks");
         }
 
         public static bool isFARInstalled()
         {
-            if (!checkedFar)
-            {
-                checkedFar = true;
-                installedFAR = isAssemblyLoaded("FerramAerospaceResearch");
-            }
+            if (!initialized) Init();
             return installedFAR;
         }
 
         public static bool isRFInstalled()
         {
-            if (!checkedRF)
-            {
-                checkedRF = true;
-                installedRF = isAssemblyLoaded("RealFuels");
-            }
+            if (!initialized) Init();
             return installedRF;
         }
 
         public static bool isMFTInstalled()
         {
-            if (!checkedMFT)
-            {
-                checkedMFT = true;
-                installedMFT = isAssemblyLoaded("modularFuelTanks");
-            }
+            if (!initialized) Init();
             return installedMFT;
-        }
-
-        private static bool isAssemblyLoaded(String name)
-        {
-            for (int i = 0; i < AssemblyLoader.loadedAssemblies.Count; i++)
-            {
-                AssemblyLoader.LoadedAssembly assembly = AssemblyLoader.loadedAssemblies[i];
-                if (assembly.name == name)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         public static void updatePartResourceDisplay(Part part)

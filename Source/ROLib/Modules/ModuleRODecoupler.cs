@@ -6,6 +6,7 @@ namespace ROLib
     {
         private const string GroupName = "ModuleRODecoupler";
         private const string GroupDisplayName = "RO-Decoupler";
+        public const float minImpulse = 0.1f;
 
         #region KSPFields
 
@@ -70,7 +71,7 @@ namespace ROLib
         #region Custom Methods
 
         private void OnDiameterChange(BaseField bf, object obj) => UpdateImpulseValues();
-        public float EjectionForce => Mathf.Round(Mathf.Min(Mathf.Pow(modularPart.currentDiameter, diamExponent) * 100, maxImpulse));
+        public float EjectionForce => Mathf.Round(Mathf.Clamp(Mathf.Pow(modularPart.currentDiameter, diamExponent) * 100, minImpulse, maxImpulse));
         public void UpdateImpulseValues()
         {
             currentEjectionForce = decouple.ejectionForce = EjectionForce;
