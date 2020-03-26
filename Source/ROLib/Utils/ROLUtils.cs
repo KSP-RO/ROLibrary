@@ -9,6 +9,21 @@ namespace ROLib
 {
     public class ROLUtils
     {
+        /// <summary>
+        /// Return the root transform for the specified name.  If does not exist, will create it and parent it to the parts' 'model' transform.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="recreate"></param>
+        /// <returns></returns>
+        public static Transform GetRootTransform(Part part, string name)
+        {
+            if (part.transform.ROLFindRecursive(name) is Transform t)
+                return t;
+            Transform root = new GameObject(name).transform;
+            root.NestToParent(part.transform.ROLFindRecursive("model"));
+            return root;
+        }
+
         public static ConfigNode parseConfigNode(String input)
         {
             ConfigNode baseCfn = ConfigNode.Parse(input);

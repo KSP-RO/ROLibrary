@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using KSPShaderTools;
 using static ROLib.ROLLog;
-using static ROLib.ROLUtils;
+using ROLib.Utils;
 
 namespace ROLib
 {
@@ -240,7 +240,7 @@ namespace ROLib
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        private ModelDefinitionVariantSet getVariantSet(string name)
+        private ModelDefinitionVariantSet GetVariantSet(string name)
         {
             if (!variantSets.TryGetValue(name, out ModelDefinitionVariantSet set))
             {
@@ -251,15 +251,12 @@ namespace ROLib
         }
 
         /// <summary>
-        /// Helper method to find the variant set for the input model definition.  Will nullref/error if no variant set is found.  Will NOT create a new set if not found.
+        /// Find the first variant set containing a definition with ModelDefinitionLayoutOptions def.  Will not create a new set if not found.
         /// </summary>
         /// <param name="def"></param>
         /// <returns></returns>
-        private ModelDefinitionVariantSet getVariantSet(ModelDefinitionLayoutOptions def)
-        {
-            //returns the first variant set out of all variants where the variants definitions contains the input definition
-            return variantSets.Values.Where((a, b) => { return a.definitions.Contains(def); }).First();
-        }
+        private ModelDefinitionVariantSet GetVariantSet(ModelDefinitionLayoutOptions def) =>
+            variantSets.Values.Where(a => a.definitions.Contains(def)).FirstOrDefault();
 
         ModelDefinitionLayoutOptions[] coreDefs;
         ModelDefinitionLayoutOptions[] noseDefs;
@@ -291,7 +288,8 @@ namespace ROLib
             if (scaleCost)
                 UpdateCost();
             ROLStockInterop.updatePartHighlighting(part);
-            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            if (HighLogic.LoadedSceneIsEditor)
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
         internal void ModelChangedHandlerWithSymmetry(bool pushNodes, bool symmetry)
@@ -322,7 +320,7 @@ namespace ROLib
             base.OnStart(state);
             initialize();
             ModelChangedHandler(false);
-            initializeUI();
+            InitializeUI();
             if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
                 GameEvents.onFlightReady.Add(UpdateDragCubes);
             initializedDefaults = true;
@@ -332,16 +330,12 @@ namespace ROLib
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
-                GameEvents.onEditorShipModified.Remove(onEditorVesselModified);
+                GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
             GameEvents.onFlightReady.Remove(UpdateDragCubes);
         }
 
         //KSP editor modified event callback
-        private void onEditorVesselModified(ShipConstruct ship)
-        {
-            //update available variants for attach node changes
-            UpdateAvailableVariants();
-        }
+        private void OnEditorVesselModified(ShipConstruct ship) => UpdateAvailableVariants();
 
         // IPartMass/CostModifier override
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
@@ -415,14 +409,14 @@ namespace ROLib
         public ContainerContribution[] getContainerContributions()
         {
             ContainerContribution[] cts;
-            ContainerContribution ct0 = getCC("nose", noseContainerIndex, noseModule.moduleVolume * 1000f);
-            ContainerContribution ct1 = getCC("core", coreContainerIndex, coreModule.moduleVolume * 1000f);
-            ContainerContribution ct2 = getCC("mount", mountContainerIndex, mountModule.moduleVolume * 1000f);
+            ContainerContribution ct0 = GetCC("nose", noseContainerIndex, noseModule.moduleVolume * 1000f);
+            ContainerContribution ct1 = GetCC("core", coreContainerIndex, coreModule.moduleVolume * 1000f);
+            ContainerContribution ct2 = GetCC("mount", mountContainerIndex, mountModule.moduleVolume * 1000f);
             cts = new ContainerContribution[3] { ct0, ct1, ct2 };
             return cts;
         }
 
-        private ContainerContribution getCC(string name, int index, float vol)
+        private ContainerContribution GetCC(string name, int index, float vol)
         {
             float contVol = vol;
             return new ContainerContribution(name, index, contVol);
@@ -464,8 +458,8 @@ namespace ROLib
                 string variantName = n.ROLGetStringValue("variant", "Default");
                 coreDefs = ROLModelData.getModelDefinitionLayouts(n.ROLGetStringValues("model"));
                 coreDefList.AddUniqueRange(coreDefs);
-                ModelDefinitionVariantSet mdvs = getVariantSet(variantName);
-                mdvs.addModels(coreDefs);
+                ModelDefinitionVariantSet mdvs = GetVariantSet(variantName);
+                mdvs.AddModels(coreDefs);
             }
             coreDefs = coreDefList.ToArray();
 
@@ -473,17 +467,17 @@ namespace ROLib
             noseDefs = ROLModelData.getModelDefinitions(node.GetNodes("NOSE"));
             mountDefs = ROLModelData.getModelDefinitions(node.GetNodes("MOUNT"));
 
-            noseModule = new ROLModelModule<ModuleROTank>(part, this, getRootTransform("ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
+            noseModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
             noseModule.name = "ModuleROTank-Nose";
             noseModule.getSymmetryModule = m => m.noseModule;
             noseModule.getValidOptions = () => noseDefs;
 
-            coreModule = new ROLModelModule<ModuleROTank>(part, this, getRootTransform("ModularPart-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, nameof(currentCoreTexture), nameof(coreModulePersistentData));
+            coreModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, nameof(currentCoreTexture), nameof(coreModulePersistentData));
             coreModule.name = "ModuleROTank-Core";
             coreModule.getSymmetryModule = m => m.coreModule;
-            coreModule.getValidOptions = () => getVariantSet(currentVariant).definitions;
+            coreModule.getValidOptions = () => GetVariantSet(currentVariant).definitions;
 
-            mountModule = new ROLModelModule<ModuleROTank>(part, this, getRootTransform("ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
+            mountModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
             mountModule.name = "ModuleROTank-Mount";
             mountModule.getSymmetryModule = m => m.mountModule;
             mountModule.getValidOptions = () => mountDefs;
@@ -505,7 +499,7 @@ namespace ROLib
         /// Initialize the UI controls, including default values, and specifying delegates for their 'onClick' methods.<para/>
         /// All UI based interaction code will be defined/run through these delegates.
         /// </summary>
-        public void initializeUI()
+        public void InitializeUI()
         {
             //set up the core variant UI control
             string[] variantNames = ROLUtils.getNames(variantSets.Values, m => m.variantName);
@@ -516,11 +510,11 @@ namespace ROLib
             {
                 //TODO find variant set for the currently enabled core model
                 //query the index from that variant set
-                ModelDefinitionVariantSet prevMdvs = getVariantSet(coreModule.definition.name);
+                ModelDefinitionVariantSet prevMdvs = GetVariantSet(coreModule.definition.name);
                 //this is the index of the currently selected model within its variant set
-                int previousIndex = prevMdvs.indexOf(coreModule.layoutOptions);
+                int previousIndex = prevMdvs.IndexOf(coreModule.layoutOptions);
                 //grab ref to the current/new variant set
-                ModelDefinitionVariantSet mdvs = getVariantSet(currentVariant);
+                ModelDefinitionVariantSet mdvs = GetVariantSet(currentVariant);
                 //and a reference to the model from same index out of the new set ([] call does validation internally for IAOOBE)
                 ModelDefinitionLayoutOptions newCoreDef = mdvs[previousIndex];
                 //now, call model-selected on the core model to update for the changes, including symmetry counterpart updating.
@@ -596,7 +590,7 @@ namespace ROLib
 
             if (HighLogic.LoadedSceneIsEditor)
             {
-                GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(onEditorVesselModified));
+                GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(OnEditorVesselModified));
             }
         }
 
@@ -691,10 +685,9 @@ namespace ROLib
         {
             float mountMaxDiam = currentMount.Contains("Mount") ? mountModule.moduleUpperDiameter : Math.Max(mountModule.moduleLowerDiameter, mountModule.moduleUpperDiameter);
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
-            totalTankLength = getTotalHeight();
+            totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
-            ROLLog.debug("currentMount: " + currentMount);
-            ROLLog.debug("The Total Tank Length is: " + totalTankLength);
+            ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Total Tank length: {totalTankLength}");
         }
 
         /// <summary>
@@ -749,27 +742,11 @@ namespace ROLib
         /// Return the total height of this part in its current configuration.  This will be the distance from the bottom attach node to the top attach node, and may not include any 'extra' structure. TOOLING
         /// </summary>
         /// <returns></returns>
-        private float getTotalHeight()
+        private float GetTotalHeight()
         {
-            float totalHeight = noseModule.moduleHeight;
-            totalHeight += mountModule.moduleHeight;
-            if (currentCore.Contains("Booster"))
-            {
-                ROLLog.debug("currentCore: " + currentCore);
-                totalHeight += coreModule.moduleActualHeight;
-            }
-            else
-                totalHeight += coreModule.moduleHeight;
+            float totalHeight = noseModule.moduleHeight + mountModule.moduleHeight;
+            totalHeight += (currentCore.Contains("Booster")) ? coreModule.moduleActualHeight : coreModule.moduleHeight;
             return totalHeight;
-        }
-
-        /// <summary>
-        /// Return the topmost position in the models relative to the part's origin.
-        /// </summary>
-        /// <returns></returns>
-        private float getPartTopY()
-        {
-            return getTotalHeight() * 0.5f;
         }
 
         /// <summary>
@@ -789,47 +766,6 @@ namespace ROLib
         private void UpdateDragCubes()
         {
             ROLModInterop.onPartGeometryUpdate(part, true);
-        }
-
-        /// <summary>
-        /// Return the root transform for the specified name.  If does not exist, will create it and parent it to the parts' 'model' transform.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="recreate"></param>
-        /// <returns></returns>
-        private Transform getRootTransform(string name)
-        {
-            Transform root = part.transform.ROLFindRecursive(name);
-            if (root != null)
-            {
-                GameObject.DestroyImmediate(root.gameObject);
-                root = null;
-            }
-            root = new GameObject(name).transform;
-            root.NestToParent(part.transform.ROLFindRecursive("model"));
-            return root;
-        }
-
-        /// <summary>
-        /// Return the model-module corresponding to the input slot name.  Valid slot names are: NOSE,UPPER,CORE,LOWER,MOUNT
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private ROLModelModule<ModuleROTank> getModuleByName(string name)
-        {
-            switch (name)
-            {
-                case "NOSE":
-                    return noseModule;
-                case "CORE":
-                    return coreModule;
-                case "MOUNT":
-                    return mountModule;
-                case "NONE":
-                    return null;
-                default:
-                    return null;
-            }
         }
 
         private void SetModelFromDimensions()
@@ -903,7 +839,7 @@ namespace ROLib
 
             // Calculate the volume of the main tank
             float r = currentDiameter / 2;
-            effectiveVolume = (EllipsoidVolume(r, r, r/2) + CylinderVolume(r, effectiveLength)) * 1000f;
+            effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, effectiveLength)) * 1000f;
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
 
             /*
@@ -996,45 +932,6 @@ namespace ROLib
         //}
 
         #endregion GUI
-
-    }
-
-    /// <summary>
-    /// Data storage for a group of model definitions that share the same 'variant' type.  Used by modular-part in variant-defined configurations.
-    /// </summary>
-    public class ModelDefinitionVariantSet
-    {
-        public readonly string variantName;
-
-        public ModelDefinitionLayoutOptions[] definitions = new ModelDefinitionLayoutOptions[0];
-
-        public ModelDefinitionLayoutOptions this[int index]
-        {
-            get
-            {
-                index = Math.Max(0, index);
-                index = Math.Min(definitions.Length - 1, index);
-                return definitions[index];
-            }
-        }
-
-        public ModelDefinitionVariantSet(string name)
-        {
-            this.variantName = name;
-        }
-
-        public void addModels(ModelDefinitionLayoutOptions[] defs)
-        {
-            List<ModelDefinitionLayoutOptions> allDefs = new List<ModelDefinitionLayoutOptions>();
-            allDefs.AddRange(definitions);
-            allDefs.AddUniqueRange(defs);
-            definitions = allDefs.ToArray();
-        }
-
-        public int indexOf(ModelDefinitionLayoutOptions def)
-        {
-            return definitions.IndexOf(def);
-        }
 
     }
 }

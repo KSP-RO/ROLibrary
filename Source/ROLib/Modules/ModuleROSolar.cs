@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ROLib.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -53,17 +54,17 @@ namespace ROLib
         public float cost = 0.0f;
 
         [KSPEvent(guiActiveEditor = true, guiName = "Reset Model to Original", groupName = GroupName)]
-        public void ResetModel()
+        public void ResetModelEvent()
         {
-            _ResetModel();
+            ResetModel();
             foreach (Part p in part.symmetryCounterparts)
             {
                 if (p.FindModuleImplementing<ModuleROSolar>() is ModuleROSolar m)
-                    m._ResetModel();
+                    m.ResetModel();
             }
         }
 
-        private void _ResetModel()
+        private void ResetModel()
         {
             panelLength = coreModule.definition.panelLength;
             panelWidth = coreModule.definition.panelWidth;
@@ -91,15 +92,13 @@ namespace ROLib
         [KSPField] public float addCost = 0.0f;
         [KSPField] public string coreManagedNodes = string.Empty;
         [KSPField] public bool fullScale = true;
+        [KSPField] public int maxTechLevel = 0;
 
         #endregion KSPFields
 
         #region Custom Fields
 
         private const string modName = "[ROSOlar]";
-
-        public int maxTechLevel = 0;
-
 
         // Previous length/width/scale values for change detection
         private float prevLength = -1;
@@ -123,17 +122,16 @@ namespace ROLib
         /// <summary>
         /// Mapping of all of the variant sets available for this part.  When variant list length > 0, an additional 'variant' UI slider is added to allow for switching between variants.
         /// </summary>
-        private Dictionary<string, ModelDefinitionVariantSet> variantSets = new Dictionary<string, ModelDefinitionVariantSet>();
+        private readonly Dictionary<string, ModelDefinitionVariantSet> variantSets = new Dictionary<string, ModelDefinitionVariantSet>();
 
         /// <summary>
         /// Helper method to get or create a variant set for the input variant name.  If no set currently exists, a new set is empty set is created and returned.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        private ModelDefinitionVariantSet getVariantSet(string name)
+        private ModelDefinitionVariantSet GetVariantSet(string name)
         {
-            ModelDefinitionVariantSet set = null;
-            if (!variantSets.TryGetValue(name, out set))
+            if (!variantSets.TryGetValue(name, out ModelDefinitionVariantSet set))
             {
                 set = new ModelDefinitionVariantSet(name);
                 variantSets.Add(name, set);
@@ -152,15 +150,18 @@ namespace ROLib
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
-            if (string.IsNullOrEmpty(configNodeData))
+            if (node.name != "CURRENTUPGRADE")
             {
-                configNodeData = node.ToString();
+                if (string.IsNullOrEmpty(configNodeData))
+                {
+                    configNodeData = node.ToString();
+                }
+                Initialize();
+                // OnStart() appears to be too late for setting the TimeEfficCurve for Kerbalism.
+                // SolarPanelFixer is possibly getting this field too soon.
+                stl = SolarTechLimit.GetTechLevel(techLevel);
+                ReloadTimeCurve();
             }
-            Initialize();
-            // OnStart() appears to be too late for setting the TimeEfficCurve for Kerbalism.
-            // SolarPanelFixer is possibly getting this field too soon.
-            stl = SolarTechLimit.GetTechLevel(techLevel);
-            ReloadTimeCurve();
         }
 
         public override void OnStart(StartState state)
@@ -224,15 +225,15 @@ namespace ROLib
                 string variantName = cn.ROLGetStringValue("variant", "Default");
                 coreDefs = ROLModelData.getModelDefinitionLayouts(cn.ROLGetStringValues("model"));
                 coreDefList.AddUniqueRange(coreDefs);
-                ModelDefinitionVariantSet mdvs = getVariantSet(variantName);
-                mdvs.addModels(coreDefs);
+                ModelDefinitionVariantSet mdvs = GetVariantSet(variantName);
+                mdvs.AddModels(coreDefs);
             }
             coreDefs = coreDefList.ToArray();
 
-            coreModule = new ROLModelModule<ModuleROSolar>(part, this, GetRootTransform("ModuleROSolar-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, null, null);
+            coreModule = new ROLModelModule<ModuleROSolar>(part, this, ROLUtils.GetRootTransform(part, "ModuleROSolar-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, null, null);
             coreModule.name = "ModuleROSolar-Core";
             coreModule.getSymmetryModule = m => m.coreModule;
-            coreModule.getValidOptions = () => getVariantSet(currentVariant).definitions;
+            coreModule.getValidOptions = () => GetVariantSet(currentVariant).definitions;
 
             coreModule.setupModelList(coreDefs);
             coreModule.setupModel();
@@ -281,11 +282,11 @@ namespace ROLib
             Fields[nameof(currentVariant)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 // Query the index from that variant set
-                ModelDefinitionVariantSet prevMdvs = getVariantSet(coreModule.definition.name);
+                ModelDefinitionVariantSet prevMdvs = GetVariantSet(coreModule.definition.name);
                 // This is the index of the currently selected model within its variant set
-                int previousIndex = prevMdvs.indexOf(coreModule.layoutOptions);
+                int previousIndex = prevMdvs.IndexOf(coreModule.layoutOptions);
                 // Grab ref to the current/new variant set
-                ModelDefinitionVariantSet mdvs = getVariantSet(currentVariant);
+                ModelDefinitionVariantSet mdvs = GetVariantSet(currentVariant);
                 // And a reference to the model from same index out of the new set ([] call does validation internally for IAOOBE)
                 ModelDefinitionLayoutOptions newCoreDef = mdvs[previousIndex];
                 // Now, call model-selected on the core model to update for the changes, including symmetry counterpart updating.
@@ -296,15 +297,6 @@ namespace ROLib
                     Fields[nameof(panelLength)].guiActiveEditor = lengthWidth;
                     Fields[nameof(panelWidth)].guiActiveEditor = lengthWidth;
                     Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
-                    if (!lengthWidth)
-                    {
-                        this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
-                    }
-                    else
-                    {
-                        this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
-                        this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
-                    }
                     m.ResetModel();
                 });
                 ModelChangedHandlerWithSymmetry(true, true);
@@ -528,25 +520,6 @@ namespace ROLib
 
         #region Custom Methods
 
-        /// <summary>
-        /// Return the root transform for the specified name.  If does not exist, will create it and parent it to the parts' 'model' transform.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="recreate"></param>
-        /// <returns></returns>
-        private Transform GetRootTransform(string name)
-        {
-            // This code used to always destroy the root transform no matter what it was, and then make a new.
-            // Doing what the description says instead...
-            if (part.transform.ROLFindRecursive(name) is Transform t)
-                return t;
-            Transform root = new GameObject(name).transform;
-            root.NestToParent(part.transform.ROLFindRecursive("model"));
-            return root;
-        }
-
-        private ROLModelModule<ModuleROSolar> getModuleByName(string name) => coreModule;
-
         public void RecalculateStats()
         {
             chargeRate = currentRate = area * stl.kwPerM2;
@@ -586,47 +559,5 @@ namespace ROLib
         }
 
         #endregion Custom Methods
-
-        #region Model Definition Variants
-
-        /// <summary>
-        /// Data storage for a group of model definitions that share the same 'variant' type.  Used by modular-part in variant-defined configurations.
-        /// </summary>
-        public class ModelDefinitionVariantSet
-        {
-            public readonly string variantName;
-
-            public ModelDefinitionLayoutOptions[] definitions = new ModelDefinitionLayoutOptions[0];
-
-            public ModelDefinitionLayoutOptions this[int index]
-            {
-                get
-                {
-                    if (index < 0) { index = 0; }
-                    if (index >= definitions.Length) { index = definitions.Length - 1; }
-                    return definitions[index];
-                }
-            }
-
-            public ModelDefinitionVariantSet(string name)
-            {
-                this.variantName = name;
-            }
-
-            public void addModels(ModelDefinitionLayoutOptions[] defs)
-            {
-                List<ModelDefinitionLayoutOptions> allDefs = new List<ModelDefinitionLayoutOptions>();
-                allDefs.AddRange(definitions);
-                allDefs.AddUniqueRange(defs);
-                definitions = allDefs.ToArray();
-            }
-
-            public int indexOf(ModelDefinitionLayoutOptions def)
-            {
-                return definitions.IndexOf(def);
-            }
-        }
-
-        #endregion Model Definition Variants
     }
 }
