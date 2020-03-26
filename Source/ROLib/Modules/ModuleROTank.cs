@@ -621,16 +621,9 @@ namespace ROLib
             //scales for modules depend on the module above/below them
             //first set the scale for the core module -- this depends directly on the UI specified 'diameter' value.
             if (lengthWidth)
-            {
-                debug($"UpdateModulePositions(): setScaleForHeightAndDiameter");
                 coreModule.setScaleForHeightAndDiameter(currentLength, currentDiameter);
-            }
             else
-            {
-                debug($"UpdateModulePositions(): setScaleForDiameter");
                 coreModule.setScaleForDiameter(currentDiameter, currentVScale);
-            }
-            ROLLog.debug($"UpdateModulePositions(): currentDiameter: {currentDiameter}, currentVScale: {currentVScale}");
 
             //next, set nose scale values
             noseModule.setDiameterFromBelow(coreModule.moduleUpperDiameter, currentVScale);
@@ -687,7 +680,7 @@ namespace ROLib
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
-            ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Total Tank length: {totalTankLength}");
+            ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Largest Diameter: {largestDiameter}.  Total Tank length: {totalTankLength}");
         }
 
         /// <summary>
