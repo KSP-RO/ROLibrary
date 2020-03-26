@@ -513,7 +513,7 @@ namespace ROLib
             float max = definition.engineThrustData.maxThrust * layout.positions.Count() * scalar;
             float[] splitThrust = definition.engineThrustData.getCombinedSplitThrust(layout.positions.Count());
             engine.thrustTransformMultipliers = splitThrust.ToList();
-            ROLStockInterop.updateEngineThrust(engine, min, max); //calls engine.OnLoad(...);
+            ROLStockInterop.UpdateEngineThrust(engine, min, max); //calls engine.OnLoad(...);
         }
 
         /// <summary>
@@ -1145,7 +1145,7 @@ namespace ROLib
             }
             enableTextureSet();
             updateTextureUIControl();
-            ROLModInterop.onPartTextureUpdated(part);
+            ROLModInterop.OnPartTextureUpdated(part);
         }
 
         /// <summary>

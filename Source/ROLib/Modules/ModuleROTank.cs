@@ -287,7 +287,7 @@ namespace ROLib
                 UpdateMass();
             if (scaleCost)
                 UpdateCost();
-            ROLStockInterop.updatePartHighlighting(part);
+            ROLStockInterop.UpdatePartHighlighting(part);
             if (HighLogic.LoadedSceneIsEditor)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
@@ -765,7 +765,7 @@ namespace ROLib
         /// </summary>
         private void UpdateDragCubes()
         {
-            ROLModInterop.onPartGeometryUpdate(part, true);
+            ROLModInterop.OnPartGeometryUpdate(part, true);
         }
 
         private void SetModelFromDimensions()
@@ -852,7 +852,7 @@ namespace ROLib
             debug("================================================");
             */
 
-            ROLModInterop.realFuelsVolumeUpdate(part, effectiveVolume);
+            ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
         }
 
         public void SendVolumeChangedEvent(float newVol)

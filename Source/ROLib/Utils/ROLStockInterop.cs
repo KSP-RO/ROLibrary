@@ -6,9 +6,9 @@ namespace ROLib
     [KSPAddon(KSPAddon.Startup.Instantly, true)]
     public class ROLStockInterop : MonoBehaviour
     {
-        private static List<Part> dragCubeUpdateParts = new List<Part>();
-        private static List<Part> delayedUpdateDragCubeParts = new List<Part>();
-        private static List<Part> FARUpdateParts = new List<Part>();
+        private static readonly List<Part> dragCubeUpdateParts = new List<Part>();
+        private static readonly List<Part> delayedUpdateDragCubeParts = new List<Part>();
+        private static readonly List<Part> FARUpdateParts = new List<Part>();
 
         private static bool fireEditorEvent = false;
 
@@ -22,7 +22,7 @@ namespace ROLib
             MonoBehaviour.print("ROTStockInterop Start");
         }
 
-        public static void fireEditorUpdate()
+        public static void FireEditorUpdate()
         {
             fireEditorEvent = HighLogic.LoadedSceneIsEditor;
         }
@@ -37,7 +37,7 @@ namespace ROLib
             foreach (Part p in dragCubeUpdateParts)
             {
                 Debug.LogWarning("[ROLibrary] ROLStockInterop.FixedUpdate() found legacy request to update drag cubes!");
-                updatePartDragCube(p);
+                UpdatePartDragCube(p);
             }
             foreach (Part p in FARUpdateParts)
             {
@@ -82,7 +82,7 @@ namespace ROLib
             ROLModelData.loadConfigData();
         }
 
-        private static void seatFirstCollider(Part part)
+        private static void SeatFirstCollider(Part part)
         {
             Collider[] colliders = part.gameObject.GetComponentsInChildren<Collider>();
             int len = colliders.Length;
@@ -95,9 +95,8 @@ namespace ROLib
             }
         }
 
-        public static void updatePartDragCube(Part part)
+        public static void UpdatePartDragCube(Part part)
         {
-            Debug.Log($"[ROLibrary] ROLStockInterop updating drag cube for part {part}");
             DragCube newDefaultCube = DragCubeSystem.Instance.RenderProceduralDragCube(part);
             newDefaultCube.Weight = 1f;
             newDefaultCube.Name = "Default";
@@ -105,10 +104,10 @@ namespace ROLib
             part.DragCubes.Cubes.Add(newDefaultCube);
             part.DragCubes.ResetCubeWeights();
             part.DragCubes.ForceUpdate(true, true, false);
-            if (part.collider == null) seatFirstCollider(part);
+            if (part.collider == null) SeatFirstCollider(part);
         }
 
-        public static void updateEngineThrust(ModuleEngines engine, float minThrust, float maxThrust)
+        public static void UpdateEngineThrust(ModuleEngines engine, float minThrust, float maxThrust)
         {
             engine.minThrust = minThrust;
             engine.maxThrust = maxThrust;
@@ -118,7 +117,7 @@ namespace ROLib
             engine.OnLoad(updateNode);
         }
 
-        public static void updatePartHighlighting(Part part)
+        public static void UpdatePartHighlighting(Part part)
         {
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) { return; }//noop on prefabs
             if (part.HighlightRenderer != null)

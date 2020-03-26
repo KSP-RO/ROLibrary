@@ -13,7 +13,7 @@ namespace ROLib
         private static bool installedRF = false;
         private static bool installedMFT = false;
 
-        public static void updateResourceVolume(Part part)
+        public static void UpdateResourceVolume(Part part)
         {
             float totalVolume = 0;
             foreach (IContainerVolumeContributor contrib in part.FindModulesImplementing<IContainerVolumeContributor>())
@@ -23,7 +23,7 @@ namespace ROLib
                     totalVolume += c.containerVolume;
                 }
             }
-            realFuelsVolumeUpdate(part, totalVolume);
+            RealFuelsVolumeUpdate(part, totalVolume);
         }
 
         /// <summary>
@@ -33,17 +33,17 @@ namespace ROLib
         /// </summary>
         /// <param name="part"></param>
         /// <param name="createDefaultCube"></param>
-        public static void onPartGeometryUpdate(Part part, bool createDefaultCube)
+        public static void OnPartGeometryUpdate(Part part, bool createDefaultCube)
         {
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) { return; }//noop on prefabs
-            ROLStockInterop.updatePartHighlighting(part);
-            part.airlock = locateAirlock(part);
-            partGeometryUpdate(part);
+            ROLStockInterop.UpdatePartHighlighting(part);
+            part.airlock = LocateAirlock(part);
+            PartGeometryUpdate(part);
             if (createDefaultCube && (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight))
             {
-                ROLStockInterop.updatePartDragCube(part);
+                ROLStockInterop.UpdatePartDragCube(part);
             }
-            if (isFARInstalled())
+            if (IsFARInstalled())
             {
                 //FARdebug(part);
                 part.SendMessage("GeometryPartModuleRebuildMeshData");
@@ -54,7 +54,7 @@ namespace ROLib
             }
         }
 
-        public static void onPartTextureUpdated(Part part)
+        public static void OnPartTextureUpdated(Part part)
         {
             if (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight)
             {
@@ -62,7 +62,7 @@ namespace ROLib
             }
         }
 
-        private static void partGeometryUpdate(Part part)
+        private static void PartGeometryUpdate(Part part)
         {
             if (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight)
             {
@@ -70,7 +70,7 @@ namespace ROLib
             }
         }
 
-        private static Transform locateAirlock(Part part)
+        private static Transform LocateAirlock(Part part)
         {
             foreach (Collider coll in part.GetComponentsInChildren<Collider>())
             {
@@ -92,14 +92,14 @@ namespace ROLib
             MonoBehaviour.print("-------------------------------------------------------------------------");
         }
 
-        public static bool realFuelsVolumeUpdate(Part part, float liters)
+        public static bool RealFuelsVolumeUpdate(Part part, float liters)
         {
-            if (!isRFInstalled() && !isMFTInstalled())
+            if (!IsRFInstalled() && !IsMFTInstalled())
             {
                 MonoBehaviour.print($"ERROR: Config for {part} is set to use RF/MFT, but neither RF nor MFT is installed, cannot update part volumes through them.  Please check your configs and/or patches for errors.");
                 return false;
             }
-            string targ = isRFInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,RealFuels" : "RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks";
+            string targ = IsRFInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,RealFuels" : "RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks";
             if (Type.GetType(targ) is Type moduleFuelTank && getModuleFuelTanks(part) is PartModule pm)
             {
                 MethodInfo mi = moduleFuelTank.GetMethod("ChangeTotalVolume");
@@ -107,7 +107,7 @@ namespace ROLib
                 mi.Invoke(pm, new object[] { volumeLiters, false });
                 MethodInfo mi2 = moduleFuelTank.GetMethod("CalculateMass");
                 mi2.Invoke(pm, new object[] { });
-                updatePartResourceDisplay(part);
+                UpdatePartResourceDisplay(part);
                 MonoBehaviour.print($"ROTModInterop - Set RF/MFT total tank volume to: {volumeLiters} Liters for part: {part.name}");
                 return true;
             } else
@@ -119,8 +119,8 @@ namespace ROLib
 
         public static PartModule getModuleFuelTanks(Part part)
         {
-            string targ = isRFInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,RealFuels" :
-                          isMFTInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks" :
+            string targ = IsRFInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,RealFuels" :
+                          IsMFTInstalled() ? "RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks" :
                           string.Empty;
             if (Type.GetType(targ) is Type moduleFuelTank)
             {
@@ -132,7 +132,7 @@ namespace ROLib
             }
         }
 
-        public static bool hasModuleFuelTanks(Part part) => getModuleFuelTanks(part) != null;
+        public static bool HasModuleFuelTanks(Part part) => getModuleFuelTanks(part) != null;
 
         public static bool hasModuleEngineConfigs(Part part) =>
             Type.GetType("RealFuels.ModuleEngineConfigs,RealFuels") is Type type && part.GetComponent(type) is PartModule;
@@ -145,25 +145,25 @@ namespace ROLib
             installedMFT = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "modularFuelTanks");
         }
 
-        public static bool isFARInstalled()
+        public static bool IsFARInstalled()
         {
             if (!initialized) Init();
             return installedFAR;
         }
 
-        public static bool isRFInstalled()
+        public static bool IsRFInstalled()
         {
             if (!initialized) Init();
             return installedRF;
         }
 
-        public static bool isMFTInstalled()
+        public static bool IsMFTInstalled()
         {
             if (!initialized) Init();
             return installedMFT;
         }
 
-        public static void updatePartResourceDisplay(Part part)
+        public static void UpdatePartResourceDisplay(Part part)
         {
             if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch == null) { return; }
             if (HighLogic.LoadedSceneIsFlight && FlightDriver.fetch == null) { return; }

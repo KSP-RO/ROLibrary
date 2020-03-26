@@ -252,9 +252,9 @@ namespace ROLib
             UpdateDragCubes();
             UpdateMassAndCost();
             RecalculateStats();
-            ROLStockInterop.updatePartHighlighting(part);
+            ROLStockInterop.UpdatePartHighlighting(part);
             if (HighLogic.LoadedSceneIsEditor)
-                ROLStockInterop.fireEditorUpdate();
+                ROLStockInterop.FireEditorUpdate();
         }
 
         internal void ModelChangedHandlerWithSymmetry(bool pushNodes, bool symmetry)
@@ -513,7 +513,7 @@ namespace ROLib
         /// </summary>
         private void UpdateDragCubes()
         {
-            ROLModInterop.onPartGeometryUpdate(part, true);
+            ROLModInterop.OnPartGeometryUpdate(part, true);
         }
 
         #endregion Custom Update Methods
