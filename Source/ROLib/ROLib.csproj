@@ -15,12 +15,14 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\GameData\ROLib\Plugins\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>8.0</LangVersion>
+    <FileAlignment>4096</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -39,7 +42,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="TexturesUnlimited">
-      <HintPath>..\..\..\..\KSP 1.7 RO RP-1\GameData\000_TexturesUnlimited\Plugins\TexturesUnlimited.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program - 1.7.3 Clean\GameData\000_TexturesUnlimited\Plugins\TexturesUnlimited.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
@@ -75,6 +78,7 @@
     <Compile Include="ModelDef\ROLModelModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="UI\ModelWindow.cs.bak" />
+    <Compile Include="Utils\ModuleDefinitionVariantSet.cs" />
     <Compile Include="Utils\ROLAttachNodeUtils.cs" />
     <Compile Include="Utils\ROLConfigNodeUtils.cs" />
     <Compile Include="Utils\ROLExtensions.cs" />
@@ -87,4 +91,8 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
 </Project>
