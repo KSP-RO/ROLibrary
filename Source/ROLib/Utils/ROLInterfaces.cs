@@ -2,21 +2,17 @@
 
 namespace ROLib
 {
-
     public interface IContainerVolumeContributor
     {
-
         /// <summary>
         /// Return an array of container contributions.
         /// </summary>
         /// <returns></returns>
         ContainerContribution[] getContainerContributions();
-
     }
 
     public struct ContainerContribution
     {
-
         public readonly string containerName;
         public readonly int containerIndex;
         public readonly float containerVolume;
@@ -27,10 +23,6 @@ namespace ROLib
             containerVolume = volumeLiters;
         }
 
-        public override string ToString()
-        {
-            return "CC[" + containerName + "]-" + containerIndex + "-" + containerVolume;
-        }
-
+        public override string ToString() => $"CC[{containerName}]-{containerIndex}-{containerVolume}";
     }
 }

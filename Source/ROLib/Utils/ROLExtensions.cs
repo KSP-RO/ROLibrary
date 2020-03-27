@@ -268,12 +268,9 @@ namespace ROLib
         public static ConfigNode getNode(this FloatCurve curve, string name)
         {
             ConfigNode node = new ConfigNode(name);
-            int len = curve.Curve.length;
-            Keyframe[] keys = curve.Curve.keys;
-            for (int i = 0; i < len; i++)
+            foreach (Keyframe key in curve.Curve.keys)
             {
-                Keyframe key = keys[i];
-                node.AddValue("key", key.time + " " + key.value + " " + key.inTangent + " " + key.outTangent);
+                node.AddValue("key", $"{key.time} {key.value} {key.inTangent} {key.outTangent}");
             }
             return node;
         }
@@ -322,15 +319,8 @@ namespace ROLib
             Transform[] trs = transform.ROLFindChildren(modelName);
             Transform[] trs2 = transform.ROLFindChildren(modelName + "(Clone)");
             Transform[] trs3 = new Transform[trs.Length + trs2.Length];
-            int index = 0;
-            for (int i = 0; i < trs.Length; i++, index++)
-            {
-                trs3[index] = trs[i];
-            }
-            for (int i = 0; i < trs2.Length; i++, index++)
-            {
-                trs3[index] = trs2[i];
-            }
+            trs3.AddUniqueRange(trs);
+            trs3.AddUniqueRange(trs2);
             return trs3;
         }
 
@@ -342,8 +332,7 @@ namespace ROLib
         /// <returns></returns>
         public static Transform ROLFindModel(this Transform transform, String modelName)
         {
-            Transform tr = transform.ROLFindRecursive(modelName);
-            if (tr != null) { return tr; }
+            if (transform.ROLFindRecursive(modelName) is Transform tr) return tr;
             return transform.ROLFindRecursive(modelName + "(Clone)");
         }
 
@@ -356,7 +345,7 @@ namespace ROLib
         public static Transform[] ROLFindChildren(this Transform transform, String name)
         {
             List<Transform> trs = new List<Transform>();
-            if (transform.name == name) { trs.Add(transform); }
+            if (transform.name == name) trs.Add(transform);
             ROLlocateTransformsRecursive(transform, name, trs);
             return trs.ToArray();
         }
@@ -379,12 +368,10 @@ namespace ROLib
         public static Transform ROLFindRecursive(this Transform transform, String name)
         {
             if (transform.name == name) { return transform; }//was the original input transform
-            Transform tr = transform.Find(name);//found as a direct child
-            if (tr != null) { return tr; }
+            if (transform.Find(name) is Transform tr) return tr;    //found as a direct child
             foreach(Transform child in transform)
             {
-                tr = child.ROLFindRecursive(name);
-                if (tr != null) { return tr; }
+                if (child.ROLFindRecursive(name) is Transform t) return t;
             }
             return null;
         }
@@ -397,11 +384,7 @@ namespace ROLib
         /// <returns></returns>
         public static Transform ROLFindOrCreate(this Transform transform, String name)
         {
-            Transform newTr = transform.ROLFindRecursive(name);
-            if (newTr != null)
-            {
-                return newTr;
-            }
+            if (transform.ROLFindRecursive(name) is Transform t) return t;
             GameObject newGO = new GameObject(name);
             newGO.SetActive(true);
             newGO.name = newGO.transform.name = name;
@@ -423,7 +406,6 @@ namespace ROLib
 
         private static void ROLrecurseAddChildren(Transform transform, List<Transform> trs)
         {
-            int len = transform.childCount;
             foreach (Transform child in transform)
             {
                 trs.Add(child);
@@ -504,88 +486,64 @@ namespace ROLib
 
         public static void ROLsetFieldEnabledEditor(this PartModule module, string fieldName, bool active)
         {
-            BaseField f = module.Fields[fieldName];
-            if (f != null) { f.guiActiveEditor = active; }
+            if (module.Fields[fieldName] is BaseField f) f.guiActiveEditor = active;
         }
 
         public static void ROLsetFieldEnabledFlight(this PartModule module, string fieldName, bool active)
         {
-            BaseField f = module.Fields[fieldName];
-            if (f != null) { f.guiActive = active; }
+            if (module.Fields[fieldName] is BaseField f) f.guiActive = active;
+        }
+
+        private static UI_Control GetWidget(PartModule module, string fieldName)
+        {
+            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) return null;
+            BaseField bf = module.Fields[fieldName];
+            return HighLogic.LoadedSceneIsEditor ? bf.uiControlEditor : bf.uiControlFlight;
         }
 
         public static void ROLupdateUIFloatEditControl(this PartModule module, string fieldName, float min, float max, float incLarge, float incSmall, float incSlide, bool forceUpdate, float forceVal)
         {
-            UI_FloatEdit widget = null;
-            if (HighLogic.LoadedSceneIsEditor)
+            if (GetWidget(module, fieldName) is UI_FloatEdit widget)
             {
-                widget = (UI_FloatEdit)module.Fields[fieldName].uiControlEditor;
-            }
-            else if (HighLogic.LoadedSceneIsFlight)
-            {
-                widget = (UI_FloatEdit)module.Fields[fieldName].uiControlFlight;
-            }
-            else
-            {
-                return;
-            }
-            if (widget == null)
-            {
-                return;
-            }
-            widget.minValue = min;
-            widget.maxValue = max;
-            widget.incrementLarge = incLarge;
-            widget.incrementSmall = incSmall;
-            widget.incrementSlide = incSlide;
-            if (forceUpdate && widget.partActionItem!=null)
-            {
-                UIPartActionFloatEdit ctr = (UIPartActionFloatEdit)widget.partActionItem;
-                var t = widget.onFieldChanged;//temporarily remove the callback
-                widget.onFieldChanged = null;
-                ctr.incSmall.onToggle.RemoveAllListeners();
-                ctr.incLarge.onToggle.RemoveAllListeners();
-                ctr.decSmall.onToggle.RemoveAllListeners();
-                ctr.decLarge.onToggle.RemoveAllListeners();
-                ctr.slider.onValueChanged.RemoveAllListeners();
-                ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                widget.onFieldChanged = t;//re-seat callback
+                widget.minValue = min;
+                widget.maxValue = max;
+                widget.incrementLarge = incLarge;
+                widget.incrementSmall = incSmall;
+                widget.incrementSlide = incSlide;
+                if (forceUpdate && widget.partActionItem is UIPartActionFloatEdit  ctr)
+                {
+                    var t = widget.onFieldChanged;//temporarily remove the callback
+                    widget.onFieldChanged = null;
+                    ctr.incSmall.onToggle.RemoveAllListeners();
+                    ctr.incLarge.onToggle.RemoveAllListeners();
+                    ctr.decSmall.onToggle.RemoveAllListeners();
+                    ctr.decLarge.onToggle.RemoveAllListeners();
+                    ctr.slider.onValueChanged.RemoveAllListeners();
+                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
+                    widget.onFieldChanged = t;//re-seat callback
+                }
             }
         }
 
         public static void ROLupdateUIFloatEditControl(this PartModule module, string fieldName, float newValue)
         {
-            UI_FloatEdit widget = null;
-            if (HighLogic.LoadedSceneIsEditor)
+            if (GetWidget(module, fieldName) is UI_FloatEdit widget)
             {
-                widget = (UI_FloatEdit)module.Fields[fieldName].uiControlEditor;
-            }
-            else if (HighLogic.LoadedSceneIsFlight)
-            {
-                widget = (UI_FloatEdit)module.Fields[fieldName].uiControlFlight;
-            }
-            else
-            {
-                return;
-            }
-            if (widget == null)
-            {
-                return;
-            }
-            BaseField field = module.Fields[fieldName];
-            field.SetValue(newValue, field.host);
-            if (widget.partActionItem != null)//force widget re-setup for changed values; this will update the GUI value and slider positions/internal cached data
-            {
-                UIPartActionFloatEdit ctr = (UIPartActionFloatEdit)widget.partActionItem;
-                var t = widget.onFieldChanged;//temporarily remove the callback; we don't need an event fired when -we- are the ones editing the value...
-                widget.onFieldChanged = null;
-                ctr.incSmall.onToggle.RemoveAllListeners();
-                ctr.incLarge.onToggle.RemoveAllListeners();
-                ctr.decSmall.onToggle.RemoveAllListeners();
-                ctr.decLarge.onToggle.RemoveAllListeners();
-                ctr.slider.onValueChanged.RemoveAllListeners();
-                ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                widget.onFieldChanged = t;//re-seat callback
+                BaseField field = module.Fields[fieldName];
+                field.SetValue(newValue, field.host);
+                //force widget re-setup for changed values; this will update the GUI value and slider positions/internal cached data
+                if (widget.partActionItem is UIPartActionFloatEdit ctr)
+                {
+                    var t = widget.onFieldChanged;//temporarily remove the callback; we don't need an event fired when -we- are the ones editing the value...
+                    widget.onFieldChanged = null;
+                    ctr.incSmall.onToggle.RemoveAllListeners();
+                    ctr.incLarge.onToggle.RemoveAllListeners();
+                    ctr.decSmall.onToggle.RemoveAllListeners();
+                    ctr.decLarge.onToggle.RemoveAllListeners();
+                    ctr.slider.onValueChanged.RemoveAllListeners();
+                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
+                    widget.onFieldChanged = t;//re-seat callback
+                }
             }
         }
 
@@ -603,59 +561,71 @@ namespace ROLib
             if (display.Length == 0 && options.Length > 0) { display = new string[] { "NONE" }; }
             if (options.Length == 0) { options = new string[] { "NONE" }; }
             module.Fields[fieldName].guiActiveEditor = options.Length > 1;
-            UI_ChooseOption widget = null;
-            if (HighLogic.LoadedSceneIsEditor)
+            if (HighLogic.LoadedSceneIsEditor && GetWidget(module, fieldName) is UI_ChooseOption widget)
             {
-                widget = (UI_ChooseOption)module.Fields[fieldName].uiControlEditor;
-            }
-            else
-            {
-                return;
-            }
-            if (widget == null)
-            {
-                return;
-            }
-            widget.display = display;
-            widget.options = options;
-            if (forceUpdate && widget.partActionItem != null)
-            {
-                UIPartActionChooseOption control = (UIPartActionChooseOption)widget.partActionItem;
-                var t = widget.onFieldChanged;
-                widget.onFieldChanged = null;
-                int index = Array.IndexOf(options, forceVal);
-                control.slider.minValue = 0;
-                control.slider.maxValue = options.Length - 1;
-                control.slider.value = index;
-                control.OnValueChanged(0);
-                widget.onFieldChanged = t;
+                widget.display = display;
+                widget.options = options;
+                if (forceUpdate && widget.partActionItem is UIPartActionChooseOption ctr)
+                {
+                    var t = widget.onFieldChanged;
+                    widget.onFieldChanged = null;
+                    int index = Array.IndexOf(options, forceVal);
+                    ctr.slider.minValue = 0;
+                    ctr.slider.maxValue = options.Length - 1;
+                    ctr.slider.value = index;
+                    ctr.OnValueChanged(0);
+                    widget.onFieldChanged = t;
+                }
             }
         }
 
         public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float[] intervals, float[] increments, bool forceUpdate, float forceValue=0)
         {
-            UI_ScaleEdit widget = null;
-            if (HighLogic.LoadedSceneIsEditor)
+            if (GetWidget(module, fieldName) is UI_ScaleEdit widget)
             {
-                widget = (UI_ScaleEdit)module.Fields[fieldName].uiControlEditor;
+                widget.intervals = intervals;
+                widget.incrementSlide = increments;
+                if (forceUpdate && widget.partActionItem is UIPartActionScaleEdit ctr)
+                {
+                    var t = widget.onFieldChanged;
+                    widget.onFieldChanged = null;
+                    ctr.inc.onToggle.RemoveAllListeners();
+                    ctr.dec.onToggle.RemoveAllListeners();
+                    ctr.slider.onValueChanged.RemoveAllListeners();
+                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
+                    widget.onFieldChanged = t;
+                }
             }
-            else if (HighLogic.LoadedSceneIsFlight)
+        }
+
+        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float min, float max, float increment, bool flight, bool editor, bool forceUpdate, float forceValue = 0)
+        {
+            float seg = (max - min) / increment;
+            int numOfIntervals = Mathf.RoundToInt(seg) + 1;
+            BaseField field = module.Fields[fieldName];
+            if (increment <= 0 || numOfIntervals <= 1)
             {
-                widget = (UI_ScaleEdit)module.Fields[fieldName].uiControlFlight;
-            }
-            else
-            {
+                field.guiActive = false;
+                field.guiActiveEditor = false;
                 return;
             }
-            if (widget == null)
+            float sliderInterval = increment * 0.05f;
+            field.guiActive = flight;
+            field.guiActiveEditor = editor;
+            float[] intervals = new float[numOfIntervals];
+            float[] increments = new float[numOfIntervals];
+            for (int i = 0; i < numOfIntervals; i++)
             {
-                return;
+                intervals[i] = min + (increment * i);
+                increments[i] = sliderInterval;
             }
-            widget.intervals = intervals;
-            widget.incrementSlide = increments;
-            if (forceUpdate && widget.partActionItem != null)
+            module.ROLupdateUIScaleEditControl(fieldName, intervals, increments, forceUpdate, forceValue);
+        }
+
+        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float value)
+        {
+            if (GetWidget(module, fieldName) is UI_ScaleEdit widget && widget.partActionItem is UIPartActionScaleEdit ctr)
             {
-                UIPartActionScaleEdit ctr = (UIPartActionScaleEdit)widget.partActionItem;
                 var t = widget.onFieldChanged;
                 widget.onFieldChanged = null;
                 ctr.inc.onToggle.RemoveAllListeners();
@@ -666,69 +636,23 @@ namespace ROLib
             }
         }
 
-        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float min, float max, float increment, bool flight, bool editor, bool forceUpdate, float forceValue = 0)
+        public static void ROLupdateUIFloatRangeControl(this PartModule module, string fieldName, float min, float max, float inc, bool forceUpdate)
         {
-            BaseField field = module.Fields[fieldName];
-            if (increment <= 0)//div/0 error
+            if (GetWidget(module, fieldName) is UI_FloatRange widget)
             {
-                field.guiActive = false;
-                field.guiActiveEditor = false;
-                return;
-            }
-            float seg = (max - min) / increment;
-            int numOfIntervals = (int)Math.Round(seg) + 1;
-            float sliderInterval = increment * 0.05f;
-            float[] intervals = new float[numOfIntervals];
-            float[] increments = new float[numOfIntervals];
-            UI_Scene scene = HighLogic.LoadedSceneIsFlight ? UI_Scene.Flight : UI_Scene.Editor;
-            if (numOfIntervals <= 1)//not enough data...
-            {
-                field.guiActive = false;
-                field.guiActiveEditor = false;
-                MonoBehaviour.print("ERROR: Not enough data to create intervals: " + min + " : " + max + " :: " + increment);
-            }
-            else
-            {
-                field.guiActive = flight;
-                field.guiActiveEditor = editor;
-                intervals = new float[numOfIntervals];
-                increments = new float[numOfIntervals];
-                for (int i = 0; i < numOfIntervals; i++)
+                widget.minValue = min;
+                widget.maxValue = max;
+                widget.stepIncrement = inc;
+                if (forceUpdate && widget.partActionItem is UIPartActionFloatRange ctr)
                 {
-                    intervals[i] = min + (increment * (float)i);
-                    increments[i] = sliderInterval;
+                    var t = widget.onFieldChanged;  // temporarily remove the callback
+                    widget.onFieldChanged = null;
+                    ctr.slider.onValueChanged.RemoveAllListeners();
+                    ctr.inputField.onValueChanged.RemoveAllListeners();
+                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
+                    widget.onFieldChanged = t; // re-seat callback
                 }
-                module.ROLupdateUIScaleEditControl(fieldName, intervals, increments, forceUpdate, forceValue);
             }
-        }
-
-        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float value)
-        {
-            UI_ScaleEdit widget = null;
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                widget = (UI_ScaleEdit)module.Fields[fieldName].uiControlEditor;
-            }
-            else if (HighLogic.LoadedSceneIsFlight)
-            {
-                widget = (UI_ScaleEdit)module.Fields[fieldName].uiControlFlight;
-            }
-            else
-            {
-                return;
-            }
-            if (widget == null || widget.partActionItem==null)
-            {
-                return;
-            }
-            UIPartActionScaleEdit ctr = (UIPartActionScaleEdit)widget.partActionItem;
-            var t = widget.onFieldChanged;
-            widget.onFieldChanged = null;
-            ctr.inc.onToggle.RemoveAllListeners();
-            ctr.dec.onToggle.RemoveAllListeners();
-            ctr.slider.onValueChanged.RemoveAllListeners();
-            ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-            widget.onFieldChanged = t;
         }
 
         /// <summary>
@@ -752,44 +676,9 @@ namespace ROLib
         public static void ROLforEachSymmetryCounterpart<T>(this T module, Action<T> action) where T : PartModule
         {
             int index = module.part.Modules.IndexOf(module);
-            int len = module.part.symmetryCounterparts.Count;
-            for (int i = 0; i < len; i++)
+            foreach (Part p in module.part.symmetryCounterparts)
             {
-                action((T)module.part.symmetryCounterparts[i].Modules[index]);
-            }
-        }
-
-        public static void ROLupdateUIFloatRangeControl(this PartModule module, string fieldName, float min, float max, float inc, bool forceUpdate)
-        {
-            UI_FloatRange widget = null;
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                widget = (UI_FloatRange)module.Fields[fieldName].uiControlEditor;
-            }
-            else if (HighLogic.LoadedSceneIsFlight)
-            {
-                widget = (UI_FloatRange)module.Fields[fieldName].uiControlFlight;
-            }
-            else
-            {
-                return;
-            }
-            if (widget == null)
-            {
-                return;
-            }
-            widget.minValue = min;
-            widget.maxValue = max;
-            widget.stepIncrement = inc;
-            if (forceUpdate && widget.partActionItem != null)
-            {
-                UIPartActionFloatRange ctr = (UIPartActionFloatRange)widget.partActionItem;
-                var t = widget.onFieldChanged;  // temporarily remove the callback
-                widget.onFieldChanged = null;
-                ctr.slider.onValueChanged.RemoveAllListeners();
-                ctr.inputField.onValueChanged.RemoveAllListeners();
-                ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                widget.onFieldChanged = t; // re-seat callback
+                action((T)p.Modules[index]);
             }
         }
 
@@ -838,12 +727,12 @@ namespace ROLib
 
         #region FloatCurve extensions
 
-        public static String ROLPrint(this FloatCurve curve)
+        public static string ROLPrint(this FloatCurve curve)
         {
-            String output = "";
+            string output = "";
             foreach (Keyframe f in curve.Curve.keys)
             {
-                output = output + "\n" + f.time + " " + f.value + " " + f.inTangent + " " + f.outTangent;
+                output += $"\n{f.time} {f.value} {f.inTangent} {f.outTangent}";
             }
             return output;
         }
@@ -851,30 +740,24 @@ namespace ROLib
         public static string ROLToStringSingleLine(this FloatCurve curve)
         {
             string data = "";
-            int len = curve.Curve.length;
-            Keyframe key;
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < curve.Curve.length; i++)
             {
-                key = curve.Curve.keys[i];
-                if (i > 0) { data = data + ":"; }
-                data = data + key.time + "," + key.value + "," + key.inTangent + "," + key.outTangent;
+                Keyframe key = curve.Curve.keys[i];
+                if (i > 0) data += ":";
+                data += $"{key.time},{key.value},{key.inTangent},{key.outTangent}";
             }
             return data;
         }
 
         public static void ROLloadSingleLine(this FloatCurve curve, string input)
         {
-            string[] keySplits = input.Split(':');
-            string[] valSplits;
-            int len = keySplits.Length;
-            float key, value, inTan, outTan;
-            for (int i = 0; i < len; i++)
+            foreach (string keySplit in input.Split(':'))
             {
-                valSplits = keySplits[i].Split(',');
-                key = float.Parse(valSplits[0]);
-                value = float.Parse(valSplits[1]);
-                inTan = float.Parse(valSplits[2]);
-                outTan = float.Parse(valSplits[3]);
+                string[] valSplits = keySplit.Split(',');
+                float key = float.Parse(valSplits[0]);
+                float value = float.Parse(valSplits[1]);
+                float inTan = float.Parse(valSplits[2]);
+                float outTan = float.Parse(valSplits[3]);
                 curve.Add(key, value, inTan, outTan);
             }
         }

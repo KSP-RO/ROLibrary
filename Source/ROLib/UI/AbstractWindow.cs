@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.Events;
-using KSP.UI.TooltipTypes;
 
 namespace ROLib
 {
@@ -59,7 +54,7 @@ namespace ROLib
             GameEvents.onShowUI.Add(OnShowUI);
         }
 
-        public Rect RequestPosition() { return Position; }
+        public Rect RequestPosition() => Position;
 
         public virtual void Show()
         {
@@ -74,15 +69,8 @@ namespace ROLib
             Enabled = true;
         }
 
-        private void OnHideUI()
-        {
-            Enabled = false;
-        }
-
-        private void OnShowUI()
-        {
-            Enabled = true;
-        }
+        private void OnHideUI() => Enabled = false;
+        private void OnShowUI() => Enabled = true;
 
         public virtual void Hide()
         {
@@ -162,14 +150,8 @@ namespace ROLib
         /// </summary>
         public void toggleWindow()
         {
-            if (this.Enabled)
-            {
-                this.Hide();
-            }
-            else
-            {
-                this.Show();
-            }
+            if (Enabled) Hide();
+            else Show();
         }
     }
 }
