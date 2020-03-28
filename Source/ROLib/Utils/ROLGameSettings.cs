@@ -8,6 +8,8 @@ namespace ROLib
         [GameParameters.CustomParameterUI("Persistent Recolor Selections", toolTip = "If true, custom recolor selections will persist across texture set changes.")]
         public bool persistRecolorSelections = false;
 
+        [GameParameters.CustomParameterUI("Enable Verbose Llogging", toolTip = "Additional Verbose logging can help when troubleshooting, but also reduces performance.")]
+        public bool enabledDebugLogging = false;
         public override string Section { get { return "RO Mods Settings"; } }
 
         public override int SectionOrder { get { return 1; } }
@@ -52,6 +54,18 @@ namespace ROLib
                 return HighLogic.CurrentGame.Parameters.CustomParams<ROLGameSettings>().persistRecolorSelections;
             }
             return false;
+        }
+
+        public static bool LoggingEnabled
+        {
+            get
+            {
+                if (HighLogic.CurrentGame != null)
+                {
+                    return HighLogic.CurrentGame.Parameters.CustomParams<ROLGameSettings>().enabledDebugLogging;
+                }
+                return false;
+            }
         }
 
     }

@@ -14,7 +14,10 @@ namespace ROLib
 
         public static void load()
         {
-            ROLLog.log("Loading Model Layouts");
+            if (ROLGameSettings.LoggingEnabled)
+            {
+                ROLLog.log("Loading Model Layouts");
+            }
             layouts.Clear();
             ConfigNode[] layoutNodes = GameDatabase.Instance.GetConfigNodes("ROL_MODEL_LAYOUT");
             int len = layoutNodes.Length;
@@ -24,7 +27,10 @@ namespace ROLib
                 layouts.Add(mld.name, mld);
             }
             loaded = true;
-            ROLLog.log("Finished loading Model Layouts");
+            if (ROLGameSettings.LoggingEnabled)
+            {
+                ROLLog.log("Finished loading Model Layouts");
+            }
         }
 
         public static ModelLayoutData findLayout(string name)

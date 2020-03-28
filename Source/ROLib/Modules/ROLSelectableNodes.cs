@@ -92,7 +92,10 @@ namespace ROLib
         public void toggleNode()
         {
             AttachNode node = part.FindAttachNode(nodeName);
-            ROLLog.debug("toggleNode() node: " + node);
+            if (ROLGameSettings.LoggingEnabled)
+            {
+                ROLLog.debug("toggleNode() node: " + node);
+            }
             if (node == null)
             {
                 currentlyEnabled = true;

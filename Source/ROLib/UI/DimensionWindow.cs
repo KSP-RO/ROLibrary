@@ -230,7 +230,10 @@ namespace ROLib
             fld.uiControlEditor.onFieldChanged.Invoke(fld, oldDiameter);
 
             MonoUtilities.RefreshContextWindows(module.part);
-            ROLLog.log("ModuleROTank - Diameter set to: " + f);
+            if (ROLGameSettings.LoggingEnabled)
+            {
+                ROLLog.log("ModuleROTank - Diameter set to: " + f);
+            }
         }
 
         public override void Window(int id)

@@ -41,12 +41,18 @@ namespace ROLib
         {
             if (!isInitialized)
             {
-                ROLLog.debug($"{modTag}: Init()");
+                if (ROLGameSettings.LoggingEnabled)
+                {
+                    ROLLog.debug($"{modTag}: Init()");
+                }
                 allTL.Clear();
                 foreach (ConfigNode node in config.GetNodes("ROS_TECH"))
                 {
                     SolarTechLimit obj = ConfigNode.CreateObjectFromConfig<SolarTechLimit>(node);
-                    ROLLog.debug($"{modTag}: Adding ROSTL {obj}");
+                    if (ROLGameSettings.LoggingEnabled)
+                    {
+                        ROLLog.debug($"{modTag}: Adding ROSTL {obj}");
+                    }
                     allTL.Add(obj.level, obj);
                     maxTL = Math.Max(maxTL, obj.level);
                 }

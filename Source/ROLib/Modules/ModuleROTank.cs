@@ -103,7 +103,10 @@ namespace ROLib
         [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = GroupName)]
         public void OpenTankDimensionGUIEvent()
         {
-            ROLLog.debug("EditDimensions() called");
+            if (ROLGameSettings.LoggingEnabled)
+            {
+                ROLLog.debug("EditDimensions() called");
+            }
             EditDimensions(this);
         }
 
@@ -680,7 +683,10 @@ namespace ROLib
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
-            ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Largest Diameter: {largestDiameter}.  Total Tank length: {totalTankLength}");
+            if (ROLGameSettings.LoggingEnabled)
+            {
+                ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Largest Diameter: {largestDiameter}.  Total Tank length: {totalTankLength}");
+            }
         }
 
         /// <summary>
@@ -774,7 +780,10 @@ namespace ROLib
 
             string ratioName = $"{modelRatio:0.0}";
             string s = $"{ratioName}x-{currentVariant}";
-            ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, {ratioName}x-{currentVariant}");
+            if (ROLGameSettings.LoggingEnabled)
+            {
+                ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, {ratioName}x-{currentVariant}");
+            }
 
             currentVScale = (dimRatio / modelRatio) - 1;
             coreModule.modelSelected(s);
