@@ -510,18 +510,8 @@ namespace ROLib
                 widget.incrementLarge = incLarge;
                 widget.incrementSmall = incSmall;
                 widget.incrementSlide = incSlide;
-                if (forceUpdate && widget.partActionItem is UIPartActionFloatEdit  ctr)
-                {
-                    var t = widget.onFieldChanged;//temporarily remove the callback
-                    widget.onFieldChanged = null;
-                    ctr.incSmall.onToggle.RemoveAllListeners();
-                    ctr.incLarge.onToggle.RemoveAllListeners();
-                    ctr.decSmall.onToggle.RemoveAllListeners();
-                    ctr.decLarge.onToggle.RemoveAllListeners();
-                    ctr.slider.onValueChanged.RemoveAllListeners();
-                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                    widget.onFieldChanged = t;//re-seat callback
-                }
+                if (forceUpdate)
+                    MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
@@ -531,19 +521,7 @@ namespace ROLib
             {
                 BaseField field = module.Fields[fieldName];
                 field.SetValue(newValue, field.host);
-                //force widget re-setup for changed values; this will update the GUI value and slider positions/internal cached data
-                if (widget.partActionItem is UIPartActionFloatEdit ctr)
-                {
-                    var t = widget.onFieldChanged;//temporarily remove the callback; we don't need an event fired when -we- are the ones editing the value...
-                    widget.onFieldChanged = null;
-                    ctr.incSmall.onToggle.RemoveAllListeners();
-                    ctr.incLarge.onToggle.RemoveAllListeners();
-                    ctr.decSmall.onToggle.RemoveAllListeners();
-                    ctr.decLarge.onToggle.RemoveAllListeners();
-                    ctr.slider.onValueChanged.RemoveAllListeners();
-                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                    widget.onFieldChanged = t;//re-seat callback
-                }
+                MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
@@ -565,17 +543,8 @@ namespace ROLib
             {
                 widget.display = display;
                 widget.options = options;
-                if (forceUpdate && widget.partActionItem is UIPartActionChooseOption ctr)
-                {
-                    var t = widget.onFieldChanged;
-                    widget.onFieldChanged = null;
-                    int index = Array.IndexOf(options, forceVal);
-                    ctr.slider.minValue = 0;
-                    ctr.slider.maxValue = options.Length - 1;
-                    ctr.slider.value = index;
-                    ctr.OnValueChanged(0);
-                    widget.onFieldChanged = t;
-                }
+                if (forceUpdate)
+                    MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
@@ -585,16 +554,8 @@ namespace ROLib
             {
                 widget.intervals = intervals;
                 widget.incrementSlide = increments;
-                if (forceUpdate && widget.partActionItem is UIPartActionScaleEdit ctr)
-                {
-                    var t = widget.onFieldChanged;
-                    widget.onFieldChanged = null;
-                    ctr.inc.onToggle.RemoveAllListeners();
-                    ctr.dec.onToggle.RemoveAllListeners();
-                    ctr.slider.onValueChanged.RemoveAllListeners();
-                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                    widget.onFieldChanged = t;
-                }
+                if (forceUpdate)
+                    MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
@@ -626,13 +587,7 @@ namespace ROLib
         {
             if (GetWidget(module, fieldName) is UI_ScaleEdit widget && widget.partActionItem is UIPartActionScaleEdit ctr)
             {
-                var t = widget.onFieldChanged;
-                widget.onFieldChanged = null;
-                ctr.inc.onToggle.RemoveAllListeners();
-                ctr.dec.onToggle.RemoveAllListeners();
-                ctr.slider.onValueChanged.RemoveAllListeners();
-                ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                widget.onFieldChanged = t;
+                MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
@@ -643,15 +598,8 @@ namespace ROLib
                 widget.minValue = min;
                 widget.maxValue = max;
                 widget.stepIncrement = inc;
-                if (forceUpdate && widget.partActionItem is UIPartActionFloatRange ctr)
-                {
-                    var t = widget.onFieldChanged;  // temporarily remove the callback
-                    widget.onFieldChanged = null;
-                    ctr.slider.onValueChanged.RemoveAllListeners();
-                    ctr.inputField.onValueChanged.RemoveAllListeners();
-                    ctr.Setup(ctr.Window, module.part, module, HighLogic.LoadedSceneIsEditor ? UI_Scene.Editor : UI_Scene.Flight, widget, module.Fields[fieldName]);
-                    widget.onFieldChanged = t; // re-seat callback
-                }
+                if (forceUpdate)
+                    MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
