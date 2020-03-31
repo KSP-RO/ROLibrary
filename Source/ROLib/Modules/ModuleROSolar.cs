@@ -176,13 +176,6 @@ namespace ROLib
 
         public void OnDestroy()
         {
-            GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
-        }
-
-        private void OnEditorVesselModified(ShipConstruct ship)
-        {
-            //update available variants for attach node changes
-            UpdateAvailableVariants();
         }
 
         // IPartMass/CostModifier overrides
@@ -369,9 +362,6 @@ namespace ROLib
                 Fields[nameof(panelWidth)].guiActiveEditor = false;
             else
                 this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
-
-            if (HighLogic.LoadedSceneIsEditor)
-                GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
         }
 
         private void SetMaxTechLevel()
