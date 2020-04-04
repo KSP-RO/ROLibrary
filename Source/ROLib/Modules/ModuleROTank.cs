@@ -169,9 +169,10 @@ namespace ROLib
             currentDiameter = coreModule.definition.diameter;
             currentVScale = 0;
 
-            this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentDiameter);
-            this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f, true, currentVScale);
+            this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep);
+            this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f);
             ModelChangedHandlerWithSymmetry(true, true);
+            MonoUtilities.RefreshPartContextWindow(part);
         }
 
         //------------------------------------------RECOLORING PERSISTENCE-----------------------------------------------//
@@ -264,14 +265,6 @@ namespace ROLib
 
         private DimensionWindow dimWindow;
 
-        private float effectiveVolume = 0f;
-        private float effectiveLength = 0f;
-        private float noseEffectiveLength = 0f;
-        private float mountEffectiveLength = 0f;
-        private float coreEffectiveLength = 0f;
-        private float noseAdditionalVol = 0f;
-        private float mountAdditionalVol = 0f;
-
         #endregion Private Variables
 
         internal void ModelChangedHandler(bool pushNodes)
@@ -297,7 +290,7 @@ namespace ROLib
             ModelChangedHandler(pushNodes);
             if (symmetry)
             {
-                foreach (Part p in part.symmetryCounterparts.Where(x => x != part))
+                foreach (Part p in part.symmetryCounterparts)
                 {
                     p.FindModuleImplementing<ModuleROTank>().ModelChangedHandler(pushNodes);
                 }
@@ -503,7 +496,7 @@ namespace ROLib
         {
             //set up the core variant UI control
             string[] variantNames = ROLUtils.getNames(variantSets.Values, m => m.variantName);
-            this.ROLupdateUIChooseOptionControl(nameof(currentVariant), variantNames, variantNames, true, currentVariant);
+            this.ROLupdateUIChooseOptionControl(nameof(currentVariant), variantNames, variantNames);
             Fields[nameof(currentVariant)].guiActiveEditor = variantSets.Count > 1;
 
             Fields[nameof(currentVariant)].uiControlEditor.onFieldChanged = (a, b) =>
@@ -530,6 +523,7 @@ namespace ROLib
                     }
                 });
                 ModelChangedHandlerWithSymmetry(true, true);
+                MonoUtilities.RefreshPartContextWindow(part);
             };
 
             Fields[nameof(currentDiameter)].uiControlEditor.onFieldChanged =
@@ -547,39 +541,29 @@ namespace ROLib
             {
                 noseModule.modelSelected(a, b);
                 ModelChangedHandlerWithSymmetry(true, true);
+                MonoUtilities.RefreshPartContextWindow(part);
             };
 
             Fields[nameof(currentCore)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 coreModule.modelSelected(a, b);
                 ModelChangedHandlerWithSymmetry(true, true);
+                MonoUtilities.RefreshPartContextWindow(part);
             };
 
             Fields[nameof(currentMount)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 mountModule.modelSelected(a, b);
                 ModelChangedHandlerWithSymmetry(true, true);
+                MonoUtilities.RefreshPartContextWindow(part);
             };
 
             //------------------MODEL DIAMETER / LENGTH SWITCH UI INIT---------------------//
-            if (maxDiameter == minDiameter)
-            {
-                Fields[nameof(currentDiameter)].guiActiveEditor = false;
-            }
-            else
-            {
-                this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentDiameter);
-            }
+            this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep);
+            this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep);
 
-            if (maxLength == minLength || !lengthWidth)
-            {
-                Fields[nameof(currentLength)].guiActiveEditor = false;
-            }
-            else
-            {
-                this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentLength);
-            }
-
+            Fields[nameof(currentDiameter)].guiActiveEditor = maxDiameter != minDiameter;
+            Fields[nameof(currentLength)].guiActiveEditor = lengthWidth && maxLength != minLength;
             Fields[nameof(currentVScale)].guiActiveEditor = enableVScale && !lengthWidth;
             Events[nameof(ResetModel)].guiActiveEditor = !lengthWidth;
 
@@ -589,9 +573,7 @@ namespace ROLib
             Fields[nameof(currentMountTexture)].uiControlEditor.onFieldChanged = mountModule.textureSetSelected;
 
             if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Add(new EventData<ShipConstruct>.OnEvent(OnEditorVesselModified));
-            }
+                GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
         }
 
         private void OnDiameterChanged(BaseField f, object o)
@@ -791,59 +773,38 @@ namespace ROLib
 
             float horScale = currentDiameter / coreModule.definition.diameter;
             float domeLength = currentDiameter / 2;
-            noseEffectiveLength = horScale * noseModule.definition.effectiveLength;
-            mountEffectiveLength = horScale * mountModule.definition.effectiveLength;
-            coreEffectiveLength = currentLength - domeLength;
-            effectiveLength = noseEffectiveLength + mountEffectiveLength + coreEffectiveLength;
-
-            /*
-            debug("================================================");
-            debug("<color=green>EFFECTIVE LENGTH INFORMATION</color>");
-            debug($"horScale: {horScale}, domeLength: {domeLength}");
-            debug($"noseEffectiveLength: {noseEffectiveLength}, mountEffectiveLength: {mountEffectiveLength}, coreEffectiveLength: {coreEffectiveLength}");
-            debug($"effectiveLength: {effectiveLength}");
-            debug("================================================");
-            */
+            float noseEffectiveLength = horScale * noseModule.definition.effectiveLength;
+            float mountEffectiveLength = horScale * mountModule.definition.effectiveLength;
+            float effectiveLength = currentLength + noseEffectiveLength + mountEffectiveLength - domeLength;
+            ROLLog.debug($"UpdateTankVolume() horScale: {horScale}.  Nose: {noseEffectiveLength:F1}, mount: {mountEffectiveLength:F1}, core: {currentLength:F1}, dome: {domeLength:F1}, result: {effectiveLength}");
 
             // Set the minimum length based on domeLength
             minLength = Math.Max(0.1f, domeLength - (noseEffectiveLength + mountEffectiveLength));
 
             // Update the float controller to reset the proper minimum length
-            this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep, true, currentLength);
+            this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep);
 
             // Set the tank length to be the same size as the minLength if it is currently smaller
-            if (currentLength < minLength)
-            {
-                currentLength = minLength;
-            }
+            currentLength = Math.Max(currentLength, minLength);
 
             // Calculate the new volume
-            // First, get the additional volume from the nose and mounts
-            float noseDiameter = noseModule.definition.shouldInvert(noseModule.definition.orientation) ? noseModule.definition.upperDiameter : noseModule.definition.lowerDiameter;
-            float noseScale = currentDiameter / noseDiameter;
-            noseScale = Mathf.Pow(noseScale, 3);
+            // First, get the additional volume from the nose and mounts *beyond what is provided by the tank length extension*
+            // Nose & Mount Diameters are the diameter of the model at the point of attachment.
+            // Inversion handles a particular model that mounts in either orientation, and its values are for the orientation specified.
+            float noseDiameter = noseModule.definition.shouldInvert(ModelOrientation.TOP) ? noseModule.definition.upperDiameter : noseModule.definition.lowerDiameter;
+            float noseScale = Mathf.Pow(currentDiameter / noseDiameter, 3);
 
-            float mountDiameter = mountModule.definition.shouldInvert(mountModule.definition.orientation) ? mountModule.definition.lowerDiameter : mountModule.definition.upperDiameter;
-            float mountScale = currentDiameter / mountDiameter;
-            mountScale = Mathf.Pow(mountScale, 3);
+            float mountDiameter = mountModule.definition.shouldInvert(ModelOrientation.BOTTOM) ? mountModule.definition.lowerDiameter : mountModule.definition.upperDiameter;
+            float mountScale = Mathf.Pow(currentDiameter / mountDiameter, 3);
 
-            noseAdditionalVol = noseScale * noseModule.definition.additionalVolume * 1000f;
-            mountAdditionalVol = mountScale * mountModule.definition.additionalVolume * 1000f;
+            float noseAdditionalVol = noseScale * noseModule.definition.additionalVolume * 1000f;
+            float mountAdditionalVol = mountScale * mountModule.definition.additionalVolume * 1000f;
 
             // Calculate the volume of the main tank
             float r = currentDiameter / 2;
-            effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, effectiveLength)) * 1000f;
+            float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, effectiveLength)) * 1000f;
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
-
-            /*
-            debug("================================================");
-            debug("<color=blue>EFFECTIVE VOLUME INFORMATION</color>");
-            debug($"noseScale: {noseScale}, mountScale: {mountScale}");
-            debug($"noseAdditionalOrig: {noseModule.definition.additionalVolume}, noseAdditionalVol: {noseAdditionalVol}, coreAdditionalOrig: {mountModule.definition.additionalVolume}, mountAdditionalVol: {mountAdditionalVol}");
-            debug($"origEffectiveVolume: {effectiveVolume - noseAdditionalVol - mountAdditionalVol}");
-            debug($"effectiveVolume: {effectiveVolume}");
-            debug("================================================");
-            */
+            ROLLog.debug($"UpdateTankVolume() Nose scale: {noseScale:F1} -> Vol: {noseAdditionalVol:F2}.  Mount scale: {mountScale:F1} -> Vol: {mountAdditionalVol:F2}.  Total volume: {effectiveVolume}");
 
             ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
         }

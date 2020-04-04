@@ -560,7 +560,7 @@ namespace ROLib
                 m.applyTextureSet(m.textureSetName, !ROLGameSettings.persistRecolor());
                 if (m.textureField != null)
                 {
-                    m.partModule.ROLupdateUIChooseOptionControl(m.textureField.name, m.definition.getTextureSetNames(), m.definition.getTextureSetTitles(), true, m.textureSetName);
+                    m.partModule.ROLupdateUIChooseOptionControl(m.textureField.name, m.definition.getTextureSetNames(), m.definition.getTextureSetTitles());
                 }
             });
         }
@@ -657,20 +657,20 @@ namespace ROLib
                 if (availableOptions == null || availableOptions.Length < 1) { MonoBehaviour.print("ERROR: No valid models found for: " + getErrorReportModuleName()); }
                 string[] names = ROLUtils.getNames(availableOptions, s => s.definition.name);
                 string[] displays = ROLUtils.getNames(availableOptions, s => s.definition.title);
-                partModule.ROLupdateUIChooseOptionControl(modelField.name, names, displays, true, modelName);
+                partModule.ROLupdateUIChooseOptionControl(modelField.name, names, displays);
                 modelField.guiActiveEditor = names.Length > 1;
             }
             //updates the texture set selection for the currently configured model definition, including disabling of the texture-set selection UI when needed
             if (textureField != null)
             {
-                partModule.ROLupdateUIChooseOptionControl(textureField.name, definition.getTextureSetNames(), definition.getTextureSetTitles(), true, textureSetName);
+                partModule.ROLupdateUIChooseOptionControl(textureField.name, definition.getTextureSetNames(), definition.getTextureSetTitles());
             }
             if (layoutField != null)
             {
                 ModelDefinitionLayoutOptions mdlo = optionsCache.ROLFind(m => m.definition == definition);
                 string[] layoutNames = mdlo.getLayoutNames();
                 string[] layoutTitles = mdlo.getLayoutTitles();
-                partModule.ROLupdateUIChooseOptionControl(layoutField.name, layoutNames, layoutTitles, true, layoutName);
+                partModule.ROLupdateUIChooseOptionControl(layoutField.name, layoutNames, layoutTitles);
                 layoutField.guiActiveEditor = layoutField.guiActiveEditor && currentLayout.positions.Length > 1;
             }
         }
@@ -745,7 +745,7 @@ namespace ROLib
         /// <param name="newDiameter"></param>
         public void setScaleForHeightAndDiameter(float newHeight, float newDiameter, bool solar)
         {
-            float newHorizScale, newVertScale = 0.0f;
+            float newHorizScale, newVertScale;
             if (solar)
             {
                 newHorizScale = newDiameter / definition.panelWidth;
@@ -847,7 +847,7 @@ namespace ROLib
             if (textureField == null) { return; }
             string[] names = definition.getTextureSetNames();
             string[] titles = definition.getTextureSetTitles();
-            partModule.ROLupdateUIChooseOptionControl(textureField.name, names, titles, true, textureSetName);
+            partModule.ROLupdateUIChooseOptionControl(textureField.name, names, titles);
             textureField.guiActiveEditor = names.Length > 1;
         }
 
@@ -872,25 +872,19 @@ namespace ROLib
             if (nodeNames.Length == 1 && (nodeNames[0] == "NONE" || nodeNames[0] == "none")) { return; }
             float currentVerticalPosition = this.currentVerticalPosition;
 
-            AttachNode node = null;
             AttachNodeBaseData data;
-
-            Vector3 pos = Vector3.zero;
-            Vector3 orient = Vector3.up;
-            int size = 4;
-
             bool invert = definition.shouldInvert(orientation);
 
             int nodeCount = definition.bodyNodeData == null ? 0 : definition.bodyNodeData.Length;
             int len = nodeNames.Length;
             for (int i = 0; i < len; i++)
             {
-                node = part.FindAttachNode(nodeNames[i]);
+                AttachNode node = part.FindAttachNode(nodeNames[i]);
                 if (i < nodeCount)
                 {
                     data = definition.bodyNodeData[i];
-                    size = Mathf.RoundToInt(data.size * currentHorizontalScale);
-                    pos = data.position;
+                    int size = Mathf.RoundToInt(data.size * currentHorizontalScale);
+                    Vector3 pos = data.position;
                     pos.y *= currentVerticalScale;
                     pos.x *= currentHorizontalScale;
                     pos.z *= currentHorizontalScale;
@@ -900,7 +894,7 @@ namespace ROLib
                         pos.x = -pos.x;
                     }
                     pos.y += currentVerticalPosition;
-                    orient = data.orientation;
+                    Vector3 orient = data.orientation;
                     if (invert) { orient = -orient; orient.z = -orient.z; }
                     if (node == null)//create it
                     {
@@ -1070,8 +1064,8 @@ namespace ROLib
             string data = string.Empty;
             for (int i = 0; i < len; i++)
             {
-                if (i > 0) { data = data + ";"; }
-                data = data + colors[i].getPersistentData();
+                if (i > 0) data += ";";
+                data += colors[i].getPersistentData();
             }
             persistentData = data;
         }
@@ -1397,21 +1391,16 @@ namespace ROLib
             //if (invert) { upper = !upper; }
             if (currentDefinition.rcsPositionData != null)
             {
-                ModelAttachablePositionData mapd = null;
+                ModelAttachablePositionData mapd;
                 if (upper)//always 0th index in config
                 {
                     mapd = currentDefinition.rcsPositionData[0];
                 }
                 else//if both positions specified, will always be 1st index, else 0th
                 {
-                    if (currentDefinition.rcsPositionData.Length > 1)
-                    {
-                        mapd = currentDefinition.rcsPositionData[1];//lower def
-                    }
-                    else
-                    {
-                        mapd = currentDefinition.rcsPositionData[0];//default to upper def if no lower defined
-                    }
+                    // Lower definition [1] if defined, otherwise default to  Upper definition [0]
+                    int index = currentDefinition.rcsPositionData.Length > 1 ? 1 : 0;
+                    mapd = currentDefinition.rcsPositionData[index];
                 }
                 mapd.getModelPosition(currentHorizontalScale, currentVerticalScale, vPos, invert, out radius, out posY);
                 posY += getPlacementOffset();
