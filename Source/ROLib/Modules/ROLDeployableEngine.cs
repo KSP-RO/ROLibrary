@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
+﻿using System.Linq;
 
 namespace ROLib.Modules
 {
@@ -15,92 +11,50 @@ namespace ROLib.Modules
         /// <summary>
         /// engine ID for the engine module that this deployable engine module is responsible for
         /// </summary>
-        [KSPField]
-        public string engineID = "Engine";
+        [KSPField] public string engineID = "Engine";
+        [KSPField(isPersistant = true)] public string persistentState = ROLAnimState.STOPPED_START.ToString();
 
-        [KSPField(isPersistant = true)]
-        public String persistentState = ROLAnimState.STOPPED_START.ToString();
-
-        [Persistent]
-        public string configNodeData = string.Empty;
+        [Persistent] public string configNodeData = string.Empty;
 
         private bool initialized = false;
-                
         private ROLAnimationModule animationModule;
-
         private ModuleEnginesFX engineModule;
         
         [KSPAction("Activate Engine")]
-        public void deployEngineAction(KSPActionParam param)
-        {
-            deployEngineEvent();
-        }
+        public void DeployEngineAction(KSPActionParam _) => DeployEngineEvent();
 
         [KSPAction("Shutdown Engine")]
-        public void retractEngineAction(KSPActionParam param)
-        {
-            retractEngineEvent();
-        }
+        public void RetractEngineAction(KSPActionParam _) => RetractEngineEvent();
 
-        [KSPEvent(name = "deployEngineEvent", guiName = "Activate Engine", guiActive = true, guiActiveEditor = false)]
-        public void deployEngineEvent()
-        {
-            animationModule.onDeployEvent();
-        }
+        [KSPEvent(name = "DeployEngineEvent", guiName = "Activate Engine", guiActive = true)]
+        public void DeployEngineEvent() => animationModule.onDeployEvent();
 
-        [KSPEvent(name = "retractEngineEvent", guiName = "Shutdown Engine", guiActive = true, guiActiveEditor = false)]
-        public void retractEngineEvent()
+        [KSPEvent(name = "RetractEngineEvent", guiName = "Shutdown Engine", guiActive = true)]
+        public void RetractEngineEvent()
         {
-            if (engineModule.EngineIgnited)
-            {
+            if (engineModule && engineModule.EngineIgnited)
                 engineModule.Shutdown();
-            }
             animationModule.onRetractEvent();
         }
 
-        public void Update()
-        {
-            if (animationModule != null) { animationModule.Update(); }
-        }
+        public void Update() => animationModule?.Update();
 
-        public void Start()
+        public void OnAnimationStateChange(ROLAnimState newState)
         {
-            engineModule = null;
-            ModuleEnginesFX[] engines = part.GetComponents<ModuleEnginesFX>();
-            int len = engines.Length;
-            for (int i = 0; i < len; i++)
-            {
-                if (engines[i].engineID == engineID)
-                {
-                    engineModule = engines[i];
-                }
-                MonoBehaviour.print("UPDATE: engineID: " + engines[i]);
-            }
-            if (engineModule == null)
-            {
-                MonoBehaviour.print("ERROR: Could not locate engine by ID: " + engineID + " for part: " + part + " for ROLDeployableEngine.  This will cause errors during gameplay.  Setting engine to first engine module (if present)");                
-            }
-            setupEngineModuleGui();
-        }
-
-        public void onAnimationStateChange(ROLAnimState newState)
-        {
-            if (newState == ROLAnimState.STOPPED_END && HighLogic.LoadedSceneIsFlight)
-            {
+            if (newState == ROLAnimState.STOPPED_END && HighLogic.LoadedSceneIsFlight && engineModule)
                 engineModule.Activate();
-            }
         }
         
         public override void OnActive()
         {
             if (animationModule.animState == ROLAnimState.STOPPED_END)
             {
-                engineModule.Activate();
+                engineModule?.Activate();
             }
             else
             {
-                deployEngineEvent();
-                if (engineModule.EngineIgnited)
+                DeployEngineEvent();
+                if (engineModule && engineModule.EngineIgnited)
                 {
                     engineModule.Shutdown();
                 }
@@ -109,46 +63,46 @@ namespace ROLib.Modules
 
         public override void OnLoad(ConfigNode node)
         {
-            base.OnLoad(node);
-            if (string.IsNullOrEmpty(configNodeData)) { configNodeData = node.ToString(); }
-            initialize();
+            if (string.IsNullOrEmpty(configNodeData)) configNodeData = node.ToString();
         }
 
-        public override void OnStart(StartState state)
+        public override void OnStart(StartState state) => Initialize();
+
+        public override void OnStartFinished(StartState state)
         {
-            base.OnStart(state);
-            initialize();
+            engineModule = part.GetComponents<ModuleEnginesFX>().Where(x => x.engineID == engineID).FirstOrDefault();
+            if (engineModule == null)
+            {
+                engineModule = part.GetComponents<ModuleEnginesFX>().FirstOrDefault();
+                ROLLog.error($"ROLDeployableEngine.OnStartFinished(): Could not locate engine by ID: {engineID} on part {part}.  This will cause errors during gameplay.  Trying default: {engineModule}");
+            }
+            SetupEngineModuleGui();
         }
 
-        public void reInitialize()
-        {
-            initialized = false;
-            animationModule = null;
-            initialize();
-        }
-
-        private void initialize()
+        private void Initialize()
         {
             if (initialized) { return; }
             initialized = true;
             ConfigNode node = ROLUtils.parseConfigNode(configNodeData);
             AnimationData animData = new AnimationData(node.GetNode("ANIMATIONDATA"));
-            animationModule = new ROLAnimationModule(part, this, nameof(persistentState), null, nameof(deployEngineEvent), nameof(retractEngineEvent));
+            animationModule = new ROLAnimationModule(part, this, nameof(persistentState), null, nameof(DeployEngineEvent), nameof(RetractEngineEvent));
             animationModule.getSymmetryModule = m => ((ROLDeployableEngine)m).animationModule;
             animationModule.setupAnimations(animData, part.transform.ROLFindRecursive("model"), 0);
-            animationModule.onAnimStateChangeCallback = onAnimationStateChange;
+            animationModule.onAnimStateChangeCallback = OnAnimationStateChange;
         }
 
-        private void setupEngineModuleGui()
+        private void SetupEngineModuleGui()
         {
-            engineModule.Events[nameof(engineModule.Activate)].active = false;
-            engineModule.Events[nameof(engineModule.Shutdown)].active = false;
-            engineModule.Events[nameof(engineModule.Activate)].guiActive = false;
-            engineModule.Events[nameof(engineModule.Shutdown)].guiActive = false;
-            engineModule.Actions[nameof(engineModule.ActivateAction)].active = false;
-            engineModule.Actions[nameof(engineModule.ShutdownAction)].active = false;
-            engineModule.Actions[nameof(engineModule.OnAction)].active = false;
+            if (engineModule is ModuleEnginesFX)
+            {
+                engineModule.Events[nameof(engineModule.Activate)].active = false;
+                engineModule.Events[nameof(engineModule.Shutdown)].active = false;
+                engineModule.Events[nameof(engineModule.Activate)].guiActive = false;
+                engineModule.Events[nameof(engineModule.Shutdown)].guiActive = false;
+                engineModule.Actions[nameof(engineModule.ActivateAction)].active = false;
+                engineModule.Actions[nameof(engineModule.ShutdownAction)].active = false;
+                engineModule.Actions[nameof(engineModule.OnAction)].active = false;
+            }
         }
-
     }
 }
