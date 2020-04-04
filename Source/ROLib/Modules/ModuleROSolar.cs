@@ -69,13 +69,14 @@ namespace ROLib
             panelLength = coreModule.definition.panelLength;
             panelWidth = coreModule.definition.panelWidth;
             panelScale = 1.0f;
-            this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
-            this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
-            this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
+            this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep);
+            this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep);
+            this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep);
             ModelChangedHandler(true);
             prevLength = panelLength;
             prevWidth = panelWidth;
             prevScale = panelScale;
+            MonoUtilities.RefreshPartContextWindow(part);
         }
 
         [KSPField] public string solarPanelType = "static";
@@ -270,7 +271,7 @@ namespace ROLib
         {
             // Set up the core variant UI control
             string[] variantNames = ROLUtils.getNames(variantSets.Values, m => m.variantName);
-            this.ROLupdateUIChooseOptionControl(nameof(currentVariant), variantNames, variantNames, true, currentVariant);
+            this.ROLupdateUIChooseOptionControl(nameof(currentVariant), variantNames, variantNames);
             Fields[nameof(currentVariant)].guiActiveEditor = variantSets.Count > 1;
             Fields[nameof(currentVariant)].uiControlEditor.onFieldChanged = (a, b) =>
             {
@@ -302,16 +303,11 @@ namespace ROLib
                 Fields[nameof(panelLength)].guiActiveEditor = lengthWidth;
                 Fields[nameof(panelWidth)].guiActiveEditor = lengthWidth;
                 Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
-                if (!lengthWidth)
-                {
-                    this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
-                }
-                else
-                {
-                    this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
-                    this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
-                }
+                this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep);
+                this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep);
+                this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep);
                 ModelChangedHandlerWithSymmetry(true, true);
+                MonoUtilities.RefreshPartContextWindow(part);
             };
 
             Fields[nameof(panelLength)].uiControlEditor.onFieldChanged =
@@ -345,23 +341,18 @@ namespace ROLib
             };
 
             Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
-            if (!lengthWidth)
-                this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep, true, panelScale);
+            Fields[nameof(panelLength)].guiActiveEditor = (lengthWidth && maxLength != minLength);
+            Fields[nameof(panelWidth)].guiActiveEditor = (lengthWidth && maxLength != minLength);
+
+            this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep);
+            this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep);
+            this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep);
 
             Fields[nameof(TechLevel)].uiControlEditor.onFieldChanged = (a, b) =>
             {
                 ModelChangedHandlerWithSymmetry(true, true);
             };
 
-            if (maxLength == minLength || !lengthWidth)
-                Fields[nameof(panelLength)].guiActiveEditor = false;
-            else
-                this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep, true, panelLength);
-
-            if (maxWidth == minWidth || !lengthWidth)
-                Fields[nameof(panelWidth)].guiActiveEditor = false;
-            else
-                this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep, true, panelWidth);
         }
 
         private void SetMaxTechLevel()

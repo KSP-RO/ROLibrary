@@ -8,40 +8,24 @@ namespace ROLib
     public static class ROLExtensions
     {
         #region ConfigNode extension methods
-
-        public static String[] ROLGetStringValues(this ConfigNode node, String name, bool reverse = false)
+        private readonly static List<string> cacheList = new List<string>();
+        public static string[] ROLGetStringValues(this ConfigNode node, string name, bool reverse = false)
         {
             string[] values = node.GetValues(name);
-            int l = values.Length;
             if (reverse)
             {
-                int len = values.Length;
-                string[] returnValues = new string[len];
-                for (int i = 0, k = len - 1; i < len; i++, k--)
-                {
-                    returnValues[i] = values[k];
-                }
-                return returnValues;
+                cacheList.Clear();
+                cacheList.AddRange(values);
+                cacheList.Reverse();
+                values = cacheList.ToArray();
             }
             return values;
         }
 
-        public static string[] ROLGetStringValues(this ConfigNode node, string name, string[] defaults, bool reverse = false)
-        {
-            if (node.HasValue(name)) { return node.ROLGetStringValues(name, reverse); }
-            return defaults;
-        }
+        public static string[] ROLGetStringValues(this ConfigNode node, string name, string[] defaults, bool reverse = false) => 
+            node.HasValue(name) ? node.ROLGetStringValues(name, reverse) : defaults;
 
-        public static string ROLGetStringValue(this ConfigNode node, String name, String defaultValue)
-        {
-            String value = node.GetValue(name);
-            return value == null ? defaultValue : value;
-        }
-
-        public static string ROLGetStringValue(this ConfigNode node, String name)
-        {
-            return ROLGetStringValue(node, name, "");
-        }
+        public static string ROLGetStringValue(this ConfigNode node, string name, string defaultValue = "") => node.GetValue(name) ?? defaultValue;
 
         public static bool[] ROLGetBoolValues(this ConfigNode node, String name)
         {
@@ -55,24 +39,9 @@ namespace ROLib
             return vals;
         }
 
-        public static bool ROLGetBoolValue(this ConfigNode node, String name, bool defaultValue)
+        public static bool ROLGetBoolValue(this ConfigNode node, string name, bool defaultValue = false)
         {
-            String value = node.GetValue(name);
-            if (value == null) { return defaultValue; }
-            try
-            {
-                return bool.Parse(value);
-            }
-            catch (Exception e)
-            {
-                MonoBehaviour.print(e.Message);
-            }
-            return defaultValue;
-        }
-
-        public static bool ROLGetBoolValue(this ConfigNode node, String name)
-        {
-            return ROLGetBoolValue(node, name, false);
+            return node.GetValue(name) is string value && bool.TryParse(value, out bool result) ? result : defaultValue;
         }
 
         public static float[] ROLGetFloatValues(this ConfigNode node, String name, float[] defaults)
@@ -88,15 +57,8 @@ namespace ROLib
             return defaults;
         }
 
-        public static float[] ROLGetFloatValues(this ConfigNode node, String name)
-        {
-            return ROLGetFloatValues(node, name, new float[] { });
-        }
-
-        public static float[] ROLGetFloatValuesCSV(this ConfigNode node, String name)
-        {
-            return ROLGetFloatValuesCSV(node, name, new float[] { });
-        }
+        public static float[] ROLGetFloatValues(this ConfigNode node, string name) => ROLGetFloatValues(node, name, new float[] { });
+        public static float[] ROLGetFloatValuesCSV(this ConfigNode node, string name) => ROLGetFloatValuesCSV(node, name, new float[] { });
 
         public static float[] ROLGetFloatValuesCSV(this ConfigNode node, String name, float[] defaults)
         {
@@ -114,64 +76,19 @@ namespace ROLib
             return values;
         }
 
-        public static float ROLGetFloatValue(this ConfigNode node, String name, float defaultValue)
+        public static float ROLGetFloatValue(this ConfigNode node, string name, float defaultValue = 0)
         {
-            String value = node.GetValue(name);
-            if (value == null) { return defaultValue; }
-            try
-            {
-                return float.Parse(value);
-            }
-            catch (Exception e)
-            {
-                MonoBehaviour.print(e.Message);
-            }
-            return defaultValue;
+            return node.GetValue(name) is string value && float.TryParse(value, out float result) ? result : defaultValue;
         }
 
-        public static float ROLGetFloatValue(this ConfigNode node, String name)
+        public static double ROLGetDoubleValue(this ConfigNode node, String name, double defaultValue = 0)
         {
-            return ROLGetFloatValue(node, name, 0);
+            return node.GetValue(name) is string value && double.TryParse(value, out double result) ? result : defaultValue;
         }
 
-        public static double ROLGetDoubleValue(this ConfigNode node, String name, double defaultValue)
+        public static int ROLGetIntValue(this ConfigNode node, String name, int defaultValue = 0)
         {
-            String value = node.GetValue(name);
-            if (value == null) { return defaultValue; }
-            try
-            {
-                return double.Parse(value);
-            }
-            catch (Exception e)
-            {
-                MonoBehaviour.print(e.Message);
-            }
-            return defaultValue;
-        }
-
-        public static double ROLGetDoubleValue(this ConfigNode node, String name)
-        {
-            return ROLGetDoubleValue(node, name, 0);
-        }
-
-        public static int ROLGetIntValue(this ConfigNode node, String name, int defaultValue)
-        {
-            String value = node.GetValue(name);
-            if (value == null) { return defaultValue; }
-            try
-            {
-                return int.Parse(value);
-            }
-            catch (Exception e)
-            {
-                MonoBehaviour.print(e.Message);
-            }
-            return defaultValue;
-        }
-
-        public static int ROLGetIntValue(this ConfigNode node, String name)
-        {
-            return ROLGetIntValue(node, name, 0);
+            return node.GetValue(name) is string value && int.TryParse(value, out int result) ? result : defaultValue;
         }
 
         public static int[] ROLGetIntValues(this ConfigNode node, string name, int[] defaultValues = null)
@@ -188,38 +105,14 @@ namespace ROLib
             return values;
         }
 
-        public static Vector3 ROLGetVector3(this ConfigNode node, String name, Vector3 defaultValue)
+        public static Vector3 ROLGetVector3(this ConfigNode node, string name, Vector3 defaultValue)
         {
-            String value = node.GetValue(name);
-            if (value == null)
-            {
-                return defaultValue;
-            }
-            String[] vals = value.Split(',');
-            if (vals.Length < 3)
-            {
-                ROLLog.error("ERROR parsing values for Vector3 from input: " + value + ". found less than 3 values, cannot create Vector3");
-                return defaultValue;
-            }
-            return new Vector3((float)ROLUtils.safeParseDouble(vals[0]), (float)ROLUtils.safeParseDouble(vals[1]), (float)ROLUtils.safeParseDouble(vals[2]));
+            return node.GetValue(name) is string value && value.Split(',') is string[] vals && vals.Length >= 3
+                ? new Vector3((float)ROLUtils.safeParseDouble(vals[0]), (float)ROLUtils.safeParseDouble(vals[1]), (float)ROLUtils.safeParseDouble(vals[2]))
+                : defaultValue;
         }
 
-        public static Vector3 ROLGetVector3(this ConfigNode node, String name)
-        {
-            String value = node.GetValue(name);
-            if (value == null)
-            {
-                ROLLog.error("ERROR: No value for name: " + name + " found in config node: " + node);
-                return Vector3.zero;
-            }
-            String[] vals = value.Split(',');
-            if (vals.Length < 3)
-            {
-                ROLLog.error("ERROR parsing values for Vector3 from input: " + value + ". found less than 3 values, cannot create Vector3");
-                return Vector3.zero;
-            }
-            return new Vector3((float)ROLUtils.safeParseDouble(vals[0]), (float)ROLUtils.safeParseDouble(vals[1]), (float)ROLUtils.safeParseDouble(vals[2]));
-        }
+        public static Vector3 ROLGetVector3(this ConfigNode node, String name) => ROLGetVector3(node, name, Vector3.zero);
 
         public static FloatCurve ROLGetFloatCurve(this ConfigNode node, String name, FloatCurve defaultValue = null)
         {
@@ -440,59 +333,35 @@ namespace ROLib
 
         public static Vector3 ROLgetTransformAxis(this Transform transform, Axis axis)
         {
-            switch (axis)
+            return axis switch
             {
-                case Axis.XPlus:
-                    return transform.right;
-                case Axis.XNeg:
-                    return -transform.right;
-                case Axis.YPlus:
-                    return transform.up;
-                case Axis.YNeg:
-                    return -transform.up;
-                case Axis.ZPlus:
-                    return transform.forward;
-                case Axis.ZNeg:
-                    return -transform.forward;
-                default:
-                    return transform.forward;
-            }
+                Axis.XPlus => transform.right,
+                Axis.XNeg => -transform.right,
+                Axis.YPlus => transform.up,
+                Axis.YNeg => -transform.up,
+                Axis.ZPlus => transform.forward,
+                Axis.ZNeg => -transform.forward,
+                _ => transform.forward,
+            };
         }
 
         public static Vector3 ROLgetLocalAxis(this Transform transform, Axis axis)
         {
-            switch (axis)
+            return axis switch
             {
-                case Axis.XPlus:
-                    return Vector3.right;
-                case Axis.XNeg:
-                    return Vector3.left;
-                case Axis.YPlus:
-                    return Vector3.up;
-                case Axis.YNeg:
-                    return Vector3.down;
-                case Axis.ZPlus:
-                    return Vector3.forward;
-                case Axis.ZNeg:
-                    return Vector3.back;
-                default:
-                    return Vector3.forward;
-            }
+                Axis.XPlus => Vector3.right,
+                Axis.XNeg => Vector3.left,
+                Axis.YPlus => Vector3.up,
+                Axis.YNeg => Vector3.down,
+                Axis.ZPlus => Vector3.forward,
+                Axis.ZNeg => Vector3.back,
+                _ => Vector3.forward,
+            };
         }
 
         #endregion
 
         #region PartModule extensionMethods
-
-        public static void ROLsetFieldEnabledEditor(this PartModule module, string fieldName, bool active)
-        {
-            if (module.Fields[fieldName] is BaseField f) f.guiActiveEditor = active;
-        }
-
-        public static void ROLsetFieldEnabledFlight(this PartModule module, string fieldName, bool active)
-        {
-            if (module.Fields[fieldName] is BaseField f) f.guiActive = active;
-        }
 
         private static UI_Control GetWidget(PartModule module, string fieldName)
         {
@@ -501,7 +370,7 @@ namespace ROLib
             return HighLogic.LoadedSceneIsEditor ? bf.uiControlEditor : bf.uiControlFlight;
         }
 
-        public static void ROLupdateUIFloatEditControl(this PartModule module, string fieldName, float min, float max, float incLarge, float incSmall, float incSlide, bool forceUpdate, float forceVal)
+        public static void ROLupdateUIFloatEditControl(this PartModule module, string fieldName, float min, float max, float incLarge, float incSmall, float incSlide)
         {
             if (GetWidget(module, fieldName) is UI_FloatEdit widget)
             {
@@ -510,18 +379,6 @@ namespace ROLib
                 widget.incrementLarge = incLarge;
                 widget.incrementSmall = incSmall;
                 widget.incrementSlide = incSlide;
-                if (forceUpdate)
-                    MonoUtilities.RefreshPartContextWindow(module.part);
-            }
-        }
-
-        public static void ROLupdateUIFloatEditControl(this PartModule module, string fieldName, float newValue)
-        {
-            if (GetWidget(module, fieldName) is UI_FloatEdit widget)
-            {
-                BaseField field = module.Fields[fieldName];
-                field.SetValue(newValue, field.host);
-                MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
@@ -532,9 +389,7 @@ namespace ROLib
         /// <param name="fieldName"></param>
         /// <param name="options"></param>
         /// <param name="display"></param>
-        /// <param name="forceUpdate"></param>
-        /// <param name="forceVal"></param>
-        public static void ROLupdateUIChooseOptionControl(this PartModule module, string fieldName, string[] options, string[] display, bool forceUpdate, string forceVal="")
+        public static void ROLupdateUIChooseOptionControl(this PartModule module, string fieldName, string[] options, string[] display)
         {
             if (display.Length == 0 && options.Length > 0) { display = new string[] { "NONE" }; }
             if (options.Length == 0) { options = new string[] { "NONE" }; }
@@ -543,23 +398,19 @@ namespace ROLib
             {
                 widget.display = display;
                 widget.options = options;
-                if (forceUpdate)
-                    MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
-        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float[] intervals, float[] increments, bool forceUpdate, float forceValue=0)
+        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float[] intervals, float[] increments)
         {
             if (GetWidget(module, fieldName) is UI_ScaleEdit widget)
             {
                 widget.intervals = intervals;
                 widget.incrementSlide = increments;
-                if (forceUpdate)
-                    MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
-        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float min, float max, float increment, bool flight, bool editor, bool forceUpdate, float forceValue = 0)
+        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float min, float max, float increment, bool flight, bool editor)
         {
             float seg = (max - min) / increment;
             int numOfIntervals = Mathf.RoundToInt(seg) + 1;
@@ -580,26 +431,16 @@ namespace ROLib
                 intervals[i] = min + (increment * i);
                 increments[i] = sliderInterval;
             }
-            module.ROLupdateUIScaleEditControl(fieldName, intervals, increments, forceUpdate, forceValue);
+            module.ROLupdateUIScaleEditControl(fieldName, intervals, increments);
         }
 
-        public static void ROLupdateUIScaleEditControl(this PartModule module, string fieldName, float value)
-        {
-            if (GetWidget(module, fieldName) is UI_ScaleEdit widget && widget.partActionItem is UIPartActionScaleEdit ctr)
-            {
-                MonoUtilities.RefreshPartContextWindow(module.part);
-            }
-        }
-
-        public static void ROLupdateUIFloatRangeControl(this PartModule module, string fieldName, float min, float max, float inc, bool forceUpdate)
+        public static void ROLupdateUIFloatRangeControl(this PartModule module, string fieldName, float min, float max, float inc)
         {
             if (GetWidget(module, fieldName) is UI_FloatRange widget)
             {
                 widget.minValue = min;
                 widget.maxValue = max;
                 widget.stepIncrement = inc;
-                if (forceUpdate)
-                    MonoUtilities.RefreshPartContextWindow(module.part);
             }
         }
 
