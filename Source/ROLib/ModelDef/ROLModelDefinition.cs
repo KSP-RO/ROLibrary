@@ -72,9 +72,9 @@ namespace ROLib
         public readonly float panelArea = 1.0f;
         public readonly string secondaryTransformName = "suncatcher";
         public readonly string pivotName = "sunPivot";
-        public readonly float surfaceNodeX = 1.0f;
-        public readonly float surfaceNodeY = 1.0f;
-        public readonly float surfaceNodeZ = 1.0f;
+        public readonly float surfaceNodeX = 0;
+        public readonly float surfaceNodeY = 0;
+        public readonly float surfaceNodeZ = 0;
         public readonly bool lengthWidth = false;
         public readonly string animationName = "fakeAnimation";
 
@@ -323,26 +323,17 @@ namespace ROLib
 
             //Load texture set definitions.
             List<TextureSet> textureSetList = new List<TextureSet>();
-            //first load any of the global sets that are specified by name
-            string[] textureSetNames = node.ROLGetStringValues("textureSet");
-            len = textureSetNames.Length;
-            for (int i = 0; i < len; i++)
+            foreach (string tsName in node.ROLGetStringValues("textureSet"))
             {
-                TextureSet ts = TexturesUnlimitedLoader.getTextureSet(textureSetNames[i]);
-                if (ts != null) { textureSetList.Add(ts); }
+                if (TexturesUnlimitedLoader.getTextureSet(tsName) is TextureSet ts)
+                    textureSetList.Add(ts);
             }
-
             //then load any of the model-specific sets
-            ConfigNode[] textureSetNodes = node.GetNodes("KSP_TEXTURE_SET");
-            len = textureSetNodes.Length;
-            textureSets = new TextureSet[len];
-            for (int i = 0; i < len; i++)
+            foreach (ConfigNode tsNode in node.GetNodes("KSP_TEXTURE_SET"))
             {
-                textureSetList.Add(new TextureSet(textureSetNodes[i]));
+                textureSetList.Add(new TextureSet(tsNode));
             }
             textureSets = textureSetList.ToArray();
-            textureSetList.Clear();
-            textureSetList = null;
 
             //Load the default texture set specification
             defaultTextureSet = node.ROLGetStringValue("defaultTextureSet");
@@ -453,20 +444,14 @@ namespace ROLib
         /// Return a string array containing the names of the texture sets that are available for this model definition.
         /// </summary>
         /// <returns></returns>
-        public string[] getTextureSetNames()
-        {
-            return ROLUtils.getNames(textureSets, m => m.name);
-        }
+        public string[] getTextureSetNames() => ROLUtils.getNames(textureSets, m => m.name);
 
         /// <summary>
         /// Returns a string array of the UI-label titles for the texture sets for this model definition.<para/>
         /// Returned in the same order as getTextureSetNames(), so they can be used in with basic indexing to map one value to another.
         /// </summary>
         /// <returns></returns>
-        public string[] getTextureSetTitles()
-        {
-            return ROLUtils.getNames(textureSets, m => m.title);
-        }
+        public string[] getTextureSetTitles() => ROLUtils.getNames(textureSets, m => m.title);
 
         /// <summary>
         /// Return the TextureSet data for the input texture set name.<para/>
@@ -474,19 +459,13 @@ namespace ROLib
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public TextureSet findTextureSet(string name)
-        {
-            return Array.Find(textureSets, m => m.name == name);
-        }
+        public TextureSet findTextureSet(string name) => Array.Find(textureSets, m => m.name == name);
 
         /// <summary>
         /// Returns the default texture set as defined in the model definition config
         /// </summary>
         /// <returns></returns>
-        public TextureSet getDefaultTextureSet()
-        {
-            return findTextureSet(defaultTextureSet);
-        }
+        public TextureSet getDefaultTextureSet() => findTextureSet(defaultTextureSet);
 
         /// <summary>
         /// Return true/false if this model should be inverted/rotated based on the input use-orientation and the models config-defined orientation.<para/>
@@ -499,10 +478,7 @@ namespace ROLib
             return (orientation == ModelOrientation.BOTTOM && this.orientation == ModelOrientation.TOP) || (orientation == ModelOrientation.TOP && this.orientation == ModelOrientation.BOTTOM);
         }
 
-        public override string ToString()
-        {
-            return "ModelDef[ " + name + " ]";
-        }
+        public override string ToString() => $"ModelDef[ {name} ]";
 
     }
 
@@ -511,7 +487,6 @@ namespace ROLib
     /// </summary>
     public class ModelEngineTransformData
     {
-
         public readonly string thrustTransformName;
         public readonly string gimbalTransformName;
         public readonly float gimbalAdjustmentRange;//how far the gimbal can be adjusted from reference while in the editor
@@ -526,23 +501,13 @@ namespace ROLib
             gimbalFlightRange = node.ROLGetFloatValue("gimbalFlightRange", 0);
         }
 
-        public void renameThrustTransforms(Transform root, string destinationName)
+        public void renameThrustTransforms(Transform root, string destinationName) => RenameTransforms(root, thrustTransformName, destinationName);
+        public void renameGimbalTransforms(Transform root, string destinationName) => RenameTransforms(root, gimbalTransformName, destinationName);
+        public void RenameTransforms(Transform root, string transformName, string destinationName)
         {
-            Transform[] trs = root.ROLFindChildren(thrustTransformName);
-            int len = trs.Length;
-            for (int i = 0; i < len; i++)
+            foreach (Transform tr in root.FindChildren(transformName))
             {
-                trs[i].gameObject.name = trs[i].name = destinationName;
-            }
-        }
-
-        public void renameGimbalTransforms(Transform root, string destinationName)
-        {
-            Transform[] trs = root.ROLFindChildren(gimbalTransformName);
-            int len = trs.Length;
-            for (int i = 0; i < len; i++)
-            {
-                trs[i].gameObject.name = trs[i].name = destinationName;
+                tr.gameObject.name = tr.name = destinationName;
             }
         }
     }
@@ -553,7 +518,6 @@ namespace ROLib
     /// </summary>
     public class ModelEngineThrustData
     {
-
         public readonly float maxThrust;
         public readonly float minThrust;
         public readonly float[] thrustSplit;
@@ -624,18 +588,13 @@ namespace ROLib
             enableRoll = node.GetBoolValue("enableRoll", true);
         }
 
-        public float getThrust(float scale)
-        {
-            return scale * scale * rcsThrust;
-        }
+        public float getThrust(float scale) => rcsThrust * scale * scale;
 
         public void renameTransforms(Transform root, string destinationName)
         {
-            Transform[] trs = root.FindChildren(thrustTransformName);
-            int len = trs.Length;
-            for (int i = 0; i < len; i++)
+            foreach (Transform tr in root.FindChildren(thrustTransformName))
             {
-                trs[i].gameObject.name = trs[i].name = destinationName;
+                tr.gameObject.name = tr.name = destinationName;
             }
             //TODO -- if transform array is null, add a single dummy transform of the given name to stop stock modules' logspam
         }
@@ -778,86 +737,53 @@ namespace ROLib
         {
             if (modelMeshes.Length > 0)
             {
-                Transform[] trs = modelRoot.transform.ROLGetAllChildren();
                 List<Transform> toKeep = new List<Transform>();
                 List<Transform> toCheck = new List<Transform>();
-                int len = trs.Length;
-                for (int i = 0; i < len; i++)
+                foreach (Transform tr in modelRoot.transform.ROLGetAllChildren())
                 {
-                    if (trs[i] == null)
+                    if (tr is Transform)
                     {
-                        continue;
-                    }
-                    else if (isActiveMesh(trs[i].name))
-                    {
-                        toKeep.Add(trs[i]);
-                    }
-                    else
-                    {
-                        toCheck.Add(trs[i]);
+                        if (IsActiveMesh(tr.name)) toKeep.Add(tr); else toCheck.Add(tr);
                     }
                 }
                 List<Transform> transformsToDelete = new List<Transform>();
-                len = toCheck.Count;
-                for (int i = 0; i < len; i++)
+                //transformsToDelete.AddRange(toCheck.Where(x => !IsParent(x, toKeep)));
+                foreach (Transform tr in toCheck)
                 {
-                    if (!isParent(toCheck[i], toKeep))
+                    if (!IsParent(tr, toKeep))
                     {
-                        transformsToDelete.Add(toCheck[i]);
+                        transformsToDelete.Add(tr);
                     }
                 }
-                len = transformsToDelete.Count;
-                for (int i = 0; i < len; i++)
+                foreach (Transform tr in transformsToDelete)
                 {
-                    GameObject.DestroyImmediate(transformsToDelete[i].gameObject);
+                    GameObject.DestroyImmediate(tr.gameObject);
                 }
             }
-            if (renameMeshes.Length > 0)
+            foreach (string renameMesh in renameMeshes)
             {
-                string[] split;
-                string oldName, newName;
-                int len = renameMeshes.Length;
-                for (int i = 0; i < len; i++)
+                string[] split = renameMesh.Split(',');
+                if (split.Length < 2)
                 {
-                    split = renameMeshes[i].Split(',');
-                    if (split.Length < 2)
-                    {
-                        ROLLog.error("ERROR: Mesh rename format invalid, must specify <oldName>,<newName>");
-                        continue;
-                    }
-                    oldName = split[0].Trim();
-                    newName = split[1].Trim();
-                    Transform[] trs = modelRoot.transform.ROLFindChildren(oldName);
-                    int len2 = trs.Length;
-                    for (int k = 0; k < len2; k++)
-                    {
-                        trs[k].name = newName;
-                    }
+                    ROLLog.error("ERROR: Mesh rename format invalid, must specify <oldName>,<newName>");
+                    continue;
+                }
+                string oldName = split[0].Trim();
+                string newName = split[1].Trim();
+                foreach (Transform tr in modelRoot.transform.ROLFindChildren(oldName))
+                {
+                    tr.name = newName;
                 }
             }
         }
 
-        private bool isActiveMesh(string transformName)
-        {
-            int len = modelMeshes.Length;
-            bool found = false;
-            for (int i = 0; i < len; i++)
-            {
-                if (modelMeshes[i] == transformName)
-                {
-                    found = true;
-                    break;
-                }
-            }
-            return found;
-        }
+        private bool IsActiveMesh(string transformName) => modelMeshes.Contains(transformName);
 
-        private bool isParent(Transform toCheck, List<Transform> children)
+        private bool IsParent(Transform toCheck, List<Transform> children)
         {
-            int len = children.Count;
-            for (int i = 0; i < len; i++)
+            foreach (Transform child in children)
             {
-                if (children[i].ROLisParent(toCheck)) { return true; }
+                if (child.ROLisParent(toCheck)) { return true; }
             }
             return false;
         }
@@ -924,32 +850,20 @@ namespace ROLib
             //merge meshes into singular mesh object
             //copy material/rendering settings from one of the original meshes
             List<CombineInstance> cis = new List<CombineInstance>();
-            CombineInstance ci;
-            Transform[] trs;
-            int len = meshNames.Length;
-            int trsLen;
-            MeshFilter mm;
-            for (int i = 0; i < len; i++)
+            foreach (string meshName in meshNames)
             {
-                trs = root.ROLFindChildren(meshNames[i]);
-                trsLen = trs.Length;
-                for (int k = 0; k < trsLen; k++)
+                foreach (Transform tr in root.ROLFindChildren(meshName))
                 {
                     //locate mesh filter from specified mesh(es)
-                    mm = trs[k].GetComponent<MeshFilter>();
-                    //if mesh did not exist, skip it
-                    //TODO log error on missing mesh on specified transform
-                    if (mm == null) { continue; }
-                    ci = new CombineInstance();
-                    ci.mesh = mm.sharedMesh;
-                    ci.transform = trs[k].localToWorldMatrix;
-                    cis.Add(ci);
-                    //if we don't currently have a reference to a material, grab a ref to/copy of the shared material
-                    //for the current mesh(es).  These must all use the same materials
-                    if (material == null)
+                    if (tr.GetComponent<MeshFilter>() is MeshFilter mm)
                     {
-                        Renderer mr = trs[k].GetComponent<Renderer>();
-                        material = mr.material;//grab a NON-shared material reference
+                        CombineInstance ci = new CombineInstance();
+                        ci.mesh = mm.sharedMesh;
+                        ci.transform = tr.localToWorldMatrix;
+                        cis.Add(ci);
+                        //if we don't currently have a reference to a material, grab a ref to/copy of the shared material
+                        //for the current mesh(es).  These must all use the same materials
+                        material ??= tr.GetComponent<Renderer>().material;
                     }
                 }
             }
@@ -958,24 +872,14 @@ namespace ROLib
             //update the material for the newly combined mesh
             //add mesh-renderer component if necessary
             Renderer renderer = target.GetComponent<Renderer>();
-            if (renderer == null)
-            {
-                renderer = target.gameObject.AddComponent<MeshRenderer>();
-            }
+            renderer ??= target.gameObject.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
 
             //parent the new output GO to the specified parent
             //or parent target transform to the input root if no parent is specified
-            if (!string.IsNullOrEmpty(parentTransform))
-            {
-                Transform parent = root.ROLFindRecursive(parentTransform);
-            }
-            else
-            {
-                target.parent = root;
-            }
+            target.parent = (!string.IsNullOrEmpty(parentTransform) && root.ROLFindRecursive(parentTransform) is Transform parent)
+                            ? parent : root;
         }
-
     }
 
     /// <summary>
@@ -1015,7 +919,7 @@ namespace ROLib
             }
         }
 
-        public void setHeightExplicit(ROLModelDefinition def, GameObject root, float dScale, float height, ModelOrientation orientation)
+        public void SetHeightExplicit(ROLModelDefinition def, GameObject root, float dScale, float height, ModelOrientation orientation)
         {
             float vScale = height / def.height;
             setHeightFromScale(def, root, dScale, vScale, orientation);
@@ -1024,46 +928,41 @@ namespace ROLib
         public void setHeightFromScale(ROLModelDefinition def, GameObject root, float dScale, float vScale, ModelOrientation orientation)
         {
             float desiredHeight = def.height * vScale;
-            float staticHeight = getStaticHeight() * dScale;
+            float staticHeight = GetStaticHeight() * dScale;
             float neededScaleHeight = desiredHeight - staticHeight;
 
             //iterate through scaleable transforms, calculate total height of scaleable transforms; use this height to determine 'percent share' of needed scale height for each transform
-            int len = compoundTransformData.Length;
             float totalScaleableHeight = 0f;
-            for (int i = 0; i < len; i++)
+            foreach (CompoundModelTransformData data in compoundTransformData)
             {
-                totalScaleableHeight += compoundTransformData[i].canScaleHeight ? compoundTransformData[i].height : 0f;
+                totalScaleableHeight += data.canScaleHeight ? data.height : 0;
             }
 
             float pos = 0f;//pos starts at origin, is incremented according to transform height along 'dir'
             float dir = orientation == ModelOrientation.BOTTOM ? -1f : 1f;//set from model orientation, either +1 or -1 depending on if origin is at botom or top of model (ModelOrientation.TOP vs ModelOrientation.BOTTOM)
             float localVerticalScale = 1f;
-            Transform[] trs;
-            int len2;
             float percent, scale, height;
 
-            for (int i = 0; i < len; i++)
+            foreach (CompoundModelTransformData data in compoundTransformData)
             {
-                percent = compoundTransformData[i].canScaleHeight ? compoundTransformData[i].height / totalScaleableHeight : 0f;
+                percent = data.canScaleHeight ? data.height / totalScaleableHeight : 0f;
                 height = percent * neededScaleHeight;
-                scale = height / compoundTransformData[i].height;
+                scale = height / data.height;
 
-                trs = root.transform.ROLFindChildren(compoundTransformData[i].name);
-                len2 = trs.Length;
-                for (int k = 0; k < len2; k++)
+                foreach (Transform tr in root.transform.ROLFindChildren(data.name))
                 {
-                    trs[k].localPosition = compoundTransformData[i].vScaleAxis * (pos + compoundTransformData[i].offset * dScale);
-                    if (compoundTransformData[i].canScaleHeight)
+                    tr.localPosition = data.vScaleAxis * (pos + data.offset * dScale);
+                    if (data.canScaleHeight)
                     {
                         pos += dir * height;
                         localVerticalScale = scale;
                     }
                     else
                     {
-                        pos += dir * dScale * compoundTransformData[i].height;
+                        pos += dir * dScale * data.height;
                         localVerticalScale = dScale;
                     }
-                    trs[k].localScale = getScaleVector(dScale, localVerticalScale, compoundTransformData[i].vScaleAxis);
+                    tr.localScale = getScaleVector(dScale, localVerticalScale, data.vScaleAxis);
                 }
             }
         }
@@ -1104,17 +1003,15 @@ namespace ROLib
         /// Returns the sum of non-scaleable transform heights from the compound model data.
         /// </summary>
         /// <returns></returns>
-        private float getStaticHeight()
+        private float GetStaticHeight()
         {
             float val = 0f;
-            int len = compoundTransformData.Length;
-            for (int i = 0; i < len; i++)
+            foreach (CompoundModelTransformData data in compoundTransformData)
             {
-                if (!compoundTransformData[i].canScaleHeight) { val += compoundTransformData[i].height; }
+                if (!data.canScaleHeight) { val += data.height; }
             }
             return val;
         }
-
     }
 
     /// <summary>
@@ -1141,6 +1038,4 @@ namespace ROLib
             vScaleAxis = node.ROLGetVector3("axis", Vector3.up);
         }
     }
-
-
 }
