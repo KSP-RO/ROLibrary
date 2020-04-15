@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -68,7 +68,6 @@ namespace ROLib
 
         public override void OnAwake()
         {
-            base.OnAwake();
             heatDissipationCurve.Add(0f, 0.2f);
             heatDissipationCurve.Add(1f, 1f);
 
@@ -89,27 +88,14 @@ namespace ROLib
 
         public override void OnStart(StartState state)
         {
-            base.OnStart(state);
-            initialize();
-        }
-
-        public void FixedUpdate()
-        {
-            if (!HighLogic.LoadedSceneIsFlight) { return; }
-            updateHeat();
-        }
-
-        private void initialize()
-        {
             locateAnimatedTransforms();
             locateEngineModule();
         }
 
-        public void reInitialize()
+        public void FixedUpdate()
         {
-            animatedRenderers = null;
-            engineModule = null;
-            initialize();
+            if (HighLogic.LoadedSceneIsFlight)
+                updateHeat();
         }
 
         private void locateEngineModule()
