@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace ROLib
@@ -103,13 +104,7 @@ namespace ROLib
             engineModule = null;
             ModuleEngines[] engines = part.GetComponents<ModuleEngines>();
             int len = engines.Length;
-            for (int i = 0; i < len; i++)
-            {
-                if (engines[i].engineID == engineID)
-                {
-                    engineModule = engines[i];
-                }
-            }
+            engineModule = part.GetComponents<ModuleEngines>().FirstOrDefault(x => x.engineID == engineID);
             if (engineModule == null)
             {
                 MonoBehaviour.print("ERROR: Could not locate engine by ID: " + engineID + " for part: " + part + " for ROLAnimateEngineHeat.  This will cause errors during gameplay.  Setting engine to first engine module (if present)");
@@ -121,10 +116,9 @@ namespace ROLib
         {
             List<Renderer> renderers = new List<Renderer>();
             Transform[] animatedTransforms = part.transform.ROLFindChildren(meshName);
-            int len = animatedTransforms.Length;
-            for (int i = 0; i < len; i++)
+            foreach (var animatedTransform in animatedTransforms)
             {
-                renderers.AddRange(animatedTransforms[i].GetComponentsInChildren<Renderer>(false));
+                renderers.AddRange(animatedTransform.GetComponentsInChildren<Renderer>(false));
             }
             animatedRenderers = renderers.ToArray();
             if (animatedRenderers == null || animatedRenderers.Length == 0) { print("ERROR: Could not locate any emissive meshes for name: " + meshName); }
@@ -180,15 +174,14 @@ namespace ROLib
             if (animatedRenderers != null)
             {
                 bool rebuild = false;
-                int len = animatedRenderers.Length;
-                for (int i = 0; i < len; i++)
+                foreach(var renderer in animatedRenderers)
                 {
-                    if (animatedRenderers[i] == null)
+                    if (renderer == null)
                     {
                         rebuild = true;
                         continue;
                     }
-                    animatedRenderers[i].sharedMaterial.SetColor(shaderEmissiveID, emissiveColor);
+                    renderer.sharedMaterial.SetColor(shaderEmissiveID, emissiveColor);
                 }
                 if (rebuild)
                 {
