@@ -102,14 +102,12 @@ namespace ROLib
         private void locateEngineModule()
         {
             engineModule = null;
-            ModuleEngines[] engines = part.GetComponents<ModuleEngines>();
-            int len = engines.Length;
             engineModule = part.GetComponents<ModuleEngines>().FirstOrDefault(x => x.engineID == engineID);
             if (engineModule == null)
-            {
-                MonoBehaviour.print("ERROR: Could not locate engine by ID: " + engineID + " for part: " + part + " for ROLAnimateEngineHeat.  This will cause errors during gameplay.  Setting engine to first engine module (if present)");
-                if (engines.Length > 0) { engineModule = engines[0]; }
-            }
+                MonoBehaviour.print("ERROR: Could not locate engine by ID: " + engineID + " for part: " + part +
+                                    " for ROLAnimateEngineHeat.  This will cause errors during gameplay.  Setting engine to first engine module (if present)");
+
+            engineModule ??= part.GetComponent<ModuleEngines>();
         }
 
         private void locateAnimatedTransforms()
