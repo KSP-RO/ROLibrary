@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace ROLib
@@ -67,6 +68,10 @@ namespace ROLib
 
         private Color emissiveColor = new Color(0f, 0f, 0f, 1f);
 
+        private Func<double> getSolverChamberTemp;
+
+        private bool useSolverEngines = false;
+
         public override void OnAwake()
         {
             heatDissipationCurve.Add(0f, 0.2f);
@@ -91,9 +96,11 @@ namespace ROLib
         {
             locateAnimatedTransforms();
             locateEngineModule();
+            if(ROLModInterop.IsSolverEnginesInstalled() && !useThrottle)
+                locateSolverEngines();
         }
 
-        public void FixedUpdate()
+        public void Update()
         {
             if (HighLogic.LoadedSceneIsFlight)
                 updateHeat();
@@ -122,13 +129,27 @@ namespace ROLib
             if (animatedRenderers == null || animatedRenderers.Length == 0) { print("ERROR: Could not locate any emissive meshes for name: " + meshName); }
         }
 
+        private void locateSolverEngines()
+        {
+            ModuleEngines solverEnginesModule = ROLModInterop.getSolverEngineModule(part, engineID);
+
+            if (solverEnginesModule == null)
+                return;
+
+            MethodInfo getter = ROLModInterop.getSolverEngineTempProperty().GetGetMethod();
+
+            getSolverChamberTemp = (Func<double>) Delegate.CreateDelegate(typeof(Func<double>), solverEnginesModule, getter);
+
+            useSolverEngines = true;
+        }
+
         private void updateHeat()
         {
             if (engineModule == null) { return; }
 
             float emissivePercent = 0f;
 
-            if (!useThrottle)
+            if (!useThrottle && !useSolverEngines)
             {
                 //add heat from engine
                 if (engineModule.EngineIgnited && !engineModule.flameout && engineModule.currentThrottle > 0)
@@ -150,6 +171,15 @@ namespace ROLib
 
                 float mhd = maxHeat - draperPoint;
                 float chd = currentHeat - draperPoint;
+
+                if (chd < 0f) { chd = 0f; }
+                emissivePercent = chd / mhd;
+            }
+            else if (!useThrottle && useSolverEngines)
+            {
+                float mhd = maxHeat - draperPoint;
+                float chamberTemp = (float) getSolverChamberTemp();
+                float chd = chamberTemp - draperPoint;
 
                 if (chd < 0f) { chd = 0f; }
                 emissivePercent = chd / mhd;
