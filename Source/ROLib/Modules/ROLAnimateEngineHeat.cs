@@ -70,7 +70,7 @@ namespace ROLib
 
         private Func<double> getSolverChamberTemp;
 
-        private bool useSolverEngines = false;
+        public bool useSolverEngines => getSolverChamberTemp != null;
 
         public override void OnAwake()
         {
@@ -131,16 +131,12 @@ namespace ROLib
 
         private void locateSolverEngines()
         {
-            ModuleEngines solverEnginesModule = ROLModInterop.getSolverEngineModule(part, engineID);
+            if (ROLModInterop.getSolverEngineModule(part, engineID) is ModuleEngines solverEnginesModule)
+            {
+                MethodInfo getter = ROLModInterop.getSolverEngineTempProperty().GetGetMethod();
 
-            if (solverEnginesModule == null)
-                return;
-
-            MethodInfo getter = ROLModInterop.getSolverEngineTempProperty().GetGetMethod();
-
-            getSolverChamberTemp = (Func<double>) Delegate.CreateDelegate(typeof(Func<double>), solverEnginesModule, getter);
-
-            useSolverEngines = true;
+                getSolverChamberTemp = (Func<double>) Delegate.CreateDelegate(typeof(Func<double>), solverEnginesModule, getter);
+            }
         }
 
         private void updateHeat()
