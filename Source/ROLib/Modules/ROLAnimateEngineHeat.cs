@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -98,12 +99,14 @@ namespace ROLib
             locateEngineModule();
             if(ROLModInterop.IsSolverEnginesInstalled() && !useThrottle)
                 locateSolverEngines();
+            else if (!ROLModInterop.IsSolverEnginesInstalled() && !useThrottle && HighLogic.LoadedSceneIsFlight)
+                StartCoroutine(updateHeatCalc());
         }
 
         public void Update()
         {
             if (HighLogic.LoadedSceneIsFlight)
-                updateHeat();
+                updateHeatAnim();
         }
 
         private void locateEngineModule()
@@ -139,14 +142,12 @@ namespace ROLib
             }
         }
 
-        private void updateHeat()
+        private IEnumerator updateHeatCalc()
         {
-            if (engineModule == null) { return; }
-
-            float emissivePercent = 0f;
-
-            if (!useThrottle && !useSolverEngines)
+            while (true)
             {
+                yield return new WaitForFixedUpdate();
+
                 //add heat from engine
                 if (engineModule.EngineIgnited && !engineModule.flameout && engineModule.currentThrottle > 0)
                 {
@@ -164,7 +165,17 @@ namespace ROLib
                     currentHeat -= heatOut;
                 }
                 if (currentHeat > maxStoredHeat) { currentHeat = maxStoredHeat; }
+            }
+        }
 
+        private void updateHeatAnim()
+        {
+            if (engineModule == null) { return; }
+
+            float emissivePercent = 0f;
+
+            if (!useThrottle && !useSolverEngines)
+            {
                 float mhd = maxHeat - draperPoint;
                 float chd = currentHeat - draperPoint;
 
