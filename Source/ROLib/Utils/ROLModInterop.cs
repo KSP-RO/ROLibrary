@@ -12,6 +12,7 @@ namespace ROLib
         private static bool installedFAR = false;
         private static bool installedRF = false;
         private static bool installedMFT = false;
+        private static bool installedSolverEngines = false;
 
         public static void UpdateResourceVolume(Part part)
         {
@@ -137,12 +138,44 @@ namespace ROLib
         public static bool hasModuleEngineConfigs(Part part) =>
             Type.GetType("RealFuels.ModuleEngineConfigs,RealFuels") is Type type && part.GetComponent(type) is PartModule;
 
+        public static PropertyInfo getSolverEngineTempProperty()
+        {
+            if (!IsSolverEnginesInstalled()) return null;
+
+            string targ = "SolverEngines.ModuleEnginesSolver,SolverEngines";
+            if (Type.GetType(targ) is Type t)
+                return t.GetProperty("GetEngineTemp");
+            else
+                return null;
+        }
+
+        public static ModuleEngines getSolverEngineModule(Part part, string engineID)
+        {
+            if (!IsSolverEnginesInstalled()) return null;
+
+            string targ = "SolverEngines.ModuleEnginesSolver,SolverEngines";
+            if (Type.GetType(targ) is Type moduleSolverEngine)
+            {
+                ModuleEngines engine = Array.ConvertAll(part.GetComponents(moduleSolverEngine), x => (ModuleEngines) x)
+                    .FirstOrDefault(x => x.engineID == engineID);
+
+                engine ??= (ModuleEngines) part.GetComponent(moduleSolverEngine);
+                return engine;
+            }
+            else
+            {
+                MonoBehaviour.print($"ERROR: getSolverEngineModule for {part} looking for {targ} but failed to find the PartModule.");
+                return null;
+            }
+        }
+
         private static void Init()
         {
             initialized = true;
             installedFAR = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "FerramAerospaceResearch");
             installedRF = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "RealFuels");
             installedMFT = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "modularFuelTanks");
+            installedSolverEngines = AssemblyLoader.loadedAssemblies.Any(a => a.assembly.GetName().Name == "SolverEngines");
         }
 
         public static bool IsFARInstalled()
@@ -161,6 +194,12 @@ namespace ROLib
         {
             if (!initialized) Init();
             return installedMFT;
+        }
+
+        public static bool IsSolverEnginesInstalled()
+        {
+            if(!initialized) Init();
+            return installedSolverEngines;
         }
 
         public static void UpdatePartResourceDisplay(Part part)
