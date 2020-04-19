@@ -37,12 +37,10 @@ namespace ROLib
                 {
                     part.attPos0 -= diff;
                     part.transform.position -= globalDiff;
-                    //and then, if this is not the root part, offset the root part in the negative of the difference to maintain relative part position
-                    Part p = part.localRoot;
-                    if (p != null && p != part)
-                    {
-                        p.transform.position += globalDiff;
-                    }
+                    //if this is not the root part, offset the root part in the negative of the difference to maintain relative part position
+                    // scale root push by number of symmetry counterparts.  (They will all push 1/symmCount)
+                    if (part.localRoot && part.localRoot != part)
+                        part.localRoot.transform.position += globalDiff / (part.symmetryCounterparts.Count + 1);
                 }
             }
         }

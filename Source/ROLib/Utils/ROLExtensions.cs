@@ -25,7 +25,7 @@ namespace ROLib
         public static string[] ROLGetStringValues(this ConfigNode node, string name, string[] defaults, bool reverse = false) => 
             node.HasValue(name) ? node.ROLGetStringValues(name, reverse) : defaults;
 
-        public static string ROLGetStringValue(this ConfigNode node, string name, string defaultValue = "") => node.GetValue(name) ?? defaultValue;
+        public static string ROLGetStringValue(this ConfigNode node, string name, string defaultValue = "") => node.HasValue(name) ? node.GetValue(name) : defaultValue;
 
         public static bool[] ROLGetBoolValues(this ConfigNode node, String name)
         {

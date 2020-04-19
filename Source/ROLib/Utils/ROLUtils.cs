@@ -75,24 +75,6 @@ namespace ROLib
             return false;
         }
 
-        //retrieve an array of Components that implement <T>/ extend <T>;
-        //<T> may be an interface or class
-        public static T[] getComponentsImplementing<T>(GameObject obj) where T : class
-        {
-            List<T> interfacesList = new List<T>();
-            Component[] comps = obj.GetComponents<MonoBehaviour>();
-            T t;
-            foreach (Component c in comps)
-            {
-                t = c as T;
-                if (t != null)
-                {
-                    interfacesList.Add(t);
-                }
-            }
-            return interfacesList.ToArray();
-        }
-
         public static string[] getNames<T>(IEnumerable<T> input, Func<T, string> alg)
         {
             return input.Select(alg).ToArray();
@@ -100,7 +82,7 @@ namespace ROLib
 
         public static T findNext<T>(T[] array, System.Predicate<T> alg, bool iterateBackwards=false)
         {
-            int index = findIndex<T>(array, alg);
+            int index = Array.FindIndex(array, alg);
             int len = array.Length;
             if (index < 0 || index >= len)
             {
@@ -115,7 +97,7 @@ namespace ROLib
 
         public static T findNext<T>(List<T> list, System.Predicate<T> alg, bool iterateBackwards=false)
         {
-            int index = findIndex<T>(list, alg);
+            int index = list.FindIndex(alg);
             int len = list.Count;
             if (index < 0 || index >= len)
             {
@@ -130,9 +112,8 @@ namespace ROLib
 
         public static T findNextEligible<T>(List<T> list, System.Predicate<T> matchCurrent, System.Predicate<T> matchEligible, bool iterateBackwards)
         {
-
             int iter = iterateBackwards ? -1 : 1;
-            int startIndex = findIndex(list, matchCurrent);
+            int startIndex = list.FindIndex(matchCurrent);
             int length = list.Count;
             int index;
             for (int i = 1; i <= length; i++)//will always loop around to catch the start index...
@@ -151,9 +132,8 @@ namespace ROLib
 
         public static T findNextEligible<T>(T[] list, System.Predicate<T> matchCurrent, System.Predicate<T> matchEligible, bool iterateBackwards)
         {
-
             int iter = iterateBackwards ? -1 : 1;
-            int startIndex = findIndex(list, matchCurrent);
+            int startIndex = Array.FindIndex(list, matchCurrent);
             int length = list.Length;
             int index;
             for (int i = 1; i <= length; i++)//will always loop around to catch the start index...
@@ -170,28 +150,10 @@ namespace ROLib
             return default(T);
         }
 
-        public static int findIndex<T>(T[] array, System.Predicate<T> alg)
+        public static double safeParseDouble(string val)
         {
-            return Array.FindIndex<T>(array, alg);
-        }
-
-        public static int findIndex<T>(List<T> list, System.Predicate<T> alg)
-        {
-            return list.FindIndex(alg);
-        }
-
-        public static double safeParseDouble(String val)
-        {
-            double returnVal = 0;
-            try
-            {
-                returnVal = double.Parse(val);
-            }
-            catch (Exception e)
-            {
-                MonoBehaviour.print("ERROR: could not parse double value from: '" + val + "'\n" + e.Message);
-            }
-            return returnVal;
+            double.TryParse(val, out double res);
+            return res;
         }
 
         internal static bool safeParseBool(string v)
@@ -201,40 +163,19 @@ namespace ROLib
             return false;
         }
 
-        public static float safeParseFloat(String val)
+        public static float safeParseFloat(string val)
         {
-            float returnVal = 0;
-            try
-            {
-                returnVal = float.Parse(val);
-            }
-            catch (Exception e)
-            {
-                MonoBehaviour.print("ERROR: could not parse float value from: '" + val + "'\n" + e.Message);
-            }
-            return returnVal;
+            float.TryParse(val, out float res);
+            return res;
         }
 
-        public static int safeParseInt(String val)
+        public static int safeParseInt(string val)
         {
-            int returnVal = 0;
-            try
-            {
-                returnVal = int.Parse(val);
-            }
-            catch (Exception e)
-            {
-                MonoBehaviour.print("ERROR: could not parse int value from: '" + val + "'\n" + e.Message);
-            }
-            return returnVal;
+            int.TryParse(val, out int res);
+            return res;
         }
 
-        public static String[] parseCSV(String input)
-        {
-            return parseCSV(input, ",");
-        }
-
-        public static String[] parseCSV(String input, String split)
+        public static String[] parseCSV(string input, string split=",")
         {
             String[] vals = input.Split(new String[] { split }, StringSplitOptions.None);
             int len = vals.Length;
@@ -247,7 +188,7 @@ namespace ROLib
 
         public static int[] parseIntArray(string input)
         {
-            string[] vals = parseCSV(input);
+            string[] vals = parseCSV(input, ",");
             int len = vals.Length;
             int[] iVals = new int[len];
             for (int i = 0; i < len; i++)
@@ -259,7 +200,7 @@ namespace ROLib
 
         public static float[] parseFloatArray(string input)
         {
-            string[] strs = parseCSV(input);
+            string[] strs = parseCSV(input, ",");
             int len = strs.Length;
             float[] flts = new float[len];
             for (int i = 0; i < len; i++)
