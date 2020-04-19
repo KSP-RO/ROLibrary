@@ -72,11 +72,12 @@ namespace ROLib
         public readonly float panelArea = 1.0f;
         public readonly string secondaryTransformName = "suncatcher";
         public readonly string pivotName = "sunPivot";
-        public readonly float surfaceNodeX = 0;
-        public readonly float surfaceNodeY = 0;
-        public readonly float surfaceNodeZ = 0;
+        public float surfaceNodeX { get => surfaceNode.position.x; }
+        public float surfaceNodeY { get => surfaceNode.position.y; }
+        public float surfaceNodeZ { get => surfaceNode.position.z; }
         public readonly bool lengthWidth = false;
-        public readonly string animationName = "fakeAnimation";
+        public readonly string animationName = string.Empty;
+        public readonly bool isTracking = false;
 
         /// <summary>
         /// The diameter of the upper attachment point on this model.  Defaults to 'diameter' if unspecified.  Used during model-scale-chaining to determine the model scale to use for adapter models.
@@ -248,7 +249,7 @@ namespace ROLib
             }
             title = node.ROLGetStringValue("title", name);
             description = node.ROLGetStringValue("description", title);
-            modelName = node.ROLGetStringValue("modelName", String.Empty);
+            modelName = node.ROLGetStringValue("modelName", string.Empty);
             upgradeUnlock = node.ROLGetStringValue("upgradeUnlock", upgradeUnlock);
             height = node.ROLGetFloatValue("height", height);
             actualHeight = node.ROLGetFloatValue("actualHeight", actualHeight);
@@ -266,10 +267,8 @@ namespace ROLib
             secondaryTransformName = node.ROLGetStringValue("secondaryTransformName", secondaryTransformName);
             pivotName = node.ROLGetStringValue("pivotName", pivotName);
             animationName = node.ROLGetStringValue("animationName", animationName);
-            surfaceNodeX = node.ROLGetFloatValue("surfaceNodeX", surfaceNodeX);
-            surfaceNodeY = node.ROLGetFloatValue("surfaceNodeY", surfaceNodeY);
-            surfaceNodeZ = node.ROLGetFloatValue("surfaceNodeZ", surfaceNodeZ);
             lengthWidth = node.ROLGetBoolValue("lengthWidth", lengthWidth);
+            isTracking = node.ROLGetBoolValue("isTracking", isTracking);
             effectiveLength = node.ROLGetFloatValue("effectiveLength", effectiveLength);
             additionalVolume = node.ROLGetFloatValue("additionalVolume", additionalVolume);
             if (node.HasValue("verticalOffset"))
@@ -320,6 +319,7 @@ namespace ROLib
                     mergeData[i] = new MeshMergeData(mergeNodes[i]);
                 }
             }
+            else mergeData = new MeshMergeData[0];
 
             //Load texture set definitions.
             List<TextureSet> textureSetList = new List<TextureSet>();
@@ -378,34 +378,19 @@ namespace ROLib
 
             //load the surface attach node specifications, or create default if none are defined.
             if (node.HasValue("surface"))
-            {
                 surfaceNode = new AttachNodeBaseData(node.ROLGetStringValue("surface"));
-            }
             else
-            {
-                String val = (diameter * 0.5f) + ",0,0,1,0,0,2";
-                surfaceNode = new AttachNodeBaseData(val);
-            }
+                surfaceNode = new AttachNodeBaseData($"{diameter / 2},0,0,1,0,0,2");
 
-            //load compound model data if present
             if (node.HasNode("COMPOUNDMODEL"))
-            {
                 compoundModelData = new CompoundModelData(node.GetNode("COMPOUNDMODEL"));
-            }
 
-            //load model animation constraint data, if present
             if (node.HasNode("CONSTRAINT"))
-            {
                 constraintData = new ModelConstraintData(node.GetNode("CONSTRAINT"));
-            }
 
-            //load model RCS module data, if present
             if (node.HasNode("RCSDATA"))
-            {
                 rcsModuleData = new ModelRCSModuleData(node.GetNode("RCSDATA"));
-            }
 
-            //load model RCS positioning data, if present
             if (node.HasNode("RCSPOSITION"))
             {
                 ConfigNode[] pns = node.GetNodes("RCSPOSITION");
@@ -417,17 +402,11 @@ namespace ROLib
                 }
             }
 
-            //load model engine thrust data, if present
             if (node.HasNode("ENGINE_THRUST"))
-            {
                 engineThrustData = new ModelEngineThrustData(node.GetNode("ENGINE_THRUST"));
-            }
 
-            //load the engine transform data, if present
             if (node.HasNode("ENGINE_TRANSFORM"))
-            {
                 engineTransformData = new ModelEngineTransformData(node.GetNode("ENGINE_TRANSFORM"));
-            }
         }
 
         /// <summary>
@@ -435,10 +414,7 @@ namespace ROLib
         /// </summary>
         /// <param name="partUpgrades"></param>
         /// <returns></returns>
-        public bool isAvailable(List<String> partUpgrades)
-        {
-            return String.IsNullOrEmpty(upgradeUnlock) || partUpgrades.Contains(upgradeUnlock);
-        }
+        public bool isAvailable(List<String> partUpgrades) => string.IsNullOrEmpty(upgradeUnlock) || partUpgrades.Contains(upgradeUnlock);
 
         /// <summary>
         /// Return a string array containing the names of the texture sets that are available for this model definition.

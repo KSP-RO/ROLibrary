@@ -8,11 +8,11 @@ namespace ROLib
         [Persistent] public string name;
         [Persistent] public int level;
         [Persistent] public string description;
-        [Persistent] public string techRequired;
         [Persistent] public float kwPerM2;
         [Persistent] public float kgPerM2;
         [Persistent] public float costPerM2;
         [Persistent] public bool retractable = false;
+        [Persistent] public bool isTracking = false;
         [Persistent] public float massMultHinged;
         [Persistent] public float massMultFolded;
         [Persistent] public float massMultTrack;
@@ -34,7 +34,7 @@ namespace ROLib
 
         public override string ToString()
         {
-            return $"{name};Level:{level};Description:{description};Tech:{techRequired};kwPerM2:{kwPerM2};kgPerM2:{kgPerM2};CostPerM2:{costPerM2}";
+            return $"{name};Level:{level};Description:{description};kwPerM2:{kwPerM2};kgPerM2:{kgPerM2};CostPerM2:{costPerM2}";
         }
 
         public static void Init(ConfigNode config)
