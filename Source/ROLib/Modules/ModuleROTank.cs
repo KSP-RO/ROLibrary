@@ -537,26 +537,12 @@ namespace ROLib
                 ModelChangedHandlerWithSymmetry(true, true);
             };
 
-            Fields[nameof(currentNose)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                noseModule.modelSelected(a, b);
-                ModelChangedHandlerWithSymmetry(true, true);
-                MonoUtilities.RefreshPartContextWindow(part);
-            };
-
-            Fields[nameof(currentCore)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                coreModule.modelSelected(a, b);
-                ModelChangedHandlerWithSymmetry(true, true);
-                MonoUtilities.RefreshPartContextWindow(part);
-            };
-
-            Fields[nameof(currentMount)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                mountModule.modelSelected(a, b);
-                ModelChangedHandlerWithSymmetry(true, true);
-                MonoUtilities.RefreshPartContextWindow(part);
-            };
+            Fields[nameof(currentNose)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentNose)].uiControlEditor.onSymmetryFieldChanged = OnModelSelectionChanged;
+            Fields[nameof(currentCore)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentCore)].uiControlEditor.onSymmetryFieldChanged = OnModelSelectionChanged;
+            Fields[nameof(currentMount)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentMount)].uiControlEditor.onSymmetryFieldChanged = OnModelSelectionChanged;
 
             //------------------MODEL DIAMETER / LENGTH SWITCH UI INIT---------------------//
             this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep);
@@ -574,6 +560,16 @@ namespace ROLib
 
             if (HighLogic.LoadedSceneIsEditor)
                 GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
+        }
+
+        private void OnModelSelectionChanged(BaseField f, object o)
+        {
+            if (f.name == Fields[nameof(currentMount)].name) mountModule.modelSelected(currentMount);
+            else if (f.name == Fields[nameof(currentCore)].name) coreModule.modelSelected(currentCore);
+            else if (f.name == Fields[nameof(currentNose)].name) noseModule.modelSelected(currentNose);
+
+            ModelChangedHandler(true);
+            MonoUtilities.RefreshPartContextWindow(part);
         }
 
         private void OnDiameterChanged(BaseField f, object o)
@@ -605,13 +601,10 @@ namespace ROLib
             if (lengthWidth)
                 coreModule.setScaleForHeightAndDiameter(currentLength, currentDiameter);
             else
-                coreModule.setScaleForDiameter(currentDiameter, currentVScale);
+                coreModule.RescaleToDiameter(currentDiameter, coreModule.definition.diameter, currentVScale);
 
-            //next, set nose scale values
-            noseModule.setDiameterFromBelow(coreModule.moduleUpperDiameter, currentVScale);
-
-            //finally, set mount scale values
-            mountModule.setDiameterFromAbove(coreModule.moduleLowerDiameter, currentVScale);
+            noseModule.RescaleToDiameter(coreModule.moduleUpperDiameter, noseModule.moduleLowerDiameter / noseModule.moduleHorizontalScale, currentVScale);
+            mountModule.RescaleToDiameter(coreModule.moduleLowerDiameter, mountModule.moduleUpperDiameter / mountModule.moduleHorizontalScale, currentVScale);
 
             //total height of the part is determined by the sum of the heights of the modules at their current scale
             float totalHeight = noseModule.moduleHeight;
@@ -621,19 +614,18 @@ namespace ROLib
             //position of each module is set such that the vertical center of the models is at part origin/COM
             float pos = totalHeight * 0.5f;//abs top of model
             pos -= noseModule.moduleHeight;//bottom of nose model
-            noseModule.setPosition(pos);
+            noseModule.SetPosition(pos);
             pos -= coreModule.moduleHeight * 0.5f;//center of 'core' model
-            coreModule.setPosition(pos);
+            coreModule.SetPosition(pos);
             pos -= coreModule.moduleHeight * 0.5f;//bottom of 'core' model
-            mountModule.setPosition(pos);
+            mountModule.SetPosition(pos);
         }
 
         public void UpdateModelMeshes()
         {
-            //update actual model positions and scales
-            noseModule.updateModelMeshes();
-            coreModule.updateModelMeshes();
-            mountModule.updateModelMeshes();
+            noseModule.UpdateModelScalesAndLayoutPositions();
+            coreModule.UpdateModelScalesAndLayoutPositions();
+            mountModule.UpdateModelScalesAndLayoutPositions();
         }
 
 
@@ -676,8 +668,8 @@ namespace ROLib
         public void UpdateAttachNodes(bool userInput)
         {
             //update the standard top and bottom attach nodes, using the node position(s) defined in the nose and mount modules
-            noseModule.updateAttachNodeTop("top", userInput);
-            mountModule.updateAttachNodeBottom("bottom", userInput);
+            noseModule.UpdateAttachNode("top", ModelOrientation.TOP, userInput);
+            mountModule.UpdateAttachNode("bottom", ModelOrientation.BOTTOM, userInput);
 
             //update the model-module specific attach nodes, using the per-module node definitions from the part
             noseModule.updateAttachNodeBody(noseNodeNames, userInput);
@@ -689,28 +681,20 @@ namespace ROLib
             int nodeSize = Mathf.RoundToInt(coreModule.moduleDiameter) + 1;
             Vector3 pos = new Vector3(0, y, 0);
             ROLSelectableNodes.updateNodePosition(part, noseInterstageNode, pos);
-            AttachNode noseInterstage = part.FindAttachNode(noseInterstageNode);
-            if (noseInterstage != null)
-            {
+            if (part.FindAttachNode(noseInterstageNode) is AttachNode noseInterstage)
                 ROLAttachNodeUtils.updateAttachNodePosition(part, noseInterstage, pos, Vector3.up, userInput, nodeSize);
-            }
 
             // Update the Mount Interstage Node
             y = mountModule.modulePosition + mountModule.moduleVerticalScale;
             nodeSize = Mathf.RoundToInt(coreModule.moduleDiameter) + 1;
             pos = new Vector3(0, y, 0);
             ROLSelectableNodes.updateNodePosition(part, mountInterstageNode, pos);
-            AttachNode mountInterstage = part.FindAttachNode(mountInterstageNode);
-            if (mountInterstage != null)
-            {
+            if (part.FindAttachNode(mountInterstageNode) is AttachNode mountInterstage)
                 ROLAttachNodeUtils.updateAttachNodePosition(part, mountInterstage, pos, Vector3.down, userInput, nodeSize);
-            }
 
             //update surface attach node position, part position, and any surface attached children
             if (part.srfAttachNode is AttachNode surfaceNode)
-            {
                 coreModule.updateSurfaceAttachNode(surfaceNode, prevDiameter, userInput);
-            }
         }
 
         /// <summary>
