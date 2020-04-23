@@ -80,22 +80,22 @@ namespace ROLib
         /// <summary>
         /// Local reference to the persistent data field used to store custom coloring data for this module.  May be null when recoloring is not used.
         /// </summary>
-        private BaseField dataField;
+        private readonly BaseField dataField;
 
         /// <summary>
         /// Local reference to the persistent data field used to store texture set names for this module.  May be null when texture switching is not used.
         /// </summary>
-        private BaseField textureField;
+        private readonly BaseField textureField;
 
         /// <summary>
         /// Local reference to the persistent data field used to store the current model name for this module.  Must not be null.
         /// </summary>
-        private BaseField modelField;
+        private readonly BaseField modelField;
 
         /// <summary>
         /// Local referenec to the persistent data field used to store the current layout name for this module.  May be null if layouts are unsupported, in which case it will always return 'defualt'.
         /// </summary>
-        private BaseField layoutField;
+        private readonly BaseField layoutField;
 
         #endregion ENDREGION - Private working data
 
@@ -155,7 +155,7 @@ namespace ROLib
         /// <summary>
         /// Return the currently active texture set from the currently active model definition.
         /// </summary>
-        public TextureSet textureSet => definition.findTextureSet(textureSetName);
+        public TextureSet textureSet => definition.FindTextureSet(textureSetName);
 
         /// <summary>
         /// Return the currently active model layout.
@@ -232,7 +232,7 @@ namespace ROLib
         /// <summary>
         /// Return the Y coordinate of the top-most point in the model in part-centric space, as defined by model-height in the model definition and modified by current model scale,
         /// </summary>
-        public float moduleTop =>
+        public float ModuleTop =>
             orientation switch
             {
                 ModelOrientation.TOP => modulePosition + moduleHeight,
@@ -244,12 +244,12 @@ namespace ROLib
         /// <summary>
         /// Return the Y coordinate of the physical 'center' of this model in part-centric space.
         /// </summary>
-        public float moduleCenter => moduleTop - (moduleHeight / 2);
+        public float ModuleCenter => ModuleTop - (moduleHeight / 2);
 
         /// <summary>
         /// Returns the Y coordinate of the bottom of this model in part-centric space.
         /// </summary>
-        public float moduleBottom => moduleTop - moduleHeight;
+        public float ModuleBottom => ModuleTop - moduleHeight;
 
         /// <summary>
         /// Return the currently configured custom color data for this module slot.
@@ -285,15 +285,15 @@ namespace ROLib
             this.partModule = partModule;
             this.root = root;
             this.orientation = orientation;
-            this.modelField = partModule.Fields[modelPersistenceFieldName];
-            this.layoutField = partModule.Fields[layoutPersistenceFieldName];
-            this.textureField = partModule.Fields[texturePersistenceFieldName];
-            this.dataField = partModule.Fields[recolorPersistenceFieldName];
+            modelField = partModule.Fields[modelPersistenceFieldName];
+            layoutField = partModule.Fields[layoutPersistenceFieldName];
+            textureField = partModule.Fields[texturePersistenceFieldName];
+            dataField = partModule.Fields[recolorPersistenceFieldName];
             getValidOptions = delegate () { return optionsCache; };
-            loadColors(persistentData);
+            LoadColors(persistentData);
         }
 
-        public override string ToString() => getErrorReportModuleName();
+        public override string ToString() => GetErrorReportModuleName();
 
         /// <summary>
         /// Initialization method.  May be called to update the available model list later; if the currently selected model is invalid, it will be set to the first model in the list.<para/>
@@ -305,13 +305,13 @@ namespace ROLib
             optionsCache = modelDefs;
             if (modelDefs.Length <= 0)
             {
-                error("No models found for: " + getErrorReportModuleName());
+                error("No models found for: " + GetErrorReportModuleName());
             }
             else if (!Array.Exists(optionsCache, m => m.definition.name == modelName))
             {
-                error("Currently configured model name: " + modelName + " was not located while setting up: "+getErrorReportModuleName());
+                error("Currently configured model name: " + modelName + " was not located while setting up: "+GetErrorReportModuleName());
                 modelName = optionsCache[0].definition.name;
-                error("Now using model: " + modelName + " for: "+getErrorReportModuleName());
+                error("Now using model: " + modelName + " for: "+GetErrorReportModuleName());
             }
         }
 
@@ -326,19 +326,19 @@ namespace ROLib
             layoutOptions = Array.Find(optionsCache, m => m.definition.name == modelName);
             if (layoutOptions == null)
             {
-                error("Could not locate model definition for: " + modelName + " for " + getErrorReportModuleName());
+                error("Could not locate model definition for: " + modelName + " for " + GetErrorReportModuleName());
             }
             definition = layoutOptions.definition;
             currentLayout = layoutOptions.getLayout(layoutName);
             if (!layoutOptions.isValidLayout(layoutName))
             {
-                log("Existing layout: "+layoutName+" for " + getErrorReportModuleName() + " was null.  Assigning default layout: " + layoutOptions.getDefaultLayout().name);
+                log("Existing layout: "+layoutName+" for " + GetErrorReportModuleName() + " was null.  Assigning default layout: " + layoutOptions.getDefaultLayout().name);
                 layoutName = layoutOptions.getDefaultLayout().name;
             }
             ConstructModels();
             UpdateModelScalesAndLayoutPositions(doNotRescaleX);    // This calls updateModelScalesAndLayoutPositions();
             SetupTextureSet();
-            updateModuleStats();
+            UpdateModuleStats();
         }
 
         #endregion ENDREGION - Constructors and Init Methods
@@ -350,21 +350,21 @@ namespace ROLib
         /// This allows for the model's transforms to be properly found by the ModuleRCS when it is (re)initialized.
         /// </summary>
         /// <param name="destinationName"></param>
-        public void RenameRCSThrustTransforms(string destinationName) => definition?.rcsModuleData?.renameTransforms(root, destinationName);
+        public void RenameRCSThrustTransforms(string destinationName) => definition?.rcsModuleData?.RenameTransforms(root, destinationName);
 
         /// <summary>
         /// If the model definition contains engine-thrust-transform data, will rename the model's engine thrust transforms to match the input 'destinationName'.<para/>
         /// This allows for the model's transforms to be properly found by the ModuleEngines when it is (re)initialized.
         /// </summary>
         /// <param name="destinationName"></param>
-        public void RenameEngineThrustTransforms(string destinationName) => definition?.engineTransformData?.renameThrustTransforms(root, destinationName);
+        public void RenameEngineThrustTransforms(string destinationName) => definition?.engineTransformData?.RenameThrustTransforms(root, destinationName);
 
         /// <summary>
         /// If the model definition contains gimbal-transform data, will rename the model's gimbal transforms to match the input 'destinationName'.<para/>
         /// This allows for the model's transforms to be properly found by the ModuleGimbal when it is (re)initialized.
         /// </summary>
         /// <param name="destinationName"></param>
-        public void RenameGimbalTransforms(string destinationName) => definition.engineTransformData.renameGimbalTransforms(root, destinationName);
+        public void RenameGimbalTransforms(string destinationName) => definition.engineTransformData.RenameGimbalTransforms(root, destinationName);
 
         /// <summary>
         /// Update the input moduleEngines min, max, and split thrust values.  Any engine thrust transforms need to have been already renamed prior to this call.
@@ -378,7 +378,7 @@ namespace ROLib
                 float scalar = Mathf.Pow(Mathf.Sqrt(moduleHorizontalScale * moduleVerticalScale), thrustScalePower);
                 float min = definition.engineThrustData.minThrust * layout.positions.Count() * scalar;
                 float max = definition.engineThrustData.maxThrust * layout.positions.Count() * scalar;
-                float[] splitThrust = definition.engineThrustData.getCombinedSplitThrust(layout.positions.Count());
+                float[] splitThrust = definition.engineThrustData.GetCombinedSplitThrust(layout.positions.Count());
                 engine.thrustTransformMultipliers = splitThrust.ToList();
                 ROLStockInterop.UpdateEngineThrust(engine, min, max); //calls engine.OnLoad(...);
             }
@@ -421,13 +421,13 @@ namespace ROLib
         /// <param name="oldValue"></param>
         public void textureSetSelected(BaseField field, System.Object oldValue)
         {
-            actionWithSymmetry(m =>
+            ActionWithSymmetry(m =>
             {
                 m.textureSetName = textureSetName;
                 m.ApplyTextureSet(m.textureSetName, !ROLGameSettings.persistRecolor());
                 if (m.textureField != null)
                 {
-                    m.partModule.ROLupdateUIChooseOptionControl(m.textureField.name, m.definition.getTextureSetNames(), m.definition.getTextureSetTitles());
+                    m.partModule.ROLupdateUIChooseOptionControl(m.textureField.name, m.definition.GetTextureSetNames(), m.definition.GetTextureSetTitles());
                 }
             });
         }
@@ -445,7 +445,7 @@ namespace ROLib
             }
             else
             {
-                error($"No model definition found for input name: {newModel}  for: {getErrorReportModuleName()}");
+                error($"No model definition found for input name: {newModel}  for: {GetErrorReportModuleName()}");
             }
         }
 
@@ -455,12 +455,12 @@ namespace ROLib
         /// <param name="colors"></param>
         public void setSectionColors(RecoloringData[] colors)
         {
-            actionWithSymmetry(m =>
+            ActionWithSymmetry(m =>
             {
                 m.textureSetName = textureSetName;
                 m.recoloringData = colors;
                 m.EnableTextureSet();
-                m.saveColors(m.recoloringData);
+                m.SaveColors(m.recoloringData);
             });
         }
 
@@ -493,9 +493,9 @@ namespace ROLib
         {
             if (modelField != null)
             {
-                if (getValidOptions == null) { error("ModelModule delegate 'getValidOptions' is not populated for: " + getErrorReportModuleName()); }
+                if (getValidOptions == null) { error("ModelModule delegate 'getValidOptions' is not populated for: " + GetErrorReportModuleName()); }
                 ModelDefinitionLayoutOptions[] availableOptions = getValidOptions();
-                if (availableOptions == null || availableOptions.Length < 1) { MonoBehaviour.print("ERROR: No valid models found for: " + getErrorReportModuleName()); }
+                if (availableOptions == null || availableOptions.Length < 1) { MonoBehaviour.print("ERROR: No valid models found for: " + GetErrorReportModuleName()); }
                 string[] names = ROLUtils.getNames(availableOptions, s => s.definition.name);
                 string[] displays = ROLUtils.getNames(availableOptions, s => s.definition.title);
                 partModule.ROLupdateUIChooseOptionControl(modelField.name, names, displays);
@@ -504,7 +504,7 @@ namespace ROLib
             //updates the texture set selection for the currently configured model definition, including disabling of the texture-set selection UI when needed
             if (textureField != null)
             {
-                partModule.ROLupdateUIChooseOptionControl(textureField.name, definition.getTextureSetNames(), definition.getTextureSetTitles());
+                partModule.ROLupdateUIChooseOptionControl(textureField.name, definition.GetTextureSetNames(), definition.GetTextureSetTitles());
             }
             if (layoutField != null)
             {
@@ -522,7 +522,7 @@ namespace ROLib
         public void RescaleToDiameter(float newDiameter, float baseDiameter, float vScalar = 0)
         {
             float scale = newDiameter / baseDiameter;
-            SetScale(scale, scale * vScaleOffset(vScalar));
+            SetScale(scale, scale * VScaleOffset(vScalar));
         }
 
         /// <summary>
@@ -555,10 +555,10 @@ namespace ROLib
             moduleDiameter = newHorizontalScale * definition.diameter;
             modulePanelLength = newVerticalScale * definition.panelLength;
             modulePanelWidth = newHorizontalScale * definition.panelWidth;
-            updateModuleStats();
+            UpdateModuleStats();
         }
 
-        private float vScaleOffset(float aspectInput)
+        private float VScaleOffset(float aspectInput)
         {
             // aspectInput is the percentage towards min[/max] scale to use.
             float vScale = 1f;
@@ -581,12 +581,12 @@ namespace ROLib
         /// <summary>
         /// Updates the input texture-control text field with the texture-set names for this model.  Disables field if no texture sets found, enables field if more than one texture set is available.
         /// </summary>
-        public void updateTextureUIControl()
+        public void UpdateTextureUIControl()
         {
             if (textureField is BaseField)
             {
-                string[] names = definition.getTextureSetNames();
-                partModule.ROLupdateUIChooseOptionControl(textureField.name, names, definition.getTextureSetTitles());
+                string[] names = definition.GetTextureSetNames();
+                partModule.ROLupdateUIChooseOptionControl(textureField.name, names, definition.GetTextureSetTitles());
                 textureField.guiActiveEditor = names.Length > 1;
             }
         }
@@ -616,7 +616,7 @@ namespace ROLib
                 AttachNode node = part.FindAttachNode(nodeNames[i]);
                 if (i < nodeCount)
                 {
-                    updateAttachNode(definition.bodyNodeData[i], node, invert, userInput, true, nodeNames[i]);
+                    UpdateAttachNode(definition.bodyNodeData[i], node, invert, userInput, true, nodeNames[i]);
                 }
                 else//extra node, destroy
                 {
@@ -633,7 +633,7 @@ namespace ROLib
             AttachNodeBaseData bottomData = invert ? definition.topNodeData : definition.bottomNodeData;
             AttachNodeBaseData nodeData = side == ModelOrientation.TOP ? topData : bottomData;
             if (nodeData is AttachNodeBaseData && part.FindAttachNode(nodeName) is AttachNode node)
-                updateAttachNode(nodeData, node, invert, userInput);
+                UpdateAttachNode(nodeData, node, invert, userInput);
         }
 
 
@@ -662,7 +662,7 @@ namespace ROLib
         /// <param name="node"></param>
         /// <param name="invert"></param>
         /// <param name="userInput"></param>
-        private void updateAttachNode(AttachNodeBaseData data, AttachNode node, bool invert, bool userInput, bool create = false, string nodeName = "")
+        private void UpdateAttachNode(AttachNodeBaseData data, AttachNode node, bool invert, bool userInput, bool create = false, string nodeName = "")
         {
             if (node == null && !create) return;
             if (data is AttachNodeBaseData)
@@ -696,10 +696,11 @@ namespace ROLib
         /// <summary>
         /// Update the cached volume, mass, and cost values for the currently configured model setup.  Must be called anytime that model definition or scales are changed.
         /// </summary>
-        private void updateModuleStats()
+        private void UpdateModuleStats()
         {
             int positions = layout.positions.Count();
             float averageScale = (moduleHorizontalScale + moduleHorizontalScale + moduleVerticalScale) / 3;
+            // averageScale cannot be valid.
             float mScalar = Mathf.Pow(averageScale, MassScalar);
             float vScalar = Mathf.Pow(averageScale, volumeScalar);
             float cScalar = Mathf.Pow(averageScale, MassScalar);
@@ -712,7 +713,7 @@ namespace ROLib
         /// Load custom colors from persistent color data.  Creates default array of colors if no data is present persistence.
         /// </summary>
         /// <param name="data"></param>
-        private void loadColors(string data)
+        private void LoadColors(string data)
         {
             if (!string.IsNullOrEmpty(data))
             {
@@ -730,7 +731,7 @@ namespace ROLib
         /// Save the current custom color data to persistent data in part-module.
         /// </summary>
         /// <param name="colors"></param>
-        private void saveColors(RecoloringData[] colors)
+        private void SaveColors(RecoloringData[] colors)
         {
             if (colors == null || colors.Length == 0) { return; }
             int len = colors.Length;
@@ -761,7 +762,7 @@ namespace ROLib
             bool useDefaultTextureColors = false;
             if (!IsValidTextureSet(textureSetName))
             {
-                textureSetName = definition.getDefaultTextureSet() is TextureSet def ? def.name : "none";
+                textureSetName = definition.GetDefaultTextureSet() is TextureSet def ? def.name : "none";
                 if (!IsValidTextureSet(textureSetName))
                 {
                     error("Default texture set: " + textureSetName + " set for model: " + definition.name + " is invalid.  This is a configuration level error in the model definition that needs to be corrected.  Bad things are about to happen....");
@@ -799,10 +800,10 @@ namespace ROLib
                     RecoloringData placeholder = new RecoloringData(Color.white, 1, 1);
                     recoloringData = new RecoloringData[] { placeholder, placeholder, placeholder };
                 }
-                saveColors(recoloringData);
+                SaveColors(recoloringData);
             }
             EnableTextureSet();
-            updateTextureUIControl();
+            UpdateTextureUIControl();
             ROLModInterop.OnPartTextureUpdated(part);
         }
 
@@ -829,17 +830,17 @@ namespace ROLib
                     //on compound model setups, only adjust for the position scalar and mpd scale
                     //the model internal scale will be setup by the compound model data
                     model.transform.localScale = mpd.localScale * scaleScalar;
-                    definition.compoundModelData.setHeightFromScale(definition, model.gameObject, moduleHorizontalScale, moduleVerticalScale, definition.orientation);
+                    definition.compoundModelData.SetHeightFromScale(definition, model.gameObject, moduleHorizontalScale, moduleVerticalScale, definition.orientation);
                 }
                 else
                 {
                     //normal models, apply all scales to the model root transform
-                    model.transform.localScale = mult(mpd.localScale, new Vector3(xScale, moduleVerticalScale, moduleHorizontalScale)) * scaleScalar;
+                    model.transform.localScale = Mult(mpd.localScale, new Vector3(xScale, moduleVerticalScale, moduleHorizontalScale)) * scaleScalar;
                 }
             }
         }
 
-        private Vector3 mult(Vector3 a, Vector3 b)
+        private Vector3 Mult(Vector3 a, Vector3 b)
         {
             return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
         }
@@ -884,18 +885,18 @@ namespace ROLib
                     }
                     //de-activate any non-active sub-model transforms
                     //iterate through all transforms for the model and deactivate(destroy?) any not on the active mesh list
-                    smd.setupSubmodel(clonedModel);
+                    smd.SetupSubmodel(clonedModel);
                 }
                 else
                 {
-                    error("Could not clone model for url: " + smd.modelURL + " while constructing meshes for model definition" + definition.name+" for: "+getErrorReportModuleName());
+                    error("Could not clone model for url: " + smd.modelURL + " while constructing meshes for model definition" + definition.name+" for: "+GetErrorReportModuleName());
                 }
             }
             if (definition?.mergeData is MeshMergeData[])
             {
                 foreach (MeshMergeData mmd in definition.mergeData)
                 {
-                    mmd.mergeMeshes(parent);
+                    mmd.MergeMeshes(parent);
                 }
             }
         }
@@ -934,7 +935,7 @@ namespace ROLib
         /// Internal utility method to allow accessing of symmetry ModelModules' in symmetry parts/part-modules
         /// </summary>
         /// <param name="action"></param>
-        private void actionWithSymmetry(Action<ROLModelModule<U>> action)
+        private void ActionWithSymmetry(Action<ROLModelModule<U>> action)
         {
             action(this);
             int index = part.Modules.IndexOf(partModule);
@@ -948,7 +949,7 @@ namespace ROLib
         /// Return a string representing the module name and other debug related information.  Used in error logging.
         /// </summary>
         /// <returns></returns>
-        private string getErrorReportModuleName() =>
+        private string GetErrorReportModuleName() =>
             $"ModelModule: [{name}] model: [{definition}] in orientation: [{orientation}] in module: {partModule} in part: {part}";
 
         /// <summary>
@@ -958,9 +959,10 @@ namespace ROLib
         /// <param name="upper"></param>
         /// <param name="radius"></param>
         /// <param name="posY"></param>
-        public void getRCSMountingValues(float vPos, bool upper, out float radius, out float posY)
+        public void GetRCSMountingValues(float vPos, bool upper, out float radius, out float posY)
         {
             bool invert = definition.shouldInvert(orientation);
+            posY = 0;
             //if (invert) { upper = !upper; }
             if (definition.rcsPositionData != null)
             {
@@ -975,16 +977,13 @@ namespace ROLib
                     int index = definition.rcsPositionData.Length > 1 ? 1 : 0;
                     mapd = definition.rcsPositionData[index];
                 }
-                mapd.getModelPosition(moduleHorizontalScale, moduleVerticalScale, vPos, invert, out radius, out posY);
-                posY += GetPlacementOffset();
-                posY += modulePosition;
+                mapd.GetModelPosition(moduleHorizontalScale, moduleVerticalScale, vPos, invert, out radius, out posY);
             }
             else
             {
                 radius = moduleDiameter * 0.5f;
-                posY = modulePosition;
-                posY += GetPlacementOffset();
             }
+            posY += modulePosition + GetPlacementOffset();
         }
 
         #endregion ENDREGION - Private/Internal methods

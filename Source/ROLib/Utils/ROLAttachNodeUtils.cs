@@ -9,7 +9,6 @@ namespace ROLib
     /// </summary>
     public static class ROLAttachNodeUtils
     {
-
         /// <summary>
         /// Updates an attach node position and handles offseting of any attached parts (or base part if attached part is the parent). <para/>
         /// Intended to replace the current per-part-module code that does the same, with a centrally managed utility method, for convenience and easier bug tracking and fixing.
@@ -26,8 +25,7 @@ namespace ROLib
             node.size = size;
             if (updatePartPosition && node.attachedPart != null)
             {
-                Vector3 globalDiff = part.transform.TransformPoint(diff);
-                globalDiff -= part.transform.position;
+                Vector3 globalDiff = part.transform.TransformDirection(diff);
                 if (node.attachedPart.parent == part)//is a child of this part, move it the entire offset distance
                 {
                     node.attachedPart.attPos0 += diff;
@@ -54,15 +52,19 @@ namespace ROLib
         /// <param name="orient"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public static AttachNode createAttachNode(Part part, String id, Vector3 pos, Vector3 orient, int size)
+        public static AttachNode createAttachNode(Part part, string id, Vector3 pos, Vector3 orient, int size)
         {
-            AttachNode newNode = new AttachNode();
-            newNode.id = id;
-            newNode.owner = part;
-            newNode.nodeType = AttachNode.NodeType.Stack;
-            newNode.size = size;
-            newNode.originalPosition = newNode.position = pos;
-            newNode.originalOrientation = newNode.orientation = orient;
+            AttachNode newNode = new AttachNode
+            {
+                id = id,
+                owner = part,
+                nodeType = AttachNode.NodeType.Stack,
+                size = size,
+                originalPosition = pos,
+                position = pos,
+                originalOrientation = orient,
+                orientation = orient
+            };
             part.attachNodes.Add(newNode);
             return newNode;
         }

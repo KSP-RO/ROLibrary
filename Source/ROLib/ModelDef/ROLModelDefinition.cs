@@ -72,9 +72,6 @@ namespace ROLib
         public readonly float panelArea = 1.0f;
         public readonly string secondaryTransformName = "suncatcher";
         public readonly string pivotName = "sunPivot";
-        public float surfaceNodeX { get => surfaceNode.position.x; }
-        public float surfaceNodeY { get => surfaceNode.position.y; }
-        public float surfaceNodeZ { get => surfaceNode.position.z; }
         public readonly bool lengthWidth = false;
         public readonly string animationName = string.Empty;
         public readonly bool isTracking = false;
@@ -414,20 +411,20 @@ namespace ROLib
         /// </summary>
         /// <param name="partUpgrades"></param>
         /// <returns></returns>
-        public bool isAvailable(List<String> partUpgrades) => string.IsNullOrEmpty(upgradeUnlock) || partUpgrades.Contains(upgradeUnlock);
+        public bool IsAvailable(List<string> partUpgrades) => string.IsNullOrEmpty(upgradeUnlock) || partUpgrades.Contains(upgradeUnlock);
 
         /// <summary>
         /// Return a string array containing the names of the texture sets that are available for this model definition.
         /// </summary>
         /// <returns></returns>
-        public string[] getTextureSetNames() => ROLUtils.getNames(textureSets, m => m.name);
+        public string[] GetTextureSetNames() => ROLUtils.getNames(textureSets, m => m.name);
 
         /// <summary>
         /// Returns a string array of the UI-label titles for the texture sets for this model definition.<para/>
         /// Returned in the same order as getTextureSetNames(), so they can be used in with basic indexing to map one value to another.
         /// </summary>
         /// <returns></returns>
-        public string[] getTextureSetTitles() => ROLUtils.getNames(textureSets, m => m.title);
+        public string[] GetTextureSetTitles() => ROLUtils.getNames(textureSets, m => m.title);
 
         /// <summary>
         /// Return the TextureSet data for the input texture set name.<para/>
@@ -435,13 +432,13 @@ namespace ROLib
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public TextureSet findTextureSet(string name) => Array.Find(textureSets, m => m.name == name);
+        public TextureSet FindTextureSet(string name) => Array.Find(textureSets, m => m.name == name);
 
         /// <summary>
         /// Returns the default texture set as defined in the model definition config
         /// </summary>
         /// <returns></returns>
-        public TextureSet getDefaultTextureSet() => findTextureSet(defaultTextureSet);
+        public TextureSet GetDefaultTextureSet() => FindTextureSet(defaultTextureSet);
 
         /// <summary>
         /// Return true/false if this model should be inverted/rotated based on the input use-orientation and the models config-defined orientation.<para/>
@@ -477,8 +474,8 @@ namespace ROLib
             gimbalFlightRange = node.ROLGetFloatValue("gimbalFlightRange", 0);
         }
 
-        public void renameThrustTransforms(Transform root, string destinationName) => RenameTransforms(root, thrustTransformName, destinationName);
-        public void renameGimbalTransforms(Transform root, string destinationName) => RenameTransforms(root, gimbalTransformName, destinationName);
+        public void RenameThrustTransforms(Transform root, string destinationName) => RenameTransforms(root, thrustTransformName, destinationName);
+        public void RenameGimbalTransforms(Transform root, string destinationName) => RenameTransforms(root, gimbalTransformName, destinationName);
         public void RenameTransforms(Transform root, string transformName, string destinationName)
         {
             foreach (Transform tr in root.FindChildren(transformName))
@@ -505,7 +502,7 @@ namespace ROLib
             thrustSplit = node.ROLGetFloatValuesCSV("thrustSplit", new float[] { 1.0f });
         }
 
-        public float[] getCombinedSplitThrust(int count)
+        public float[] GetCombinedSplitThrust(int count)
         {
             if (thrustSplit == null) { return null; }
             int l1 = thrustSplit.Length;
@@ -564,9 +561,9 @@ namespace ROLib
             enableRoll = node.GetBoolValue("enableRoll", true);
         }
 
-        public float getThrust(float scale) => rcsThrust * scale * scale;
+        public float GetThrust(float scale) => rcsThrust * scale * scale;
 
-        public void renameTransforms(Transform root, string destinationName)
+        public void RenameTransforms(Transform root, string destinationName)
         {
             foreach (Transform tr in root.FindChildren(thrustTransformName))
             {
@@ -612,7 +609,7 @@ namespace ROLib
             angle = node.GetFloatValue("angle", 0);
         }
 
-        public void getModelPosition(float hScale, float vScale, float vRange, bool invert, out float oRadius, out float oPosY)
+        public void GetModelPosition(float hScale, float vScale, float vRange, bool invert, out float oRadius, out float oPosY)
         {
             float rads = Mathf.Deg2Rad * angle;
             //position of the center of the offset
@@ -709,7 +706,7 @@ namespace ROLib
             this.scale = scale;
         }
 
-        public void setupSubmodel(GameObject modelRoot)
+        public void SetupSubmodel(GameObject modelRoot)
         {
             if (modelMeshes.Length > 0)
             {
@@ -722,16 +719,7 @@ namespace ROLib
                         if (IsActiveMesh(tr.name)) toKeep.Add(tr); else toCheck.Add(tr);
                     }
                 }
-                List<Transform> transformsToDelete = new List<Transform>();
-                //transformsToDelete.AddRange(toCheck.Where(x => !IsParent(x, toKeep)));
-                foreach (Transform tr in toCheck)
-                {
-                    if (!IsParent(tr, toKeep))
-                    {
-                        transformsToDelete.Add(tr);
-                    }
-                }
-                foreach (Transform tr in transformsToDelete)
+                foreach (Transform tr in toCheck.Where(x => !IsParent(x, toKeep)))
                 {
                     GameObject.DestroyImmediate(tr.gameObject);
                 }
@@ -801,7 +789,7 @@ namespace ROLib
         /// and parent them to the specified parent transform (or root if NA).
         /// </summary>
         /// <param name="root"></param>
-        public void mergeMeshes(Transform root)
+        public void MergeMeshes(Transform root)
         {
             //find target transform
             //create if it doesn't exist
@@ -833,9 +821,11 @@ namespace ROLib
                     //locate mesh filter from specified mesh(es)
                     if (tr.GetComponent<MeshFilter>() is MeshFilter mm)
                     {
-                        CombineInstance ci = new CombineInstance();
-                        ci.mesh = mm.sharedMesh;
-                        ci.transform = tr.localToWorldMatrix;
+                        CombineInstance ci = new CombineInstance
+                        {
+                            mesh = mm.sharedMesh,
+                            transform = tr.localToWorldMatrix
+                        };
                         cis.Add(ci);
                         //if we don't currently have a reference to a material, grab a ref to/copy of the shared material
                         //for the current mesh(es).  These must all use the same materials
@@ -882,7 +872,7 @@ namespace ROLib
             * The 'remainderTotalHeight' is then divided proportionately between all remaining scale-able meshes.
             * Calculate needed v-scale for the portion of height needed for each v-scale-able mesh.
          */
-        CompoundModelTransformData[] compoundTransformData;
+        private readonly CompoundModelTransformData[] compoundTransformData;
 
         public CompoundModelData(ConfigNode node)
         {
@@ -898,10 +888,10 @@ namespace ROLib
         public void SetHeightExplicit(ROLModelDefinition def, GameObject root, float dScale, float height, ModelOrientation orientation)
         {
             float vScale = height / def.height;
-            setHeightFromScale(def, root, dScale, vScale, orientation);
+            SetHeightFromScale(def, root, dScale, vScale, orientation);
         }
 
-        public void setHeightFromScale(ROLModelDefinition def, GameObject root, float dScale, float vScale, ModelOrientation orientation)
+        public void SetHeightFromScale(ROLModelDefinition def, GameObject root, float dScale, float vScale, ModelOrientation orientation)
         {
             float desiredHeight = def.height * vScale;
             float staticHeight = GetStaticHeight() * dScale;
@@ -916,7 +906,6 @@ namespace ROLib
 
             float pos = 0f;//pos starts at origin, is incremented according to transform height along 'dir'
             float dir = orientation == ModelOrientation.BOTTOM ? -1f : 1f;//set from model orientation, either +1 or -1 depending on if origin is at botom or top of model (ModelOrientation.TOP vs ModelOrientation.BOTTOM)
-            float localVerticalScale = 1f;
             float percent, scale, height;
 
             foreach (CompoundModelTransformData data in compoundTransformData)
@@ -928,17 +917,9 @@ namespace ROLib
                 foreach (Transform tr in root.transform.ROLFindChildren(data.name))
                 {
                     tr.localPosition = data.vScaleAxis * (pos + data.offset * dScale);
-                    if (data.canScaleHeight)
-                    {
-                        pos += dir * height;
-                        localVerticalScale = scale;
-                    }
-                    else
-                    {
-                        pos += dir * dScale * data.height;
-                        localVerticalScale = dScale;
-                    }
-                    tr.localScale = getScaleVector(dScale, localVerticalScale, data.vScaleAxis);
+                    float localVerticalScale = data.canScaleHeight ? scale : dScale;
+                    pos += dir * (data.canScaleHeight ? height : dScale * data.height);
+                    tr.localScale = GetScaleVector(dScale, localVerticalScale, data.vScaleAxis);
                 }
             }
         }
@@ -951,12 +932,12 @@ namespace ROLib
         /// <param name="sVert"></param>
         /// <param name="axis"></param>
         /// <returns></returns>
-        private Vector3 getScaleVector(float sHoriz, float sVert, Vector3 axis)
+        private Vector3 GetScaleVector(float sHoriz, float sVert, Vector3 axis)
         {
             if (axis.x < 0) { axis.x = 1; }
             if (axis.y < 0) { axis.y = 1; }
             if (axis.z < 0) { axis.z = 1; }
-            return (axis * sVert) + (getInverseVector(axis) * sHoriz);
+            return (axis * sVert) + (GetInverseVector(axis) * sHoriz);
         }
 
         /// <summary>
@@ -966,7 +947,7 @@ namespace ROLib
         /// </summary>
         /// <param name="axis"></param>
         /// <returns></returns>
-        private Vector3 getInverseVector(Vector3 axis)
+        private Vector3 GetInverseVector(Vector3 axis)
         {
             Vector3 val = Vector3.one;
             if (axis.x != 0) { val.x = 0; }
