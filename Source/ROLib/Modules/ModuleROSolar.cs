@@ -53,6 +53,14 @@ namespace ROLib
         [KSPField(guiActiveEditor = true, guiName = "Cost", guiFormat = "F1", groupName = GroupName)]
         public float cost = 0.0f;
 
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Tracking", groupName = GroupName),
+        UI_Toggle(scene = UI_Scene.Editor)]
+        public bool trackingToggle = false;
+
+        [KSPField(guiActive = true, guiActiveEditor = true, guiName = "Debug Suncatching", groupName = GroupName),
+        UI_Toggle(scene = UI_Scene.All)]
+        public bool drawDebugRays = false;
+
         [KSPEvent(guiActiveEditor = true, guiName = "Reset Model to Original", groupName = GroupName)]
         public void ResetModelEvent()
         {
@@ -69,9 +77,7 @@ namespace ROLib
             panelLength = coreModule.definition.panelLength;
             panelWidth = coreModule.definition.panelWidth;
             panelScale = 1.0f;
-            this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep);
-            this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep);
-            this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep);
+            SetUIVisibleFields();
             ModelChangedHandler(true);
             prevLength = panelLength;
             prevWidth = panelWidth;
@@ -92,7 +98,6 @@ namespace ROLib
         [KSPField] public float addMass = 0.0f;
         [KSPField] public float addCost = 0.0f;
         [KSPField] public string coreManagedNodes = string.Empty;
-        [KSPField] public bool fullScale = true;
         [KSPField] public int maxTechLevel = 0;
 
         #endregion KSPFields
@@ -101,10 +106,19 @@ namespace ROLib
 
         private const string modName = "[ROSOlar]";
 
+        ModelDefinitionLayoutOptions[] coreDefs;
+        private SolarTechLimit stl;
+
         // Previous length/width/scale values for change detection
         private float prevLength = -1;
         private float prevWidth = -1;
         private float prevScale = -1;
+
+        private LineRenderer trackingRenderer, sunDirRenderer, panelRotRenderer;
+        private GameObject trackingDrawer, sunDirDrawer, panelOrientationDrawer;
+        private static Material lineMaterial;
+
+        private bool lengthWidth { get => coreModule?.definition.lengthWidth ?? false; }
 
         /// <summary>
         /// Standard work-around for lack of config-node data being passed consistently and lack of support for mod-added serializable classes.
@@ -140,29 +154,20 @@ namespace ROLib
             return set;
         }
 
-        ModelDefinitionLayoutOptions[] coreDefs;
-        private SolarTechLimit stl;
-        private bool lengthWidth = false;
-
         #endregion Custom Fields
 
         #region Standard KSP Overrides
 
         public override void OnLoad(ConfigNode node)
         {
-            base.OnLoad(node);
             if (node.name != "CURRENTUPGRADE")
             {
                 if (string.IsNullOrEmpty(configNodeData))
-                {
                     configNodeData = node.ToString();
-                }
                 Initialize();
-                // OnStart() appears to be too late for setting the TimeEfficCurve for Kerbalism.
-                // SolarPanelFixer is possibly getting this field too soon.
-                stl = SolarTechLimit.GetTechLevel(techLevel);
-                ReloadTimeCurve();
             }
+            base.OnLoad(node);
+            ReloadTimeCurve();  //OnStart() appears too late for setting the TimeEfficCurve for Kerbalism's SolarPanelFixer.
         }
 
         public override void OnStart(StartState state)
@@ -175,11 +180,12 @@ namespace ROLib
             InitializeUI();
         }
 
-        public void OnDestroy()
+        public override void OnUpdate()
         {
+            base.OnUpdate();
+            DrawRays();
         }
 
-        // IPartMass/CostModifier overrides
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
         public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => Mathf.Max(mass, 0.0001f);
@@ -197,6 +203,7 @@ namespace ROLib
         {
             if (initialized) return;
             initialized = true;
+            stl ??= SolarTechLimit.GetTechLevel(techLevel);
 
             prevLength = panelLength;
             prevWidth = panelWidth;
@@ -230,16 +237,20 @@ namespace ROLib
             coreModule.getValidOptions = () => GetVariantSet(currentVariant).definitions;
 
             coreModule.setupModelList(coreDefs);
-            coreModule.setupModel();
+            coreModule.setupModel(true);
 
+            CreateLineMaterial();
             UpdateModulePositions();
+            UpdateAnimationAndTracking();
         }
 
         internal void ModelChangedHandler(bool pushNodes)
         {
             stl = SolarTechLimit.GetTechLevel(techLevel);
             retractable = stl.retractable && solarPanelType != "static";
+            useRaycastForTrackingDot = true;
             UpdateModulePositions();
+            UpdateAnimationAndTracking();
             startFSM();
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
@@ -248,19 +259,11 @@ namespace ROLib
             RecalculateStats();
             ROLStockInterop.UpdatePartHighlighting(part);
             if (HighLogic.LoadedSceneIsEditor)
-                ROLStockInterop.FireEditorUpdate();
-        }
-
-        internal void ModelChangedHandlerWithSymmetry(bool pushNodes, bool symmetry)
-        {
-            ModelChangedHandler(pushNodes);
-            if (symmetry)
             {
-                foreach (Part p in part.symmetryCounterparts.Where(x => x != part))
-                {
-                    p.FindModuleImplementing<ModuleROSolar>().ModelChangedHandler(pushNodes);
-                }
+                Fields[nameof(trackingToggle)].guiActiveEditor = stl.isTracking && coreModule.definition.isTracking && solarPanelType != "static";
+                ROLStockInterop.FireEditorUpdate();
             }
+            RemakeTrackingPointers();
         }
 
         /// <summary>
@@ -286,29 +289,13 @@ namespace ROLib
                 // Now, call model-selected on the core model to update for the changes, including symmetry counterpart updating.
                 this.ROLactionWithSymmetry(m =>
                 {
-                    m.coreModule.modelSelected(newCoreDef.definition.name);
-                    lengthWidth = coreModule.definition.lengthWidth;
-                    Fields[nameof(panelLength)].guiActiveEditor = lengthWidth;
-                    Fields[nameof(panelWidth)].guiActiveEditor = lengthWidth;
-                    Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
+                    m.coreModule.modelSelected(newCoreDef.definition.name, false);
                     m.ResetModel();
                 });
-                ModelChangedHandlerWithSymmetry(true, true);
             };
 
-            Fields[nameof(currentCore)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                coreModule.modelSelected(a, b);
-                lengthWidth = coreModule.definition.lengthWidth;
-                Fields[nameof(panelLength)].guiActiveEditor = lengthWidth;
-                Fields[nameof(panelWidth)].guiActiveEditor = lengthWidth;
-                Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
-                this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep);
-                this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep);
-                this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep);
-                ModelChangedHandlerWithSymmetry(true, true);
-                MonoUtilities.RefreshPartContextWindow(part);
-            };
+            Fields[nameof(currentCore)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentCore)].uiControlEditor.onSymmetryFieldChanged = OnModelSelectionChanged;
 
             Fields[nameof(panelLength)].uiControlEditor.onFieldChanged =
             Fields[nameof(panelLength)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
@@ -339,20 +326,31 @@ namespace ROLib
                     prevScale = panelScale;
                 }
             };
+            Fields[nameof(TechLevel)].uiControlEditor.onFieldChanged =
+            Fields[nameof(TechLevel)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
+            {
+                ModelChangedHandler(true);
+            };
 
+            SetUIVisibleFields();
+        }
+
+        private void OnModelSelectionChanged(BaseField f, object o)
+        {
+            if (f.name == Fields[nameof(currentCore)].name) coreModule.modelSelected(currentCore, false);
+            SetUIVisibleFields();
+            ModelChangedHandler(true);
+            MonoUtilities.RefreshPartContextWindow(part);
+        }
+
+        private void SetUIVisibleFields()
+        {
             Fields[nameof(panelScale)].guiActiveEditor = !lengthWidth;
             Fields[nameof(panelLength)].guiActiveEditor = (lengthWidth && maxLength != minLength);
             Fields[nameof(panelWidth)].guiActiveEditor = (lengthWidth && maxLength != minLength);
-
             this.ROLupdateUIFloatEditControl(nameof(panelScale), 0.1f, 100f, largeStep, smallStep, slideStep);
             this.ROLupdateUIFloatEditControl(nameof(panelLength), minLength, maxLength, largeStep, smallStep, slideStep);
             this.ROLupdateUIFloatEditControl(nameof(panelWidth), minWidth, maxWidth, largeStep, smallStep, slideStep);
-
-            Fields[nameof(TechLevel)].uiControlEditor.onFieldChanged = (a, b) =>
-            {
-                ModelChangedHandlerWithSymmetry(true, true);
-            };
-
         }
 
         private void SetMaxTechLevel()
@@ -374,47 +372,18 @@ namespace ROLib
 
         private void UpdateModulePositions()
         {
-            lengthWidth = coreModule.definition.lengthWidth;
-            float height = lengthWidth ? panelLength : coreModule.moduleHeight;
             if (lengthWidth)
-                coreModule.setScaleForHeightAndDiameter(panelLength, panelWidth, lengthWidth);
+                coreModule.setScaleForHeightAndDiameter(panelLength, panelWidth, true);
             else
-                coreModule.setScaleForHeightAndDiameter(panelScale, panelScale, lengthWidth);
+                coreModule.SetScale(panelScale, panelScale);
+            coreModule.SetPosition(coreModule.moduleHeight / 2);
+            coreModule.UpdateModelScalesAndLayoutPositions(false);
+        }
 
-            coreModule.setPosition(height / 2);
-            coreModule.updateModelMeshes(lengthWidth);
-
-            /*
-            if (fullScale)
-            {
-                ROLLog.debug("UpdateModulePositions() fullScale");
-                float currentDiameter = coreModule.definition.diameter * panelScale;
-                coreModule.setScaleForDiameter(currentDiameter, 1);
-                height = coreModule.moduleHeight;
-                pos = height * 0.5f;
-                coreModule.setPosition(pos);
-                coreModule.updateModelMeshes();
-            }
-            else
-            {
-                ROLLog.debug("UpdateModulePositions()");
-                lengthWidth = coreModule.definition.lengthWidth;
-                ROLLog.debug($"lengthWidth: {lengthWidth}");
-                if (lengthWidth)
-                {
-                    coreModule.setScaleForHeightAndDiameter(panelLength, panelWidth, lengthWidth);
-                    height = coreModule.modulePanelLength;
-                }
-                else
-                {
-                    coreModule.setScaleForHeightAndDiameter(panelScale, panelScale, lengthWidth);
-                    height = coreModule.moduleHeight;
-                }
-                pos = height * 0.5f;
-                coreModule.setPosition(pos);
-                coreModule.updateModelMeshes(lengthWidth);
-            }
-            */
+        private void UpdateAnimationAndTracking()
+        {
+            isTracking = stl.isTracking && trackingToggle && coreModule.definition.isTracking;
+            trackingMode = TrackingMode.SUN;
 
             animationName = coreModule.definition.animationName;
             FindAnimations();
@@ -422,54 +391,37 @@ namespace ROLib
             // Allow StartFSM() to configure the animation state (time/speed/weight)
             // Change handler will need to re-call StartFSM() to properly reset a model.
 
-            if (pivotName.Equals("sunPivot"))
-                hasPivot = false;
-
-            pivotName = coreModule.GetPivotName();
+            pivotName = coreModule.definition.pivotName;
             panelRotationTransform = part.FindModelTransform(pivotName);
-            originalRotation = currentRotation = panelRotationTransform.localRotation;
-            secondaryTransformName = raycastTransformName = coreModule.GetSecondaryTransform();
+            secondaryTransformName = raycastTransformName = coreModule.definition.secondaryTransformName;
+            hasPivot = panelRotationTransform is Transform;
+            originalRotation = currentRotation = panelRotationTransform?.localRotation ?? Quaternion.identity;
         }
 
         private void UpdateMassAndCost()
         {
-            lengthWidth = coreModule.definition.lengthWidth;
-            string s;
             if (!lengthWidth)
             {
                 area = coreModule.definition.panelArea * panelScale * panelScale;
-                s = $"panelScale: {panelScale:F2}";
             }
             else
             {
                 float lengthScale = panelLength / coreModule.definition.panelLength;
                 float widthScale = panelWidth / coreModule.definition.panelWidth;
                 area = coreModule.definition.panelArea * lengthScale * widthScale;
-                s = $"lengthScale: {lengthScale:F2} widthScale: {widthScale:F2}";
             }
-            //Debug.Log($"{modName}: {part} UpdateMassAndCost() Area: {area:F2} from panelArea: {coreModule.definition.panelArea:F2} {s}");
 
             mass = area * stl.kgPerM2;
             cost = area * stl.costPerM2;
-            switch (solarPanelType)
+            (float massMult, float costMult) = solarPanelType switch
             {
-                case "hinged":
-                    mass *= stl.massMultHinged;
-                    cost *= stl.costMultHinged;
-                    break;
-                case "folded":
-                    mass *= stl.massMultFolded;
-                    cost *= stl.costMultFolded;
-                    break;
-                case "tracking":
-                    mass *= stl.massMultTrack;
-                    cost *= stl.costMultTrack;
-                    break;
-                default:
-                    break;
-            }
-            mass += addMass;
-            cost += addCost;
+                "hinged" => (stl.massMultHinged, stl.costMultHinged),
+                "folded" => (stl.massMultFolded, stl.costMultFolded),
+                "tracking" => (stl.massMultTrack, stl.costMultTrack),
+                _ => (1, 1)
+            };
+            mass = (mass * massMult) + addMass;
+            cost = (cost * costMult) + addCost;
             mass = Math.Max(mass, 0.0001f);
             cost = Math.Max(cost, 0.1f);
         }
@@ -477,25 +429,29 @@ namespace ROLib
         private void UpdateAttachNodes(bool userInput)
         {
             coreModule.updateAttachNodeBody(coreNodeNames, userInput);
-            coreModule.updateSurfaceAttachNode(part.srfAttachNode, panelLength, panelWidth, userInput);
+
+            if (part.srfAttachNode is AttachNode node
+                && coreModule?.definition is ROLModelDefinition def
+                && def.surfaceNode is AttachNodeBaseData surfNodeData)
+            {
+                float x = def.surfaceNode.position.x * (lengthWidth ? panelWidth / def.panelWidth : panelScale);
+                float y = def.surfaceNode.position.y * (lengthWidth ? panelLength / def.panelLength : panelScale);
+                float z = def.surfaceNode.position.z * (lengthWidth ? panelWidth / def.panelWidth : panelScale);
+                Vector3 pos = new Vector3(x, y, z);
+                ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, surfNodeData.orientation, userInput, node.size);
+            }
         }
 
         /// <summary>
         /// Update the UI visibility for the currently available selections.<para/>
         /// Will hide/remove UI fields for slots with only a single option (models, textures, layouts).
         /// </summary>
-        private void UpdateAvailableVariants()
-        {
-            coreModule.updateSelections();
-        }
+        private void UpdateAvailableVariants() => coreModule.updateSelections();
 
         /// <summary>
         /// Calls the generic ROT procedural drag-cube updating routines.  Will update the drag cubes for whatever the current model state is.
         /// </summary>
-        private void UpdateDragCubes()
-        {
-            ROLModInterop.OnPartGeometryUpdate(part, true);
-        }
+        private void UpdateDragCubes() => ROLModInterop.OnPartGeometryUpdate(part, true);
 
         #endregion Custom Update Methods
 
@@ -521,22 +477,79 @@ namespace ROLib
 
         private void FindAnimations()
         {
-            if (animationName.Equals("fakeAnimation"))
+            anim = null;
+            if (!string.IsNullOrEmpty(animationName))
             {
-                anim = null;
-                useAnimation = false;
-                return;
+                Animation[] animations = part.transform.ROLFindRecursive("model").GetComponentsInChildren<Animation>();
+                anim = animations.FirstOrDefault(x => x.GetClip(animationName) is AnimationClip);
+                anim ??= animations.FirstOrDefault();
             }
-
-            Animation[] componentsInChildren = part.transform.ROLFindRecursive("model").GetComponentsInChildren<Animation>();
-            foreach (Animation a in componentsInChildren)
-            {
-                if (a.GetClip(animationName) != null)
-                    anim = a;
-            }
-            if (componentsInChildren.Length > 0 && anim == null)
-                anim = componentsInChildren[0];
             useAnimation = anim != null;
+        }
+
+        private static void CreateLineMaterial()
+        {
+            if (!lineMaterial)
+            {
+                // Unity's built-in shader for drawing simple colored things.
+                Shader shader = Shader.Find("Hidden/Internal-Colored");
+                lineMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+                // Alpha blending: On.  Backface culling: Off.  Depth Writes: Off.
+                lineMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                lineMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                lineMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+                lineMaterial.SetInt("_ZWrite", 0);
+            }
+        }
+
+        private void MakeRenderer(Transform parent, out GameObject go, out LineRenderer rend, string name = "ROSolarRenderer", Color color = default)
+        {
+            if (color == default) color = Color.red;
+            go = new GameObject(name);
+            go.transform.SetParent(parent);
+            rend = go.AddComponent<LineRenderer>();
+            rend.material = new Material(lineMaterial) { color = color };
+            rend.startColor = rend.endColor = color;
+            rend.startWidth = 0.05f;
+            rend.endWidth = 0.01f;
+            rend.enabled = false;
+        }
+
+        private void RemakeTrackingPointers()
+        {
+            if (trackingDrawer) Destroy(trackingDrawer);
+            if (sunDirDrawer) Destroy(sunDirDrawer);
+            if (panelOrientationDrawer) Destroy(panelOrientationDrawer);
+            MakeRenderer(gameObject.transform, out trackingDrawer, out trackingRenderer, "ROSolarTrackingDir", Color.red);
+            MakeRenderer(gameObject.transform, out sunDirDrawer, out sunDirRenderer, "ROSolarSunDir", Color.yellow);
+            MakeRenderer(gameObject.transform, out panelOrientationDrawer, out panelRotRenderer, "ROSolarPanelDir", Color.green);
+        }
+
+        private void DrawRays()
+        {
+            // Of interest:  raycastTransform, secondaryTransform, panelRotationTransform, sunDir
+            // secondaryTransform is for raycasts.
+            // trackingDotTransform = useRaycastForTrackingDot ? secondaryTransform : panelRotationTransform;
+            trackingRenderer.enabled = drawDebugRays;
+            sunDirRenderer.enabled = drawDebugRays;
+            panelRotRenderer.enabled = drawDebugRays;
+
+            if (drawDebugRays)
+            {
+                Vector3 pivot = panelRotationTransform.position;
+                sunDirRenderer.positionCount = 2;
+                Vector3 sunDir = (trackingTransformLocal.position - pivot).normalized;
+                sunDirRenderer.SetPosition(0, pivot);
+                sunDirRenderer.SetPosition(1, pivot + sunDir);
+
+                trackingRenderer.positionCount = 2;
+                trackingRenderer.SetPosition(0, trackingDotTransform.position);
+                trackingRenderer.SetPosition(1, trackingDotTransform.position + trackingDotTransform.forward);
+
+                panelRotRenderer.positionCount = 2;
+                panelRotRenderer.SetPosition(0, panelRotationTransform.position);
+                panelRotRenderer.SetPosition(1, panelRotationTransform.position + panelRotationTransform.forward);
+            }
         }
 
         #endregion Custom Methods
