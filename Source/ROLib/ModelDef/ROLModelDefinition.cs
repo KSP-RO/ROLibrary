@@ -70,6 +70,7 @@ namespace ROLib
         public readonly float panelLength = 1.0f;
         public readonly float panelWidth = 1.0f;
         public readonly float panelArea = 1.0f;
+        public readonly float panelScale = 1.0f;
         public readonly string secondaryTransformName = "suncatcher";
         public readonly string pivotName = "sunPivot";
         public readonly bool lengthWidth = false;
@@ -261,6 +262,7 @@ namespace ROLib
             panelLength = node.ROLGetFloatValue("panelLength", panelLength);
             panelWidth = node.ROLGetFloatValue("panelWidth", panelWidth);
             panelArea = node.ROLGetFloatValue("panelArea", panelArea);
+            panelScale = node.ROLGetFloatValue("panelScale", panelScale);
             secondaryTransformName = node.ROLGetStringValue("secondaryTransformName", secondaryTransformName);
             pivotName = node.ROLGetStringValue("pivotName", pivotName);
             animationName = node.ROLGetStringValue("animationName", animationName);

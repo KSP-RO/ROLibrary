@@ -76,7 +76,7 @@ namespace ROLib
         {
             panelLength = coreModule.definition.panelLength;
             panelWidth = coreModule.definition.panelWidth;
-            panelScale = 1.0f;
+            panelScale = coreModule.definition.panelScale;
             SetUIVisibleFields();
             ModelChangedHandler(true);
             prevLength = panelLength;
@@ -180,9 +180,8 @@ namespace ROLib
             InitializeUI();
         }
 
-        public override void OnUpdate()
+        public void Update()
         {
-            base.OnUpdate();
             DrawRays();
         }
 
@@ -542,9 +541,12 @@ namespace ROLib
                 sunDirRenderer.SetPosition(0, pivot);
                 sunDirRenderer.SetPosition(1, pivot + sunDir);
 
-                trackingRenderer.positionCount = 2;
-                trackingRenderer.SetPosition(0, trackingDotTransform.position);
-                trackingRenderer.SetPosition(1, trackingDotTransform.position + trackingDotTransform.forward);
+                if (trackingDotTransform)
+                {
+                    trackingRenderer.positionCount = 2;
+                    trackingRenderer.SetPosition(0, trackingDotTransform.position);
+                    trackingRenderer.SetPosition(1, trackingDotTransform.position + trackingDotTransform.forward);
+                }
 
                 panelRotRenderer.positionCount = 2;
                 panelRotRenderer.SetPosition(0, panelRotationTransform.position);
