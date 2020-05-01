@@ -104,37 +104,37 @@ namespace ROLib
         /// <summary>
         /// Wrapper for the BaseField in the PartModule.  Uses reflection, so a bit dirty, but functional and reliable.
         /// </summary>
-        private string textureSetName
+        public string textureSetName
         {
             get { return textureField?.GetValue<string>(partModule) ?? "default"; }
-            set { textureField?.SetValue(value, partModule); }
+            private set { textureField?.SetValue(value, partModule); }
         }
 
         /// <summary>
         /// Wrapper for the BaseField in the PartModule.  Uses reflection, so a bit dirty, but functional and reliable.
         /// </summary>
-        private string modelName
+        public string modelName
         {
             get { return modelField?.GetValue<string>(partModule) ?? string.Empty; }
-            set { modelField?.SetValue(value, partModule); }
+            private set { modelField?.SetValue(value, partModule); }
         }
 
         /// <summary>
         /// Wrapper for the BaseField in the PartModule.  Uses reflection, so a bit dirty, but functional and reliable.
         /// </summary>
-        private string persistentData
+        public string persistentData
         {
             get { return dataField?.GetValue<string>(partModule) ?? string.Empty; }
-            set { dataField?.SetValue(value, partModule); }
+            private set { dataField?.SetValue(value, partModule); }
         }
 
         /// <summary>
         /// Wrapper for the BaseField in the PartModule.  Uses reflection, so a bit dirty, but functional and reliable.
         /// </summary>
-        private string layoutName
+        public string layoutName
         {
             get { return layoutField?.GetValue<string>(partModule) ?? "default"; }
-            set { layoutField?.SetValue(value, partModule); }
+            private set { layoutField?.SetValue(value, partModule); }
         }
 
         #endregion ENDREGION - BaseField wrappers
