@@ -47,7 +47,7 @@ namespace ROLib
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Area", guiFormat = "F4", guiUnits = " m^2", groupName = GroupName)]
         public float area = 0.0f;
 
-        [KSPField(guiActiveEditor = true, guiName = "Mass", guiFormat = "F4", guiUnits = " m", groupName = GroupName)]
+        [KSPField(guiActiveEditor = true, guiName = "Mass", guiFormat = "F4", guiUnits = " t", groupName = GroupName)]
         public float mass = 0.0f;
 
         [KSPField(guiActiveEditor = true, guiName = "Cost", guiFormat = "F1", groupName = GroupName)]
