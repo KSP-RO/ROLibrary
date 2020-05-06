@@ -1,5 +1,5 @@
 {
-   "NAME" : "Procedural Parts",
+   "NAME" : "ROLibrary",
    "URL" : "https://raw.githubusercontent.com/KSP-RO/ROLibrary/master/GameData/ROLib/ROLib.version",
    "DOWNLOAD" : "https://github.com/KSP-RO/ROLibrary/releases",
    "GITHUB" : {
@@ -9,7 +9,7 @@
    },
    "VERSION" : {
       "MAJOR" : 1,
-      "MINOR" : 0,
+      "MINOR" : 1,
       "PATCH" : 0,
       "BUILD" : 0
    },
