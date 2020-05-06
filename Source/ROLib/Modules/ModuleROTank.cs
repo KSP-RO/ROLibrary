@@ -23,71 +23,30 @@ namespace ROLib
 
         #region KSPFields
 
-        [KSPField]
-        public float diameterLargeStep = 0.1f;
+        [KSPField] public float diameterLargeStep = 0.1f;
+        [KSPField] public float diameterSmallStep = 0.1f;
+        [KSPField] public float diameterSlideStep = 0.001f;
+        [KSPField] public float minDiameter = 0.1f;
+        [KSPField] public float maxDiameter = 100.0f;
+        [KSPField] public float minLength = 0.1f;
+        [KSPField] public float maxLength = 100.0f;
+        [KSPField] public float actualHeight = 0.0f;
 
-        [KSPField]
-        public float diameterSmallStep = 0.1f;
-
-        [KSPField]
-        public float diameterSlideStep = 0.001f;
-
-        [KSPField]
-        public float minDiameter = 0.1f;
-
-        [KSPField]
-        public float maxDiameter = 100.0f;
-
-        [KSPField]
-        public float minLength = 0.1f;
-
-        [KSPField]
-        public float maxLength = 100.0f;
-
-        [KSPField]
-        public float volumeScalingPower = 3f;
-
-        [KSPField]
-        public float massScalingPower = 3f;
-
-        [KSPField]
-        public bool enableVScale = true;
-
-        [KSPField]
-        public bool scaleMass = false;
-
-        [KSPField]
-        public bool scaleCost = false;
-
-        [KSPField]
-        public int coreContainerIndex = 0;
-
-        [KSPField]
-        public int noseContainerIndex = 0;
-
-        [KSPField]
-        public int mountContainerIndex = 0;
-
-        [KSPField]
-        public string coreManagedNodes = string.Empty;
-
-        [KSPField]
-        public string noseManagedNodes = string.Empty;
-
-        [KSPField]
-        public string mountManagedNodes = string.Empty;
-
-        [KSPField]
-        public string noseInterstageNode = "noseinterstage";
-
-        [KSPField]
-        public string mountInterstageNode = "mountinterstage";
-
-        [KSPField]
-        public float actualHeight = 0.0f;
-
-        [KSPField]
-        public bool lengthWidth = false;
+        [KSPField] public float volumeScalingPower = 3f;
+        [KSPField] public float massScalingPower = 3f;
+        [KSPField] public bool enableVScale = true;
+        [KSPField] public bool lengthWidth = false;
+        [KSPField] public bool scaleMass = false;
+        [KSPField] public bool scaleCost = false;
+        
+        [KSPField] public int coreContainerIndex = 0;
+        [KSPField] public int noseContainerIndex = 0;
+        [KSPField] public int mountContainerIndex = 0;
+        [KSPField] public string coreManagedNodes = string.Empty;
+        [KSPField] public string noseManagedNodes = string.Empty;
+        [KSPField] public string mountManagedNodes = string.Empty;
+        [KSPField] public string noseInterstageNode = "noseinterstage";
+        [KSPField] public string mountInterstageNode = "mountinterstage";
 
         /// <summary>
         /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
@@ -101,11 +60,7 @@ namespace ROLib
         public float currentLength = 1.0f;
 
         [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = GroupName)]
-        public void OpenTankDimensionGUIEvent()
-        {
-            ROLLog.debug("EditDimensions() called");
-            EditDimensions(this);
-        }
+        public void OpenTankDimensionGUIEvent() => EditDimensions();
 
         /// <summary>
         /// Adjustment to the vertical-scale of v-scale compatible models/module-slots.
@@ -269,6 +224,7 @@ namespace ROLib
 
         internal void ModelChangedHandler(bool pushNodes)
         {
+            ValidateLength();
             UpdateModulePositions();
             UpdateTankVolume(lengthWidth);
             UpdateDimensions();
@@ -299,19 +255,15 @@ namespace ROLib
 
         #region Standard KSP Overrides
 
-        // Standard KSP lifecyle override
         public override void OnLoad(ConfigNode node)
         {
-            base.OnLoad(node);
             if (string.IsNullOrEmpty(configNodeData)) { configNodeData = node.ToString(); }
-            initialize();
+            Initialize();
         }
 
-        // Standard KSP lifecyle override
         public override void OnStart(StartState state)
         {
-            base.OnStart(state);
-            initialize();
+            Initialize();
             ModelChangedHandler(false);
             InitializeUI();
             if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
@@ -319,7 +271,6 @@ namespace ROLib
             initializedDefaults = true;
         }
 
-        // Standard Unity lifecyle override
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -327,75 +278,47 @@ namespace ROLib
             GameEvents.onFlightReady.Remove(UpdateDragCubes);
         }
 
-        //KSP editor modified event callback
         private void OnEditorVesselModified(ShipConstruct ship) => UpdateAvailableVariants();
 
-        // IPartMass/CostModifier override
-        public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.CONSTANTLY;
-
-        // IPartMass/CostModifier override
-        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.CONSTANTLY;
-
-        // IPartMass/CostModifier override
+        // IPartMass/CostModifier overrides
+        public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
+        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
         public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => Mathf.Max(0, modifiedMass);
-
-        // IPartMass/CostModifier override
         public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => Mathf.Max(0, modifiedCost);
 
-        //IRecolorable override
+        #endregion Standard KSP Overrides
+
+        #region IRecolorable and IContainerVolumeContributor Overrides
+
         public string[] getSectionNames() => new string[] { "Nose", "Core", "Mount" };
 
-        //IRecolorable override
         public RecoloringData[] getSectionColors(string section)
         {
-            if (section == "Nose")
+            return section switch
             {
-                return noseModule.recoloringData;
-            }
-            else if (section == "Core")
-            {
-                return coreModule.recoloringData;
-            }
-            else if (section == "Mount")
-            {
-                return mountModule.recoloringData;
-            }
-            return coreModule.recoloringData;
+                "Nose" => noseModule.recoloringData,
+                "Core" => coreModule.recoloringData,
+                "Mount" => mountModule.recoloringData,
+                _ => coreModule.recoloringData,
+            };
         }
 
-        //IRecolorable override
         public void setSectionColors(string section, RecoloringData[] colors)
         {
-            if (section == "Nose")
-            {
-                noseModule.setSectionColors(colors);
-            }
-            else if (section == "Core")
-            {
-                coreModule.setSectionColors(colors);
-            }
-            else if (section == "Mount")
-            {
-                mountModule.setSectionColors(colors);
-            }
+            if (section == "Nose") noseModule.setSectionColors(colors);
+            else if (section == "Core") coreModule.setSectionColors(colors);
+            else if (section == "Mount") mountModule.setSectionColors(colors);
         }
 
-        //IRecolorable override
         public TextureSet getSectionTexture(string section)
         {
-            if (section == "Nose")
+            return section switch
             {
-                return noseModule.textureSet;
-            }
-            else if (section == "Core")
-            {
-                return coreModule.textureSet;
-            }
-            else if (section == "Mount")
-            {
-                return mountModule.textureSet;
-            }
-            return coreModule.textureSet;
+                "Nose" => noseModule.textureSet,
+                "Core" => coreModule.textureSet,
+                "Mount" => mountModule.textureSet,
+                _ => coreModule.textureSet,
+            };
         }
 
         //IContainerVolumeContributor override
@@ -411,11 +334,10 @@ namespace ROLib
 
         private ContainerContribution GetCC(string name, int index, float vol)
         {
-            float contVol = vol;
-            return new ContainerContribution(name, index, contVol);
+            return new ContainerContribution(name, index, vol);
         }
 
-        #endregion Standard KSP Overrides
+        #endregion IRecolorable and IContainerVolumeContributor Overrides
 
         #region Custom Update Methods
 
@@ -423,7 +345,7 @@ namespace ROLib
         /// Initialization method.  Sets up model modules, loads their configs from the input config node.  Does all initial linking of part-modules.<para/>
         /// Does NOT set up their UI interaction -- that is all handled during OnStart()
         /// </summary>
-        private void initialize()
+        private void Initialize()
         {
             if (initialized) { return; }
             initialized = true;
@@ -514,15 +436,11 @@ namespace ROLib
                 this.ROLactionWithSymmetry(m =>
                 {
                     if (lengthWidth)
-                    {
                         m.SetModelFromDimensions();
-                    }
                     else
-                    {
                         m.coreModule.modelSelected(newCoreDef.definition.name);
-                    }
+                    ModelChangedHandler(true);
                 });
-                ModelChangedHandlerWithSymmetry(true, true);
                 MonoUtilities.RefreshPartContextWindow(part);
             };
 
@@ -532,9 +450,10 @@ namespace ROLib
             Fields[nameof(currentLength)].uiControlEditor.onFieldChanged =
             Fields[nameof(currentLength)].uiControlEditor.onSymmetryFieldChanged = OnLengthChanged;
 
-            Fields[nameof(currentVScale)].uiControlEditor.onFieldChanged = (a, b) =>
+            Fields[nameof(currentVScale)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentVScale)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
-                ModelChangedHandlerWithSymmetry(true, true);
+                ModelChangedHandler(true);
             };
 
             Fields[nameof(currentNose)].uiControlEditor.onFieldChanged =
@@ -577,7 +496,10 @@ namespace ROLib
             // KSP 1.7.3 bug, symmetry invocations will have o=newValue instead of previousValue
             if ((float)f.GetValue(this) == prevDiameter) return;
             if (lengthWidth)
+            {
+                ValidateLength();
                 SetModelFromDimensions();
+            }
             ModelChangedHandler(true);
             prevDiameter = currentDiameter;
         }
@@ -585,16 +507,17 @@ namespace ROLib
         private void OnLengthChanged(BaseField f, object o) 
         {
             if ((float)f.GetValue(this) == prevLength) return;
+            ValidateLength();
             SetModelFromDimensions();
             ModelChangedHandler(true);
             prevLength = currentLength;
         }
 
-    /// <summary>
-    /// Update the scale and position values for all currently configured models.  Does no validation, only updates positions.<para/>
-    /// After calling this method, all models will be scaled and positioned according to their internal position/scale values and the orientations/offsets defined in the models.
-    /// </summary>
-    public void UpdateModulePositions()
+        /// <summary>
+        /// Update the scale and position values for all currently configured models.  Does no validation, only updates positions.<para/>
+        /// After calling this method, all models will be scaled and positioned according to their internal position/scale values and the orientations/offsets defined in the models.
+        /// </summary>
+        public void UpdateModulePositions()
         {
             //scales for modules depend on the module above/below them
             //first set the scale for the core module -- this depends directly on the UI specified 'diameter' value.
@@ -606,10 +529,7 @@ namespace ROLib
             noseModule.RescaleToDiameter(coreModule.moduleUpperDiameter, noseModule.moduleLowerDiameter / noseModule.moduleHorizontalScale, currentVScale);
             mountModule.RescaleToDiameter(coreModule.moduleLowerDiameter, mountModule.moduleUpperDiameter / mountModule.moduleHorizontalScale, currentVScale);
 
-            //total height of the part is determined by the sum of the heights of the modules at their current scale
-            float totalHeight = noseModule.moduleHeight;
-            totalHeight += coreModule.moduleHeight;
-            totalHeight += mountModule.moduleHeight;
+            float totalHeight = noseModule.moduleHeight + coreModule.moduleHeight + mountModule.moduleHeight;
 
             //position of each module is set such that the vertical center of the models is at part origin/COM
             float pos = totalHeight * 0.5f;//abs top of model
@@ -650,7 +570,8 @@ namespace ROLib
         /// </summary>
         public void UpdateDimensions()
         {
-            float mountMaxDiam = currentMount.Contains("Mount") ? mountModule.moduleUpperDiameter : Math.Max(mountModule.moduleLowerDiameter, mountModule.moduleUpperDiameter);
+            // If mount module is originally designed as a bottom (mount) module, refer to upper diameter.  If it is anything repurposed, use its max diameter.
+            float mountMaxDiam = mountModule.definition.shouldInvert(ModelOrientation.BOTTOM) ? Math.Max(mountModule.moduleLowerDiameter, mountModule.moduleUpperDiameter) : mountModule.moduleUpperDiameter;
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
@@ -743,7 +664,36 @@ namespace ROLib
             ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, {ratioName}x-{currentVariant}");
 
             currentVScale = (dimRatio / modelRatio) - 1;
-            coreModule.modelSelected(s);
+            if (coreModule.modelName != s)
+                coreModule.modelSelected(s);
+        }
+
+        #nullable enable
+        private float ModuleEffectiveLength(ROLModelModule<ModuleROTank>? module) =>
+            (module is null) ? 0 : module.definition.effectiveLength * currentDiameter / coreModule.definition.diameter;
+        #nullable disable
+
+        private float DomeLength => currentDiameter / 2;
+        private float NoseEffectiveLength => ModuleEffectiveLength(noseModule);
+        private float MountEffectiveLength => ModuleEffectiveLength(mountModule);
+        private float EffectiveCylinderLength() //=> currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
+        {
+            float effectiveLength = currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
+            ROLLog.debug($"EffectiveLength() horScale: {currentDiameter / coreModule.definition.diameter}.  Nose: {NoseEffectiveLength:F1}, mount: {MountEffectiveLength:F1}, core: {currentLength:F1}, dome: {DomeLength:F1}, result: {effectiveLength}");
+            return effectiveLength;
+        }
+
+        private float CalcMinLength()
+        {
+            float min = Math.Max(0.1f, DomeLength - (NoseEffectiveLength + MountEffectiveLength));
+            return Mathf.Ceil(min / diameterSlideStep) * diameterSlideStep;
+        }
+
+        private void ValidateLength()
+        {
+            float minL = Mathf.Max(minLength, CalcMinLength());
+            this.ROLupdateUIFloatEditControl(nameof(currentLength), minL, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep);
+            currentLength = Mathf.Max(currentLength, minL);
         }
 
         private void UpdateTankVolume(bool lw)
@@ -755,24 +705,7 @@ namespace ROLib
                 return;
             }
 
-            float horScale = currentDiameter / coreModule.definition.diameter;
-            float domeLength = currentDiameter / 2;
-            float noseEffectiveLength = horScale * noseModule.definition.effectiveLength;
-            float mountEffectiveLength = horScale * mountModule.definition.effectiveLength;
-            float effectiveLength = currentLength + noseEffectiveLength + mountEffectiveLength - domeLength;
-            ROLLog.debug($"UpdateTankVolume() horScale: {horScale}.  Nose: {noseEffectiveLength:F1}, mount: {mountEffectiveLength:F1}, core: {currentLength:F1}, dome: {domeLength:F1}, result: {effectiveLength}");
-
-            // Set the minimum length based on domeLength
-            minLength = Math.Max(0.1f, domeLength - (noseEffectiveLength + mountEffectiveLength));
-
-            // Update the float controller to reset the proper minimum length
-            this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep);
-
-            // Set the tank length to be the same size as the minLength if it is currently smaller
-            currentLength = Math.Max(currentLength, minLength);
-
-            // Calculate the new volume
-            // First, get the additional volume from the nose and mounts *beyond what is provided by the tank length extension*
+            // Get the additional volume from the nose and mounts *beyond what is provided by the tank length extension*
             // Nose & Mount Diameters are the diameter of the model at the point of attachment.
             // Inversion handles a particular model that mounts in either orientation, and its values are for the orientation specified.
             float noseDiameter = noseModule.definition.shouldInvert(ModelOrientation.TOP) ? noseModule.definition.upperDiameter : noseModule.definition.lowerDiameter;
@@ -786,9 +719,9 @@ namespace ROLib
 
             // Calculate the volume of the main tank
             float r = currentDiameter / 2;
-            float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, effectiveLength)) * 1000f;
+            float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, EffectiveCylinderLength())) * 1000f;
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
-            ROLLog.debug($"UpdateTankVolume() Nose scale: {noseScale:F1} -> Vol: {noseAdditionalVol:F2}.  Mount scale: {mountScale:F1} -> Vol: {mountAdditionalVol:F2}.  Total volume: {effectiveVolume}");
+            ROLLog.debug($"UpdateTankVolume() Nose scale: {noseScale:F3} -> Vol: {noseAdditionalVol:F1}.  Mount scale: {mountScale:F3} -> Vol: {mountAdditionalVol:F1}.  Total volume: {effectiveVolume}");
 
             ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
         }
@@ -828,46 +761,16 @@ namespace ROLib
 
         private void OnSceneChange(GameScenes _) => HideGUI();
 
-        public void EditDimensions(ModuleROTank m)
+        public void EditDimensions()
         {
             if (dimWindow != null)
                 HideGUI();
             else 
             {
-                dimWindow = new DimensionWindow(m);
+                dimWindow = new DimensionWindow(this);
                 dimWindow.Show();
             }
         }
-
-        //private void openVariantGUI()
-        //{
-        //    if (VariantSelectionGUI.roTank != null)
-        //    {
-        //        VariantSelectionGUI.closeGUI();
-        //        return;
-        //    }
-
-        //    isVariantGUI = true;
-
-        //    VariantSelectionGUI.updateGUI();
-
-        //    EditorLogic editor = EditorLogic.fetch;
-        //    if (editor != null)
-        //    {
-        //        editor.Lock(true, true, true, "ROTankVariantLock");
-        //    }
-        //    VariantSelectionGUI.openGUI(this, coreDefs, noseDefs, mountDefs);
-        //}
-
-        //public void closeVariantGUI()
-        //{
-        //    isVariantGUI = false;
-        //    EditorLogic editor = EditorLogic.fetch;
-        //    if (editor != null)
-        //    {
-        //        editor.Unlock("ROTankVariantLock");
-        //    }
-        //}
 
         #endregion GUI
 
