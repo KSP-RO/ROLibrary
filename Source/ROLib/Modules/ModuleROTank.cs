@@ -142,10 +142,6 @@ namespace ROLib
         [KSPField(isPersistant = true)]
         public string mountModulePersistentData = string.Empty;
 
-        //tracks if default textures and resource volumes have been initialized; only occurs once during the parts' first Start() call
-        [KSPField(isPersistant = true)]
-        public bool initializedDefaults = false;
-
         #endregion KSPFields
 
         #region Private Variables
@@ -212,7 +208,7 @@ namespace ROLib
         /// <param name="def"></param>
         /// <returns></returns>
         private ModelDefinitionVariantSet GetVariantSet(ModelDefinitionLayoutOptions def) =>
-            variantSets.Values.Where(a => a.definitions.Contains(def)).FirstOrDefault();
+            variantSets.Values.FirstOrDefault(a => a.definitions.Contains(def));
 
         ModelDefinitionLayoutOptions[] coreDefs;
         ModelDefinitionLayoutOptions[] noseDefs;
@@ -259,6 +255,9 @@ namespace ROLib
         {
             if (string.IsNullOrEmpty(configNodeData)) { configNodeData = node.ToString(); }
             Initialize();
+            UpdateModulePositions();
+            UpdateDimensions();
+            UpdateModelMeshes();
         }
 
         public override void OnStart(StartState state)
@@ -268,7 +267,6 @@ namespace ROLib
             InitializeUI();
             if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
                 GameEvents.onFlightReady.Add(UpdateDragCubes);
-            initializedDefaults = true;
         }
 
         public void OnDestroy()
