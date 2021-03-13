@@ -169,7 +169,6 @@ namespace ROLib
 
         public float volumeScalar = 3f;
         public float MassScalar = 3f;
-        public float thrustScalar = 3f;
 
         /// <summary>
         /// Return the current mass for this module slot.  Includes adjustments from the definition mass based on the current scale.
@@ -699,11 +698,10 @@ namespace ROLib
         private void UpdateModuleStats()
         {
             int positions = layout.positions.Count();
-            float averageScale = (moduleHorizontalScale + moduleHorizontalScale + moduleVerticalScale) / 3;
-            // averageScale cannot be valid.
-            float mScalar = Mathf.Pow(averageScale, MassScalar);
-            float vScalar = Mathf.Pow(averageScale, volumeScalar);
-            float cScalar = Mathf.Pow(averageScale, MassScalar);
+            float scale = moduleHorizontalScale * moduleHorizontalScale * moduleVerticalScale;
+            float mScalar = Mathf.Pow(scale, MassScalar / 3);
+            float vScalar = Mathf.Pow(scale, volumeScalar / 3);
+            float cScalar = Mathf.Pow(scale, MassScalar / 3);
             moduleMass = definition.mass * mScalar * positions;
             moduleCost = definition.cost * cScalar * positions;
             moduleVolume = definition.volume * vScalar * positions;
