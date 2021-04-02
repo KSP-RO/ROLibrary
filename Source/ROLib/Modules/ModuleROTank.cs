@@ -47,6 +47,8 @@ namespace ROLib
         [KSPField] public string mountManagedNodes = string.Empty;
         [KSPField] public string noseInterstageNode = "noseinterstage";
         [KSPField] public string mountInterstageNode = "mountinterstage";
+        [KSPField] public bool validateNose = false;
+        [KSPField] public bool validateMount = false;
 
         /// <summary>
         /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
@@ -220,6 +222,8 @@ namespace ROLib
 
         internal void ModelChangedHandler(bool pushNodes)
         {
+            if (validateNose || validateMount)
+                ValidateModules();
             ValidateLength();
             UpdateModulePositions();
             UpdateTankVolume(lengthWidth);
@@ -380,20 +384,34 @@ namespace ROLib
             noseDefs = ROLModelData.getModelDefinitions(node.GetNodes("NOSE"));
             mountDefs = ROLModelData.getModelDefinitions(node.GetNodes("MOUNT"));
 
-            noseModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
-            noseModule.name = "ModuleROTank-Nose";
-            noseModule.getSymmetryModule = m => m.noseModule;
-            noseModule.getValidOptions = () => noseDefs;
-
             coreModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-CORE"), ModelOrientation.CENTRAL, nameof(currentCore), null, nameof(currentCoreTexture), nameof(coreModulePersistentData));
             coreModule.name = "ModuleROTank-Core";
             coreModule.getSymmetryModule = m => m.coreModule;
             coreModule.getValidOptions = () => GetVariantSet(currentVariant).definitions;
 
+            noseModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
+            noseModule.name = "ModuleROTank-Nose";
+            noseModule.getSymmetryModule = m => m.noseModule;
+            if (validateNose)
+            {
+                noseModule.getValidOptions = () => noseModule.getValidModels(noseDefs, coreModule.definition.style);
+            }
+            else
+            {
+                noseModule.getValidOptions = () => noseDefs;
+            }
+
             mountModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
             mountModule.name = "ModuleROTank-Mount";
             mountModule.getSymmetryModule = m => m.mountModule;
-            mountModule.getValidOptions = () => mountDefs;
+            if (validateMount)
+            {
+                mountModule.getValidOptions = () => mountModule.getValidModels(mountDefs, coreModule.definition.style);
+            }
+            else
+            {
+                mountModule.getValidOptions = () => mountDefs;
+            }
 
             noseModule.volumeScalar = volumeScalingPower;
             coreModule.volumeScalar = volumeScalingPower;
@@ -406,6 +424,8 @@ namespace ROLib
             coreModule.setupModel();
             noseModule.setupModel();
             mountModule.setupModel();
+            if (validateNose || validateMount)
+                ValidateModules();
         }
 
         /// <summary>
@@ -477,6 +497,24 @@ namespace ROLib
 
             if (HighLogic.LoadedSceneIsEditor)
                 GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
+        }
+
+        private void ValidateModules()
+        {
+            if (validateNose && !coreModule.isValidModel(noseModule, coreModule.definition.style))
+            {
+                String coreStyle = coreModule.definition.style;
+                ROLModelDefinition def = coreModule.findFirstValidModel(noseModule, coreStyle);
+                if (def == null) { error("Could not locate valid definition for NOSE"); }
+                noseModule.modelSelected(def.name);
+            }
+            if (validateNose && !coreModule.isValidModel(mountModule, coreModule.definition.style))
+            {
+                String coreStyle = coreModule.definition.style;
+                ROLModelDefinition def = coreModule.findFirstValidModel(mountModule, coreStyle);
+                if (def == null) { error("Could not locate valid definition for MOUNT"); }
+                mountModule.modelSelected(def.name);
+            }
         }
 
         private void OnModelSelectionChanged(BaseField f, object o)
@@ -573,7 +611,7 @@ namespace ROLib
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
-            ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Largest Diameter: {largestDiameter}.  Total Tank length: {totalTankLength}");
+            // ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Largest Diameter: {largestDiameter}.  Total Tank length: {totalTankLength}");
         }
 
         /// <summary>
@@ -659,7 +697,7 @@ namespace ROLib
 
             string ratioName = $"{modelRatio:0.0}";
             string s = $"{ratioName}x-{currentVariant}";
-            ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, {ratioName}x-{currentVariant}");
+            //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, {ratioName}x-{currentVariant}");
 
             currentVScale = (dimRatio / modelRatio) - 1;
             if (coreModule.modelName != s)
@@ -677,7 +715,7 @@ namespace ROLib
         private float EffectiveCylinderLength() //=> currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
         {
             float effectiveLength = currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
-            ROLLog.debug($"EffectiveLength() horScale: {currentDiameter / coreModule.definition.diameter}.  Nose: {NoseEffectiveLength:F1}, mount: {MountEffectiveLength:F1}, core: {currentLength:F1}, dome: {DomeLength:F1}, result: {effectiveLength}");
+            //ROLLog.debug($"EffectiveLength() horScale: {currentDiameter / coreModule.definition.diameter}.  Nose: {NoseEffectiveLength:F1}, mount: {MountEffectiveLength:F1}, core: {currentLength:F1}, dome: {DomeLength:F1}, result: {effectiveLength}");
             return effectiveLength;
         }
 
@@ -719,7 +757,7 @@ namespace ROLib
             float r = currentDiameter / 2;
             float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, EffectiveCylinderLength())) * 1000f;
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
-            ROLLog.debug($"UpdateTankVolume() Nose scale: {noseScale:F3} -> Vol: {noseAdditionalVol:F1}.  Mount scale: {mountScale:F3} -> Vol: {mountAdditionalVol:F1}.  Total volume: {effectiveVolume}");
+            //ROLLog.debug($"UpdateTankVolume() Nose scale: {noseScale:F3} -> Vol: {noseAdditionalVol:F1}.  Mount scale: {mountScale:F3} -> Vol: {mountAdditionalVol:F1}.  Total volume: {effectiveVolume}");
 
             ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
         }

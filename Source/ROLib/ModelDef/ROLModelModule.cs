@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using KSPShaderTools;
 using static ROLib.ROLLog;
+using System.Collections.Generic;
 
 namespace ROLib
 {
@@ -950,41 +951,52 @@ namespace ROLib
         private string GetErrorReportModuleName() =>
             $"ModelModule: [{name}] model: [{definition}] in orientation: [{orientation}] in module: {partModule} in part: {part}";
 
-        /// <summary>
-        /// Return the X and Y mounting positions for an RCS model-module slot parented to -this- model-module.
-        /// </summary>
-        /// <param name="vPos"></param>
-        /// <param name="upper"></param>
-        /// <param name="radius"></param>
-        /// <param name="posY"></param>
-        public void GetRCSMountingValues(float vPos, bool upper, out float radius, out float posY)
+        #endregion ENDREGION - Private/Internal methods
+
+        public ModelDefinitionLayoutOptions[] getValidModels (ModelDefinitionLayoutOptions[] inputOptions, String coreName)
         {
-            bool invert = definition.shouldInvert(orientation);
-            posY = 0;
-            //if (invert) { upper = !upper; }
-            if (definition.rcsPositionData != null)
+            List<ModelDefinitionLayoutOptions> validDefs = new List<ModelDefinitionLayoutOptions>();
+            ModelDefinitionLayoutOptions def;
+            int len = inputOptions.Length;
+            for (int i = 0; i < len; i++)
             {
-                ModelAttachablePositionData mapd;
-                if (upper)//always 0th index in config
+                def = inputOptions[i];
+                if (def.definition.requiredCore == coreName)
                 {
-                    mapd = definition.rcsPositionData[0];
+                    validDefs.Add(def);
                 }
-                else//if both positions specified, will always be 1st index, else 0th
-                {
-                    // Lower definition [1] if defined, otherwise default to  Upper definition [0]
-                    int index = definition.rcsPositionData.Length > 1 ? 1 : 0;
-                    mapd = definition.rcsPositionData[index];
-                }
-                mapd.GetModelPosition(moduleHorizontalScale, moduleVerticalScale, vPos, invert, out radius, out posY);
             }
-            else
-            {
-                radius = moduleDiameter * 0.5f;
-            }
-            posY += modulePosition + GetPlacementOffset();
+            return validDefs.ToArray();
         }
 
-        #endregion ENDREGION - Private/Internal methods
+        public ROLModelDefinition findFirstValidModel(ROLModelModule<U> module, String coreName)
+        {
+            int len = module.optionsCache.Length;
+            for (int i = 0; i < len; i++)
+            {
+                if (module.optionsCache[i].definition.requiredCore == coreName)
+                {
+                    return module.optionsCache[i].definition;
+                }
+            }
+            error("Could not locate any valid upper modules matching def: " + definition);
+            return null;
+        }
+
+        public bool isValidModel (ROLModelModule<U> module, String coreName)
+        {
+            return isValidModel(module.definition, coreName);
+        }
+
+        public bool isValidModel (ROLModelDefinition def, String coreName)
+        {
+            if (def.requiredCore == coreName)
+            {
+                return true;
+            }
+            error("Could not locate any valid upper modules matching def: " + def);
+            return false;
+        }
 
     }
 }

@@ -231,6 +231,9 @@ namespace ROLib
         /// </summary>
         public readonly ModelRCSModuleData rcsModuleData;
 
+        public readonly String requiredCore;
+        public readonly String style;
+
         /// <summary>
         /// Construct the model definition from the data in the input ConfigNode.<para/>
         /// All data constructs MUST conform to the expected format (see documentation), or things will not load properly and the model will likely not work as expected.
@@ -283,6 +286,14 @@ namespace ROLib
 
             orientation = (ModelOrientation)Enum.Parse(typeof(ModelOrientation), node.ROLGetStringValue("orientation", ModelOrientation.TOP.ToString()));
             invertAxis = node.ROLGetVector3("invertAxis", invertAxis);
+            if (node.HasValue("requiredCore"))
+            {
+                requiredCore = node.ROLGetStringValue("requiredCore");
+            }
+            if (node.HasValue("style"))
+            {
+                style = node.ROLGetStringValue("style");
+            }
 
             //load sub-model definitions
             ConfigNode[] subModelNodes = node.GetNodes("SUBMODEL");
@@ -451,6 +462,17 @@ namespace ROLib
         internal bool shouldInvert(ModelOrientation orientation)
         {
             return (orientation == ModelOrientation.BOTTOM && this.orientation == ModelOrientation.TOP) || (orientation == ModelOrientation.TOP && this.orientation == ModelOrientation.BOTTOM);
+        }
+
+        private bool canAttach(string[] compatible, String coreName)
+        {
+            bool foundAll = true;
+            int len = compatible.Length;
+            if (!compatible.Contains(coreName))
+            {
+                foundAll = false;
+            }
+            return foundAll;
         }
 
         public override string ToString() => $"ModelDef[ {name} ]";
