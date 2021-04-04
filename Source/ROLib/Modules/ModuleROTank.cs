@@ -634,17 +634,18 @@ namespace ROLib
             mountModule.updateAttachNodeBody(mountNodeNames, userInput);
 
             // Update the Nose Interstage Node
-            float y = noseModule.modulePosition + noseModule.moduleVerticalScale;
+            //float y = (coreModule.ModuleTop);
             int nodeSize = Mathf.RoundToInt(coreModule.moduleDiameter) + 1;
-            Vector3 pos = new Vector3(0, y, 0);
+            Vector3 pos = new Vector3(0, coreModule.ModuleTop, 0);
             ROLSelectableNodes.updateNodePosition(part, noseInterstageNode, pos);
             if (part.FindAttachNode(noseInterstageNode) is AttachNode noseInterstage)
                 ROLAttachNodeUtils.updateAttachNodePosition(part, noseInterstage, pos, Vector3.up, userInput, nodeSize);
 
             // Update the Mount Interstage Node
-            y = mountModule.modulePosition + mountModule.moduleVerticalScale;
+            //y = mountModule.modulePosition + mountModule.moduleVerticalScale;
+            //y = (-coreModule.moduleHeight / 2);
             nodeSize = Mathf.RoundToInt(coreModule.moduleDiameter) + 1;
-            pos = new Vector3(0, y, 0);
+            pos = new Vector3(0, coreModule.ModuleBottom, 0);
             ROLSelectableNodes.updateNodePosition(part, mountInterstageNode, pos);
             if (part.FindAttachNode(mountInterstageNode) is AttachNode mountInterstage)
                 ROLAttachNodeUtils.updateAttachNodePosition(part, mountInterstage, pos, Vector3.down, userInput, nodeSize);
