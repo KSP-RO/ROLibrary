@@ -19,7 +19,7 @@ namespace ROLib
             INSTANCE = this;
             KSPShaderTools.TexturesUnlimitedLoader.addPostLoadCallback(KSPShaderToolsPostLoad);
             GameObject.DontDestroyOnLoad(this);
-            MonoBehaviour.print("ROLStockInterop Start");
+            MonoBehaviour.print("ROTStockInterop Start");
         }
 
         public static void FireEditorUpdate()
@@ -130,11 +130,6 @@ namespace ROLib
                 }
                 part.RefreshHighlighter();
             }
-        }
-
-        public static void fireEditorUpdate()
-        {
-            fireEditorEvent = HighLogic.LoadedSceneIsEditor;
         }
     }
 }

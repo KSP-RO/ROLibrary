@@ -1,0 +1,121 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{FBB972B2-53AD-4174-A6E7-202E02645572}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ROLib</RootNamespace>
+    <AssemblyName>ROLib</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\GameData\ROLib\Plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>8.0</LangVersion>
+    <FileAlignment>4096</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\GameData\ROLib\Plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="TexturesUnlimited">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VehiclesModule">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Modules\ModuleROTAirstreamShield.bak" />
+    <Compile Include="Modules\ModuleROSolar.cs" />
+    <Compile Include="Modules\ROLAnimateEngineHeat.cs" />
+    <Compile Include="Modules\ROLDeployableEngine.cs" />
+    <Compile Include="ROSolar\SolarTechLimit.cs" />
+    <Compile Include="UI\DimensionWindow.cs" />
+    <Compile Include="UI\AbstractWindow.cs" />
+    <Compile Include="ModelDef\ROLAnimationModule.cs" />
+    <Compile Include="ModelDef\ROLAnimState.cs" />
+    <Compile Include="Modules\ModuleRODecoupler.cs" />
+    <Compile Include="Modules\ModuleROTank.cs" />
+    <Compile Include="Modules\ROLModelConstraint.cs" />
+    <Compile Include="Modules\ROLCollisionHandler.cs" />
+    <Compile Include="Modules\ROLFlagDecal.cs" />
+    <None Include="Modules\ModuleROTNodeFairing.bak" />
+    <Compile Include="Modules\ROLSelectableNodes.cs" />
+    <None Include="ModelDef\ROLMeshBuilder.cs.bak" />
+    <None Include="ModelDef\ROLMeshGenerators.cs.bak" />
+    <Compile Include="ModelDef\ROLModelData.cs" />
+    <Compile Include="ModelDef\ROLModelDefinition.cs" />
+    <Compile Include="ModelDef\ROLModelLayout.cs" />
+    <Compile Include="ModelDef\ROLModelModule.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="UI\ModelWindow.cs.bak" />
+    <Compile Include="Utils\ModuleDefinitionVariantSet.cs" />
+    <Compile Include="Utils\ROLAttachNodeUtils.cs" />
+    <Compile Include="Utils\ROLConfigNodeUtils.cs" />
+    <Compile Include="Utils\ROLExtensions.cs" />
+    <Compile Include="Utils\ROLGameSettings.cs" />
+    <Compile Include="Utils\ROLInterfaces.cs" />
+    <Compile Include="Utils\ROLLog.cs" />
+    <Compile Include="Utils\ROLModInterop.cs" />
+    <Compile Include="Utils\ROLStockInterop.cs" />
+    <Compile Include="Utils\ROLUtils.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
