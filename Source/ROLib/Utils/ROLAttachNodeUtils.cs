@@ -93,6 +93,31 @@ namespace ROLib
         /// <param name="part"></param>
         /// <param name="oldDiameter"></param>
         /// <param name="newDiameter"></param>
+        public static void updateSurfaceAttachedChildren(Part part, float oldDiameter, float newDiameter, float oldLength, float newLength)
+        {
+            float delta = (newDiameter - oldDiameter) / 2;
+            float lengthDelta = (newLength - oldLength) / 2;
+            Vector3 parentLS = part.transform.localPosition;
+            foreach (Part child in part.children)
+            {
+                if (child.srfAttachNode is AttachNode n && n.attachedPart == part)//has surface attach node, and surface attach node is attached to the input part
+                {
+                    // The child must displace radially in the coordinate system of the parent
+                    // Work in the parent coordinate space, then translate in world.
+                    Vector3 childInParentSpace = part.transform.InverseTransformPoint(child.transform.position);
+                    Vector3 dir = childInParentSpace - parentLS;
+                    dir.y = 0;
+                    dir.Normalize();
+                    // Debug.Log($"[ROLAttachNode] Moving surface-attached children by {delta} in dir {dir} in parent space");
+                    Vector3 dir_w = part.transform.TransformDirection(dir);
+                    Vector3 dir_y = part.transform.TransformDirection(0f, 1f, 0f);
+                    child.transform.Translate(dir_w * delta, Space.World);
+                    child.transform.Translate(dir_y * lengthDelta, Space.World);
+                    child.attPos0 = child.transform.localPosition;
+                }
+            }
+        }
+
         public static void updateSurfaceAttachedChildren(Part part, float oldDiameter, float newDiameter)
         {
             float delta = (newDiameter - oldDiameter) / 2;
