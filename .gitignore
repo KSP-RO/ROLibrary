@@ -330,3 +330,5 @@ ASALocalRun/
 .mfractor/
 
 Source/ROLib/ROLib.csproj
+
+*.csproj
