@@ -154,6 +154,11 @@ namespace ROLib
         public readonly Vector3 invertAxis = Vector3.forward;
 
         /// <summary>
+        /// Container for the faring data for this model definition.  Enabled/disabled, positioning, sizing data.
+        /// </summary>
+        public readonly ModelFairingData fairingData;
+
+        /// <summary>
         /// Data defining a submodel setup -- a custom model comprised of multiple sub-models, all being treated as a single model-definition.<para/>
         /// All model definitions are mapped to a SUBMODEL setup internally during model creation, even if they only use the basic singular 'modelName=' configuration setup.
         /// This single model from the database becomes a single subModelData entry, using all of the transforms from the specified database model.
@@ -195,6 +200,8 @@ namespace ROLib
         /// </summary>
         public readonly AttachNodeBaseData surfaceNode;
 
+        public readonly String[] disableTransforms;
+
         /// <summary>
         /// The 'default' texture set for this model definition.  If unspecified, is set to the first available texture set if any are present in the model definition.
         /// </summary>
@@ -231,7 +238,7 @@ namespace ROLib
         /// </summary>
         public readonly ModelRCSModuleData rcsModuleData;
 
-        public readonly String requiredCore;
+        public readonly String[] requiredCore;
         public readonly String style;
 
         /// <summary>
@@ -286,14 +293,38 @@ namespace ROLib
 
             orientation = (ModelOrientation)Enum.Parse(typeof(ModelOrientation), node.ROLGetStringValue("orientation", ModelOrientation.TOP.ToString()));
             invertAxis = node.ROLGetVector3("invertAxis", invertAxis);
+
+            List<String> compatibleCores = new List<String>();
             if (node.HasValue("requiredCore"))
             {
-                requiredCore = node.ROLGetStringValue("requiredCore");
+                foreach (string core in node.ROLGetStringValues("requiredCore"))
+                {
+                    compatibleCores.Add(core);
+                }
+                requiredCore = compatibleCores.ToArray();
             }
+
             if (node.HasValue("style"))
             {
                 style = node.ROLGetStringValue("style");
             }
+            else
+            {
+                style = "NONE";
+            }
+
+            List<String> disableMeshes = new List<String>();
+            foreach (string trans in node.ROLGetStringValues("disableTransform"))
+            {
+                ROLLog.log($"trans: {trans}");
+                disableMeshes.Add(trans);
+            }
+            disableTransforms = disableMeshes.ToArray();
+            foreach (string dt in disableTransforms)
+            {
+                ROLLog.log($"disableTransforms: {dt}");
+            }
+            ROLLog.log($"disableTransforms.Length: {disableTransforms.Length}");
 
             //load sub-model definitions
             ConfigNode[] subModelNodes = node.GetNodes("SUBMODEL");
@@ -302,7 +333,7 @@ namespace ROLib
             {
                 if (!string.IsNullOrEmpty(modelName))
                 {
-                    SubModelData smd = new SubModelData(modelName, new string[0], string.Empty, positionOffset, rotationOffset, scaleOffset);
+                    SubModelData smd = new SubModelData(modelName, new string[0], disableTransforms, string.Empty, positionOffset, rotationOffset, scaleOffset);
                     subModelData = new SubModelData[] { smd };
                 }
                 else//is an empty proxy model with no meshes
@@ -398,25 +429,17 @@ namespace ROLib
             if (node.HasNode("CONSTRAINT"))
                 constraintData = new ModelConstraintData(node.GetNode("CONSTRAINT"));
 
-            if (node.HasNode("RCSDATA"))
-                rcsModuleData = new ModelRCSModuleData(node.GetNode("RCSDATA"));
-
-            if (node.HasNode("RCSPOSITION"))
-            {
-                ConfigNode[] pns = node.GetNodes("RCSPOSITION");
-                len = pns.Length;
-                rcsPositionData = new ModelAttachablePositionData[len];
-                for (int i = 0; i < len; i++)
-                {
-                    rcsPositionData[i] = new ModelAttachablePositionData(pns[i]);
-                }
-            }
-
             if (node.HasNode("ENGINE_THRUST"))
                 engineThrustData = new ModelEngineThrustData(node.GetNode("ENGINE_THRUST"));
 
             if (node.HasNode("ENGINE_TRANSFORM"))
                 engineTransformData = new ModelEngineTransformData(node.GetNode("ENGINE_TRANSFORM"));
+
+            //load the fairing data, if present
+            if (node.HasNode("FAIRINGDATA"))
+            {
+                fairingData = new ModelFairingData(node.GetNode("FAIRINGDATA"));
+            }
         }
 
         /// <summary>
@@ -425,6 +448,8 @@ namespace ROLib
         /// <param name="partUpgrades"></param>
         /// <returns></returns>
         public bool IsAvailable(List<string> partUpgrades) => string.IsNullOrEmpty(upgradeUnlock) || partUpgrades.Contains(upgradeUnlock);
+
+        public string[] GetTransformsToRemove() => disableTransforms;
 
         /// <summary>
         /// Return a string array containing the names of the texture sets that are available for this model definition.
@@ -556,6 +581,50 @@ namespace ROLib
     }
 
     /// <summary>
+    /// Information pertaining to a single ModelDefinition, defining how NodeFairings are configured for the model at its default scale.
+    /// </summary>
+    public class ModelFairingData
+    {
+
+        /// <summary>
+        /// Are fairings supported on this model?
+        /// </summary>
+        public readonly bool fairingsSupported = false;
+
+        /// <summary>
+        /// Position of the 'top' of the fairing, relative to model in its defined orientation and scale.
+        /// If the model is used in oposite orientation, this value is negated.
+        /// </summary>
+        public readonly float top = 0f;
+
+        /// <summary>
+        /// Position of the 'bottom' of the fairing, relative to model in its defined orientation and scale.
+        /// If the model is used in oposite orientation, this value is negated.
+        /// </summary>
+        public readonly float bottom = 0f;
+
+        public ModelFairingData(ConfigNode node)
+        {
+            fairingsSupported = node.GetBoolValue("enabled", false);
+            top = node.GetFloatValue("top", 0f);
+            bottom = node.GetFloatValue("bottom", 0f);
+        }
+
+        public float GetTop(float scale, bool invert)
+        {
+            if (invert) { return scale * bottom; }
+            return scale * top;
+        }
+
+        public float GetBottom(float scale, bool invert)
+        {
+            if (invert) { return scale * top; }
+            return scale * bottom;
+        }
+
+    }
+
+    /// <summary>
     /// Container for RCS position related data for a standard structural model definition.
     /// </summary>
     public class ModelRCSModuleData
@@ -648,7 +717,6 @@ namespace ROLib
             oRadius = outX;
             oPosY = outY;
         }
-
     }
 
     /// <summary>
@@ -703,6 +771,7 @@ namespace ROLib
         public readonly string modelURL;
         public readonly string[] modelMeshes;
         public readonly string[] renameMeshes;
+        public readonly string[] deleteMeshes;
         public readonly string parent;
         public readonly Vector3 rotation;
         public readonly Vector3 position;
@@ -713,17 +782,19 @@ namespace ROLib
             modelURL = node.ROLGetStringValue("modelName");
             modelMeshes = node.ROLGetStringValues("transform");
             renameMeshes = node.ROLGetStringValues("rename");
+            deleteMeshes = node.ROLGetStringValues("disableTransform");
             parent = node.ROLGetStringValue("parent", string.Empty);
             position = node.ROLGetVector3("position", Vector3.zero);
             rotation = node.ROLGetVector3("rotation", Vector3.zero);
             scale = node.ROLGetVector3("scale", Vector3.one);
         }
 
-        public SubModelData(string modelURL, string[] meshNames, string parent, Vector3 pos, Vector3 rot, Vector3 scale)
+        public SubModelData(string modelURL, string[] meshNames, string[] deleteNames, string parent, Vector3 pos, Vector3 rot, Vector3 scale)
         {
             this.modelURL = modelURL;
             this.modelMeshes = meshNames;
             this.renameMeshes = new string[0];
+            this.deleteMeshes = deleteNames;
             this.parent = parent;
             this.position = pos;
             this.rotation = rot;
@@ -761,6 +832,27 @@ namespace ROLib
                 foreach (Transform tr in modelRoot.transform.ROLFindChildren(oldName))
                 {
                     tr.name = newName;
+                }
+            }
+            foreach (Transform tr in modelRoot.transform.ROLGetAllChildren())
+            {
+                List<Transform> toKeep = new List<Transform>();
+                List<Transform> toCheck = new List<Transform>();
+                if (tr is Transform)
+                {
+                    toCheck.Add(tr);
+                }
+                foreach (string delTrans in deleteMeshes)
+                {
+                    foreach (Transform trans in toCheck)
+                    {
+                        ROLLog.log($"trans: {trans.name} -> {delTrans}");
+                        if (trans.name == delTrans)
+                        {
+                            tr.gameObject.SetActive(false);
+                            ROLLog.log($"Transform {tr} removed.");
+                        }                        
+                    }
                 }
             }
         }

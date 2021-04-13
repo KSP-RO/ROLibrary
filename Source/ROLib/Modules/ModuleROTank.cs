@@ -38,7 +38,8 @@ namespace ROLib
         [KSPField] public bool lengthWidth = false;
         [KSPField] public bool scaleMass = false;
         [KSPField] public bool scaleCost = false;
-        
+        [KSPField] public bool hasNodeFairing = false;
+
         [KSPField] public int coreContainerIndex = 0;
         [KSPField] public int noseContainerIndex = 0;
         [KSPField] public int mountContainerIndex = 0;
@@ -47,8 +48,14 @@ namespace ROLib
         [KSPField] public string mountManagedNodes = string.Empty;
         [KSPField] public string noseInterstageNode = "noseinterstage";
         [KSPField] public string mountInterstageNode = "mountinterstage";
-        [KSPField] public bool validateNose = false;
-        [KSPField] public bool validateMount = false;
+        [KSPField] public string noseFairingNode = "nosefairing";
+        [KSPField] public string mountFairingNode = "mountfairing";
+        [KSPField] public bool validateNose = true;
+        [KSPField] public bool validateMount = true;
+        [KSPField] public bool hasFairing = false;
+
+        [KSPField] public int topFairingIndex = -1;
+        [KSPField] public int bottomFairingIndex = -1;
 
         /// <summary>
         /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
@@ -63,6 +70,12 @@ namespace ROLib
 
         [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = GroupName)]
         public void OpenTankDimensionGUIEvent() => EditDimensions();
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Nose Fairing", groupName = GroupName, groupDisplayName = GroupDisplayName), UI_Toggle(disabledText = "Disabled", enabledText = "Enabled", suppressEditorShipModified = true)]
+        public bool hasNoseFairing = false;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Mount Fairing", groupName = GroupName, groupDisplayName = GroupDisplayName), UI_Toggle(disabledText = "Disabled", enabledText = "Enabled", suppressEditorShipModified = true)]
+        public bool hasMountFairing = false;
 
         /// <summary>
         /// Adjustment to the vertical-scale of v-scale compatible models/module-slots.
@@ -135,14 +148,11 @@ namespace ROLib
         //------------------------------------------RECOLORING PERSISTENCE-----------------------------------------------//
 
         //persistent data for modules; stores colors
-        [KSPField(isPersistant = true)]
-        public string noseModulePersistentData = string.Empty;
+        [KSPField(isPersistant = true)] public string noseModulePersistentData = string.Empty;
 
-        [KSPField(isPersistant = true)]
-        public string coreModulePersistentData = string.Empty;
+        [KSPField(isPersistant = true)] public string coreModulePersistentData = string.Empty;
 
-        [KSPField(isPersistant = true)]
-        public string mountModulePersistentData = string.Empty;
+        [KSPField(isPersistant = true)] public string mountModulePersistentData = string.Empty;
 
         #endregion KSPFields
 
@@ -231,6 +241,7 @@ namespace ROLib
             UpdateModelMeshes();
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
+            UpdateFairing(true);
             UpdateDragCubes();
             if (scaleMass)
                 UpdateMass();
@@ -353,10 +364,7 @@ namespace ROLib
             initialized = true;
 
             prevDiameter = currentDiameter;
-            if (lengthWidth)
-            {
-                prevLength = currentLength;
-            }
+            prevLength = currentLength;
 
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
@@ -388,6 +396,7 @@ namespace ROLib
             coreModule.name = "ModuleROTank-Core";
             coreModule.getSymmetryModule = m => m.coreModule;
             coreModule.getValidOptions = () => GetVariantSet(currentVariant).definitions;
+            
 
             noseModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
             noseModule.name = "ModuleROTank-Nose";
@@ -399,7 +408,7 @@ namespace ROLib
             else
             {
                 noseModule.getValidOptions = () => noseDefs;
-            }
+            }            
 
             mountModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
             mountModule.name = "ModuleROTank-Mount";
@@ -411,11 +420,12 @@ namespace ROLib
             else
             {
                 mountModule.getValidOptions = () => mountDefs;
-            }
+            }            
 
             noseModule.volumeScalar = volumeScalingPower;
             coreModule.volumeScalar = volumeScalingPower;
             mountModule.volumeScalar = volumeScalingPower;
+
 
             //set up the model lists and load the currently selected model
             noseModule.setupModelList(noseDefs);
@@ -472,6 +482,20 @@ namespace ROLib
             Fields[nameof(currentVScale)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
                 ModelChangedHandler(true);
+            };
+
+            Fields[nameof(hasNoseFairing)].uiControlEditor.onFieldChanged =
+            Fields[nameof(hasNoseFairing)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
+            {
+                log($"CHANGED hasNoseFairing: {hasNoseFairing}");
+                UpdateFairing(true);
+            };
+
+            Fields[nameof(hasMountFairing)].uiControlEditor.onFieldChanged =
+            Fields[nameof(hasMountFairing)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
+            {
+                log($"CHANGED hasMountFairing: {hasMountFairing}");
+                UpdateFairing(true);
             };
 
             Fields[nameof(currentNose)].uiControlEditor.onFieldChanged =
@@ -538,6 +562,7 @@ namespace ROLib
             }
             ModelChangedHandler(true);
             prevDiameter = currentDiameter;
+            prevLength = currentLength;
         }
 
         private void OnLengthChanged(BaseField f, object o) 
@@ -583,7 +608,6 @@ namespace ROLib
             coreModule.UpdateModelScalesAndLayoutPositions();
             mountModule.UpdateModelScalesAndLayoutPositions();
         }
-
 
         /// <summary>
         /// Update the cached modifiedMass field values.  Used with stock mass modifier interface.<para/>
@@ -640,6 +664,7 @@ namespace ROLib
             ROLSelectableNodes.updateNodePosition(part, noseInterstageNode, pos);
             if (part.FindAttachNode(noseInterstageNode) is AttachNode noseInterstage)
                 ROLAttachNodeUtils.updateAttachNodePosition(part, noseInterstage, pos, Vector3.up, userInput, nodeSize);
+            ROLModelModule<ModuleROTank> nodeModule = coreModule;
 
             // Update the Mount Interstage Node
             //y = mountModule.modulePosition + mountModule.moduleVerticalScale;
@@ -652,7 +677,7 @@ namespace ROLib
 
             //update surface attach node position, part position, and any surface attached children
             if (part.srfAttachNode is AttachNode surfaceNode)
-                coreModule.updateSurfaceAttachNode(surfaceNode, prevDiameter, userInput);
+                coreModule.updateSurfaceAttachNode(surfaceNode, prevDiameter, prevLength, userInput);
         }
 
         /// <summary>
@@ -675,6 +700,11 @@ namespace ROLib
             noseModule.updateSelections();
             coreModule.updateSelections();
             mountModule.updateSelections();
+
+            bool isFairing = hasFairing;
+
+            Fields[nameof(hasNoseFairing)].guiActiveEditor = isFairing;
+            Fields[nameof(hasMountFairing)].guiActiveEditor = isFairing;
         }
 
         /// <summary>
@@ -703,6 +733,11 @@ namespace ROLib
             currentVScale = (dimRatio / modelRatio) - 1;
             if (coreModule.modelName != s)
                 coreModule.modelSelected(s);
+        }
+
+        private float GetPartTopY()
+        {
+            return GetTotalHeight() * 0.5f;
         }
 
         #nullable enable
@@ -771,11 +806,84 @@ namespace ROLib
             part.SendEvent("OnPartVolumeChanged", data, 0);
         }
 
-        #endregion ENDREGION - Custom Update Methods
+        private void UpdateFairing(bool userInput)
+        {
+            log($"Updating Fairing...");
+            ModuleROLNodeFairing[] modules = part.GetComponents<ModuleROLNodeFairing>();
+            if (topFairingIndex >= 0 && topFairingIndex < modules.Length)
+            {
+                bool enabled = hasNoseFairing;
+                log($"hasNoseFairing: {hasNoseFairing}");
+                ModuleROLNodeFairing topFairing = modules[topFairingIndex];
+                ROLFairingUpdateData data = new ROLFairingUpdateData();
+                data.SetBottomY(coreModule.ModuleTop);
+                data.SetBottomRadius(coreModule.moduleUpperDiameter / 2);
+                data.SetNoseFairingNode(noseFairingNode);
+                data.SetEnable(enabled);
+                if (userInput) { data.SetTopRadius(coreModule.moduleUpperDiameter / 2); }
+                topFairing.UpdateExternal(data);
+            }
+            if (bottomFairingIndex >= 0 && bottomFairingIndex < modules.Length)
+            {
+                bool enabled = hasMountFairing;
+                log($"hasMountFairing: {hasMountFairing}");
+                ModuleROLNodeFairing bottomFairing = modules[bottomFairingIndex];
+                ROLFairingUpdateData data = new ROLFairingUpdateData();
+                data.SetTopRadius(coreModule.moduleLowerDiameter / 2);
+                data.SetTopY(coreModule.ModuleBottom);
+                data.SetMountFairingNode(mountFairingNode);
+                data.SetEnable(enabled);
+                if (userInput) { data.SetBottomRadius(coreModule.moduleLowerDiameter / 2); }
+                bottomFairing.UpdateExternal(data);
+            }
+        }
 
-        #region GUI
+        /// <summary>
+        /// Return the ModelModule slot responsible for upper attach point of lower fairing module
+        /// </summary>
+        /// <returns></returns>
+        private ROLModelModule<ModuleROTank> GetLowerFairingModelModule()
+        {
+            float coreBaseDiam = coreModule.moduleDiameter;
+            if (coreModule.moduleLowerDiameter < coreBaseDiam) { return coreModule; }
+            return mountModule;
+        }
 
-        private void OnGUI()
+        /// <summary>
+        /// Return the ModelModule slot responsible for lower attach point of the upper fairing module
+        /// </summary>
+        /// <returns></returns>
+        private ROLModelModule<ModuleROTank> GetUpperFairingModelModule()
+        {
+            float coreBaseDiam = coreModule.moduleDiameter;
+            if (coreModule.moduleUpperDiameter < coreBaseDiam) { return coreModule; }
+            return noseModule;
+        }
+
+        private void InitializeFairingTextureData(RecoloringHandler recolor, string curTex, bool initialized, string[] name, string[] title)
+        {
+            TextureSet curTexData = TexturesUnlimitedLoader.getTextureSet(curTex);
+            string currentTexture = curTex;
+            if (curTexData == null)
+            {
+                curTex = name[0];
+                curTexData = TexturesUnlimitedLoader.getTextureSet(curTex);
+                initialized = false;
+            }
+            if (!initialized)
+            {
+                initialized = true;
+                recolor.setColorData(curTexData.maskColors);
+            }
+            this.updateUIChooseOptionControl(nameof(currentTexture), name, title, true, name[0]);
+            Fields[nameof(currentTexture)].guiActiveEditor = name.Length > 1;
+        }
+
+#endregion ENDREGION - Custom Update Methods
+
+#region GUI
+
+private void OnGUI()
         {
             GUI.depth = 0;
 

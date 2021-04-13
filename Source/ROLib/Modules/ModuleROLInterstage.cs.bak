@@ -1,0 +1,82 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using KSPShaderTools;
+using static ROLib.ROLLog;
+using ROLib.Utils;
+
+namespace ROLib
+{
+    public class ModuleROTInterstage : ModuleDecouple, IPartMassModifier, IPartCostModifier, IRecolorable
+    {
+        private const string GroupDisplayName = "RO-Tanks";
+        private const string GroupName = "ModuleROLInterstage";
+
+        [KSPField] public String baseTransformName = "InterstageDecouplerFairingRoot";
+        [KSPField] public String 
+        [KSPField] public String uvMap = "NodeFairing";
+
+        [KSPField] public float costPerPanelArea = 50f;
+        [KSPField] public float massPerPanelArea = 0.025f;
+        [KSPField] public float panelWallThickness = 0.05f;
+        [KSPField] public float diameterLargeStep = 0.1f;
+        [KSPField] public float diameterSmallStep = 0.1f;
+        [KSPField] public float diameterSlideStep = 0.001f;
+        [KSPField] public float heightLargeStep = 0.1f;
+        [KSPField] public float heightSmallStep = 0.1f;
+        [KSPField] public float heightSlideStep = 0.001f;
+        [KSPField] public float taperHeightLargeStep = 0.1f;
+        [KSPField] public float taperHeightSmallStep = 0.1f;
+        [KSPField] public float taperHeightSlideStep = 0.001f;
+        [KSPField] public float minDiameter = 0.1f;
+        [KSPField] public float maxDiameter = 100.0f;
+        [KSPField] public float minLength = 0.1f;
+        [KSPField] public float maxLength = 100.0f;
+
+        [KSPField] public int cylinderSides = 24;
+        [KSPField] public int numberOfPanels = 1;
+        [KSPField] public int upperDecouplerModuleIndex = 2;
+
+        [KSPField] public bool shieldsParts = true;
+
+        [KSPField(isPersistant = true, guiName = "Transparency", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", suppressEditorShipModified = true)]
+        public bool editorTransparency = true;
+
+        [KSPField(guiName = "Colliders", guiActiveEditor = true, isPersistant = true, groupName = GroupName, groupDisplayName = GroupDisplayName), UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", suppressEditorShipModified = true)]
+        public bool generateColliders = false;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Top Diam", guiUnits = "m", groupName = GroupName, groupDisplayName = GroupDisplayName),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
+        public float currentTopDiameter = 1.0f;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Bot. Diam", guiUnits = "m", groupName = GroupName, groupDisplayName = GroupDisplayName),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
+        public float currentBottomDiameter = 1.0f;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Height", guiUnits = "m", groupName = GroupName, groupDisplayName = GroupDisplayName),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
+        public float currentHeight = 1.0f;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Taper Height", guiUnits = "m", groupName = GroupName, groupDisplayName = GroupDisplayName),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true)]
+        public float currentTaperHeight = 1.0f;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Fairing Tex", groupName = GroupName),
+         UI_ChooseOption(suppressEditorShipModified = true)]
+        public String currentTextureSet = "default";
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Core Tex", groupName = GroupName),
+         UI_ChooseOption(suppressEditorShipModified = true)]
+        public string currentCoreTexture = "default";
+
+
+
+
+
+
+
+
+    }
+}

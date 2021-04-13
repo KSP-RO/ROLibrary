@@ -194,6 +194,11 @@ namespace ROLib
         public float modulePanelWidth { get; private set; }
 
         /// <summary>
+        /// Return true/false if fairings are enabled for this module in its current configuration.
+        /// </summary>
+        public bool fairingEnabled { get { return definition.fairingData == null ? false : definition.fairingData.fairingsSupported; } }
+
+        /// <summary>
         /// Return the current upper-mounting diamter of the model in this module slot.  This value is to be used for sizing/scaling of any module slot used for an upper-adapter/nose option for this slot.
         /// </summary>
         public float moduleUpperDiameter => (definition.shouldInvert(orientation) ? definition.lowerDiameter : definition.upperDiameter) * moduleHorizontalScale;
@@ -229,6 +234,7 @@ namespace ROLib
         /// </summary>
         public float modulePosition { get; private set; }
 
+        public string[] moduleTransformsToRemove => definition.disableTransforms;
         /// <summary>
         /// Return the Y coordinate of the top-most point in the model in part-centric space, as defined by model-height in the model definition and modified by current model scale,
         /// </summary>
@@ -250,6 +256,36 @@ namespace ROLib
         /// Returns the Y coordinate of the bottom of this model in part-centric space.
         /// </summary>
         public float ModuleBottom => ModuleTop - moduleHeight;
+
+        /// <summary>
+        /// Return the upper fairing attachment point for this module.  The returned position is relative to 'modulePosition'.
+        /// </summary>
+        public float fairingTop
+        {
+            get
+            {
+                float pos = modulePosition;
+                if (definition.fairingData == null) { return pos; }
+                pos += definition.fairingData.GetTop(moduleVerticalScale, definition.shouldInvert(orientation));
+                pos += GetPlacementOffset();
+                return pos;
+            }
+        }
+
+        /// <summary>
+        /// Return the lower fairing attachment point for this module.  The returned position is relative to 'modulePosition'.
+        /// </summary>
+        public float fairingBottom
+        {
+            get
+            {
+                float pos = modulePosition;
+                if (definition.fairingData == null) { return pos; }
+                pos += definition.fairingData.GetBottom(moduleVerticalScale, definition.shouldInvert(orientation));
+                pos += GetPlacementOffset();
+                return pos;
+            }
+        }
 
         /// <summary>
         /// Return the currently configured custom color data for this module slot.
@@ -656,6 +692,25 @@ namespace ROLib
         }
 
         /// <summary>
+        /// Update the input surface attach node for current model diameter, adjusted for model-def specified positioning.<para/>
+        /// Also updates any surface-attached children on the part, by the delta of (oldDiam - newDiam)
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="prevDiameter"></param>
+        /// <param name="prevLength"></param>
+        /// <param name="userInput"></param>
+        public void updateSurfaceAttachNode(AttachNode node, float prevDiameter, float prevLength, bool userInput)
+        {
+            if (node is AttachNode && definition.surfaceNode is AttachNodeBaseData surfNodeData)
+            {
+                Vector3 pos = surfNodeData.position * moduleHorizontalScale;
+                ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, surfNodeData.orientation, userInput, node.size);
+                if (userInput)
+                    ROLAttachNodeUtils.updateSurfaceAttachedChildren(part, prevDiameter, moduleDiameter, prevLength, moduleHeight);
+            }
+        }
+
+        /// <summary>
         /// Internal helper method for updating of an attach node from attach-node data
         /// </summary>
         /// <param name="data"></param>
@@ -961,9 +1016,13 @@ namespace ROLib
             for (int i = 0; i < len; i++)
             {
                 def = inputOptions[i];
-                if (def.definition.requiredCore == coreName)
+                //String reqCore = def.definition.requiredCore;
+                foreach (String reqCore in def.definition.requiredCore)
                 {
-                    validDefs.Add(def);
+                    if (reqCore == "ALL" || reqCore == coreName)
+                    {
+                        validDefs.Add(def);
+                    }
                 }
             }
             return validDefs.ToArray();
@@ -971,10 +1030,11 @@ namespace ROLib
 
         public ROLModelDefinition findFirstValidModel(ROLModelModule<U> module, String coreName)
         {
+            //return module.optionsCache.FirstOrDefault(x => x.definition.requiredCore == coreName || x.definition.requiredCore == "ALL")?.definition;
             int len = module.optionsCache.Length;
             for (int i = 0; i < len; i++)
             {
-                if (module.optionsCache[i].definition.requiredCore == coreName)
+                if (module.optionsCache[i].definition.requiredCore.Contains(coreName) || module.optionsCache[i].definition.requiredCore.Contains("ALL"))
                 {
                     return module.optionsCache[i].definition;
                 }
@@ -990,7 +1050,7 @@ namespace ROLib
 
         public bool isValidModel (ROLModelDefinition def, String coreName)
         {
-            if (def.requiredCore == coreName)
+            if (def.requiredCore.Contains(coreName) || def.requiredCore.Contains("ALL"))
             {
                 return true;
             }
