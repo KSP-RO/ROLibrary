@@ -241,7 +241,7 @@ namespace ROLib
             UpdateModelMeshes();
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
-            UpdateFairing(true);
+            //UpdateFairing(true);
             UpdateDragCubes();
             if (scaleMass)
                 UpdateMass();
@@ -488,14 +488,14 @@ namespace ROLib
             Fields[nameof(hasNoseFairing)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
                 log($"CHANGED hasNoseFairing: {hasNoseFairing}");
-                UpdateFairing(true);
+                //UpdateFairing(true);
             };
 
             Fields[nameof(hasMountFairing)].uiControlEditor.onFieldChanged =
             Fields[nameof(hasMountFairing)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
                 log($"CHANGED hasMountFairing: {hasMountFairing}");
-                UpdateFairing(true);
+                //UpdateFairing(true);
             };
 
             Fields[nameof(currentNose)].uiControlEditor.onFieldChanged =
@@ -806,6 +806,7 @@ namespace ROLib
             part.SendEvent("OnPartVolumeChanged", data, 0);
         }
 
+        /*
         private void UpdateFairing(bool userInput)
         {
             log($"Updating Fairing...");
@@ -837,6 +838,7 @@ namespace ROLib
                 bottomFairing.UpdateExternal(data);
             }
         }
+        */
 
         /// <summary>
         /// Return the ModelModule slot responsible for upper attach point of lower fairing module
