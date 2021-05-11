@@ -770,6 +770,28 @@ namespace ROLib
             }
         }
 
+
+        private void OnMouseOver()
+        {
+            if (!HighLogic.LoadedSceneIsEditor)
+            {
+                return;
+            }
+            
+            if (!Input.GetKeyDown(onHoverKeyCode)) return;
+            
+            if (Input.GetKeyDown(onHoverKeyCode) && _isWindowOpen)
+            {
+                gameObject.AddComponent<SSTURecolorGUI>().recolorClose();
+                _isWindowOpen = false;
+                return;
+            }
+            
+            gameObject.AddComponent<SSTURecolorGUI>().recolorGUIEvent();
+            _isWindowOpen = true;
+        }
+
+
         #endregion GUI
 
     }
