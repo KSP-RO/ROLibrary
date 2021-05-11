@@ -771,6 +771,8 @@ namespace ROLib
         }
 
 
+        private bool _isWindowOpen = false;
+
         private void OnMouseOver()
         {
             if (!HighLogic.LoadedSceneIsEditor)
