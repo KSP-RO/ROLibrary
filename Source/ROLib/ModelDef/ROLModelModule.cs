@@ -186,6 +186,10 @@ namespace ROLib
         /// </summary>
         public float moduleVolume { get; private set; }
 
+        public bool moduleCanRotate { get; private set; }
+
+        public Vector3 moduleDefaultRotation { get; private set; }
+
         /// <summary>
         /// Return the current diameter of the model in this module slot.  This is the base diamter as specified in the model definition, modified by the currently specified scale.
         /// </summary>
@@ -233,6 +237,8 @@ namespace ROLib
         /// A value of 0 denotes origin is at the parts' origin/COM.
         /// </summary>
         public float modulePosition { get; private set; }
+
+        public Vector3 moduleRotation { get; private set; }
 
         public string[] moduleTransformsToRemove => definition.disableTransforms;
         /// <summary>
@@ -633,6 +639,15 @@ namespace ROLib
         /// <param name="originPos"></param>
         public void SetPosition(float originPos) => modulePosition = originPos;
 
+        public void SetRotation(Vector3 newRotation)
+        {
+            //log($"Set Rotation to: {newRotation.ToString()}");
+            //root.transform.localRotation = Quaternion.Euler(newRotation);
+            moduleRotation = newRotation;
+            
+
+        }
+
         /// <summary>
         /// Updates the attach nodes on the part for the input list of attach nodes and the current specified nodes for this model.
         /// Any 'extra' attach nodes from the part will be disabled.
@@ -761,6 +776,8 @@ namespace ROLib
             moduleMass = definition.mass * mScalar * positions;
             moduleCost = definition.cost * cScalar * positions;
             moduleVolume = definition.volume * vScalar * positions;
+            moduleCanRotate = definition.canRotate;
+            moduleDefaultRotation = definition.rotationOffset;
         }
 
         /// <summary>
@@ -876,7 +893,7 @@ namespace ROLib
                 Transform model = models[i];
                 ModelPositionData mpd = layout.positions[i];
                 model.transform.localPosition = mpd.localPosition * posScalar;
-                model.transform.localRotation = Quaternion.Euler(mpd.localRotation);
+                model.transform.localRotation = Quaternion.Euler(moduleRotation);
                 float xScale = doNotRescaleX ? 1 : moduleHorizontalScale;
 
                 if (definition.compoundModelData != null)
@@ -914,6 +931,9 @@ namespace ROLib
                 ConstructSubModels(models[i]);
             }
             Vector3 rotation = definition.shouldInvert(orientation) ? definition.invertAxis * 180f : Vector3.zero;
+            log("Creating the localRotation");
+            log($"{Quaternion.Euler(moduleRotation + rotation).ToString()}");
+            rotation.y = moduleRotation.y;
             root.transform.localRotation = Quaternion.Euler(rotation);
         }
 

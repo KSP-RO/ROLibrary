@@ -241,6 +241,8 @@ namespace ROLib
         public readonly String[] requiredCore;
         public readonly String style;
 
+        public readonly bool canRotate = false;
+
         /// <summary>
         /// Construct the model definition from the data in the input ConfigNode.<para/>
         /// All data constructs MUST conform to the expected format (see documentation), or things will not load properly and the model will likely not work as expected.
@@ -280,6 +282,7 @@ namespace ROLib
             isTracking = node.ROLGetBoolValue("isTracking", isTracking);
             effectiveLength = node.ROLGetFloatValue("effectiveLength", effectiveLength);
             additionalVolume = node.ROLGetFloatValue("additionalVolume", additionalVolume);
+            canRotate = node.ROLGetBoolValue("canRotate", canRotate);
             if (node.HasValue("verticalOffset"))
             {
                 positionOffset = new Vector3(0, node.ROLGetFloatValue("verticalOffset"), 0);

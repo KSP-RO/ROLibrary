@@ -53,6 +53,8 @@ namespace ROLib
         [KSPField] public bool validateNose = true;
         [KSPField] public bool validateMount = true;
         [KSPField] public bool hasFairing = false;
+        [KSPField] public bool hasNoseToRotate = false;
+        [KSPField] public bool hasMountToRotate = false;
 
         [KSPField] public int topFairingIndex = -1;
         [KSPField] public int bottomFairingIndex = -1;
@@ -96,6 +98,20 @@ namespace ROLib
         [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Largest Diameter", guiFormat = "F4", guiUnits = "m", groupName = GroupName)]
         public float largestDiameter = 0.0f;
 
+        /// <summary>
+        /// Allows for the rotation of the nose model
+        /// </summary>
+        [KSPField(isPersistant = true, guiName = "Nose Rot.", groupName = GroupName),
+         UI_FloatEdit(sigFigs = 0, suppressEditorShipModified = true, minValue = -180f, maxValue = 180f, incrementLarge = 45f, incrementSmall = 15f, incrementSlide = 1f)]
+        public float currentNoseRotation = 0f;
+
+        /// <summary>
+        /// Allows for the rotation of the mount model
+        /// </summary>
+        [KSPField(isPersistant = true, guiName = "Mount Rot.", groupName = GroupName),
+         UI_FloatEdit(sigFigs = 0, suppressEditorShipModified = true, minValue = -180f, maxValue = 180f, incrementLarge = 45f, incrementSmall = 15f, incrementSlide = 1f)]
+        public float currentMountRotation = 0f;
+
         //------------------------------------------MODEL SELECTION SET PERSISTENCE-----------------------------------------------//
 
         //non-persistent value; initialized to whatever the currently selected core model definition is at time of loading
@@ -138,6 +154,8 @@ namespace ROLib
 
             currentDiameter = coreModule.definition.diameter;
             currentVScale = 0;
+            currentNoseRotation = noseModule.moduleDefaultRotation.y;
+            currentMountRotation = mountModule.moduleDefaultRotation.y;
 
             this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep);
             this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f);
@@ -213,6 +231,9 @@ namespace ROLib
             }
             return set;
         }
+
+        private bool noseModuleCanRotate = false;
+        private bool mountModuleCanRotate = false;
 
         /// <summary>
         /// Find the first variant set containing a definition with ModelDefinitionLayoutOptions def.  Will not create a new set if not found.
@@ -396,11 +417,13 @@ namespace ROLib
             coreModule.name = "ModuleROTank-Core";
             coreModule.getSymmetryModule = m => m.coreModule;
             coreModule.getValidOptions = () => GetVariantSet(currentVariant).definitions;
-            
+
 
             noseModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
             noseModule.name = "ModuleROTank-Nose";
             noseModule.getSymmetryModule = m => m.noseModule;
+            currentNoseRotation = noseModule.moduleDefaultRotation.y;
+            noseModuleCanRotate = noseModule.moduleCanRotate;
             if (validateNose)
             {
                 noseModule.getValidOptions = () => noseModule.getValidModels(noseDefs, coreModule.definition.style);
@@ -408,11 +431,13 @@ namespace ROLib
             else
             {
                 noseModule.getValidOptions = () => noseDefs;
-            }            
+            }
 
             mountModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
             mountModule.name = "ModuleROTank-Mount";
             mountModule.getSymmetryModule = m => m.mountModule;
+            currentMountRotation = mountModule.moduleDefaultRotation.y;
+            mountModuleCanRotate = mountModule.moduleCanRotate;
             if (validateMount)
             {
                 mountModule.getValidOptions = () => mountModule.getValidModels(mountDefs, coreModule.definition.style);
@@ -420,7 +445,7 @@ namespace ROLib
             else
             {
                 mountModule.getValidOptions = () => mountDefs;
-            }            
+            }
 
             noseModule.volumeScalar = volumeScalingPower;
             coreModule.volumeScalar = volumeScalingPower;
@@ -484,6 +509,18 @@ namespace ROLib
                 ModelChangedHandler(true);
             };
 
+            Fields[nameof(currentNoseRotation)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentNoseRotation)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
+            {
+                ModelChangedHandler(true);
+            };
+
+            Fields[nameof(currentMountRotation)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentMountRotation)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
+            {
+                ModelChangedHandler(true);
+            };
+
             Fields[nameof(hasNoseFairing)].uiControlEditor.onFieldChanged =
             Fields[nameof(hasNoseFairing)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
@@ -512,6 +549,8 @@ namespace ROLib
             Fields[nameof(currentDiameter)].guiActiveEditor = maxDiameter != minDiameter;
             Fields[nameof(currentLength)].guiActiveEditor = lengthWidth && maxLength != minLength;
             Fields[nameof(currentVScale)].guiActiveEditor = enableVScale && !lengthWidth;
+            Fields[nameof(currentNoseRotation)].guiActiveEditor = hasNoseToRotate;
+            Fields[nameof(currentMountRotation)].guiActiveEditor = hasMountToRotate;
             Events[nameof(ResetModel)].guiActiveEditor = !lengthWidth;
 
             //------------------MODULE TEXTURE SWITCH UI INIT---------------------//
@@ -547,6 +586,8 @@ namespace ROLib
             else if (f.name == Fields[nameof(currentCore)].name) coreModule.modelSelected(currentCore);
             else if (f.name == Fields[nameof(currentNose)].name) noseModule.modelSelected(currentNose);
 
+            noseModuleCanRotate = noseModule.moduleCanRotate;
+            mountModuleCanRotate = mountModule.moduleCanRotate;
             ModelChangedHandler(true);
             MonoUtilities.RefreshPartContextWindow(part);
         }
@@ -594,12 +635,17 @@ namespace ROLib
 
             //position of each module is set such that the vertical center of the models is at part origin/COM
             float pos = totalHeight * 0.5f;//abs top of model
+            Vector3 vect = new Vector3(0f, 0f, 0f);
             pos -= noseModule.moduleHeight;//bottom of nose model
+            vect.Set(0f, currentNoseRotation, 0f);
             noseModule.SetPosition(pos);
+            noseModule.SetRotation(vect);
             pos -= coreModule.moduleHeight * 0.5f;//center of 'core' model
             coreModule.SetPosition(pos);
             pos -= coreModule.moduleHeight * 0.5f;//bottom of 'core' model
+            vect.Set(0f, currentMountRotation, 0f);
             mountModule.SetPosition(pos);
+            mountModule.SetRotation(vect);
         }
 
         public void UpdateModelMeshes()
