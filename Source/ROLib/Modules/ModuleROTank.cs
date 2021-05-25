@@ -234,6 +234,7 @@ namespace ROLib
 
         private bool noseModuleCanRotate = false;
         private bool mountModuleCanRotate = false;
+        public KeyCode onHoverKeyCode = KeyCode.J;
 
         /// <summary>
         /// Find the first variant set containing a definition with ModelDefinitionLayoutOptions def.  Will not create a new set if not found.
@@ -963,6 +964,28 @@ private void OnGUI()
                 dimWindow = new DimensionWindow(this);
                 dimWindow.Show();
             }
+        }
+
+        private bool _isRecoloringWindowOpen = false;
+
+        private void OnMouseOver()
+        {
+            if (!HighLogic.LoadedSceneIsEditor)
+            {
+                return;
+            }
+
+            if (!Input.GetKeyDown(onHoverKeyCode)) return;
+
+            if (Input.GetKeyDown(onHoverKeyCode) && _isRecoloringWindowOpen)
+            {
+                gameObject.AddComponent<SSTURecolorGUI>().recolorClose();
+                _isRecoloringWindowOpen = false;
+                return;
+            }
+
+            gameObject.AddComponent<SSTURecolorGUI>().recolorGUIEvent();
+            _isRecoloringWindowOpen = true;
         }
 
         #endregion GUI
