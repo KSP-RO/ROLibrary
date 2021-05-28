@@ -788,13 +788,22 @@ namespace ROLib
         }
 
         #nullable enable
-        private float ModuleEffectiveLength(ROLModelModule<ModuleROTank>? module) =>
-            (module is null) ? 0 : module.definition.effectiveLength * currentDiameter / coreModule.definition.diameter;
+        private float ModuleEffectiveLength(ROLModelModule<ModuleROTank>? module, bool nose)
+        {
+            if (module is null) return 0;
+            float diam;
+            if (nose)
+                diam = module.definition.shouldInvert(ModelOrientation.TOP) ? module.definition.upperDiameter : module.definition.lowerDiameter;
+            else
+                diam = module.definition.shouldInvert(ModelOrientation.BOTTOM) ? module.definition.lowerDiameter : module.definition.upperDiameter;
+
+            return module.definition.effectiveLength * currentDiameter / diam;
+        }
         #nullable disable
 
         private float DomeLength => currentDiameter / 2;
-        private float NoseEffectiveLength => ModuleEffectiveLength(noseModule);
-        private float MountEffectiveLength => ModuleEffectiveLength(mountModule);
+        private float NoseEffectiveLength => ModuleEffectiveLength(noseModule, true);
+        private float MountEffectiveLength => ModuleEffectiveLength(mountModule, false);
         private float EffectiveCylinderLength() //=> currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
         {
             float effectiveLength = currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
