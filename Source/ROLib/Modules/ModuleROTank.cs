@@ -722,7 +722,7 @@ namespace ROLib
             Vector3 pos = new Vector3(0, coreModule.ModuleTop, 0);
             ROLSelectableNodes.updateNodePosition(part, noseInterstageNode, pos);
             if (part.FindAttachNode(noseInterstageNode) is AttachNode noseInterstage)
-                ROLAttachNodeUtils.updateAttachNodePosition(part, noseInterstage, pos, Vector3.up, userInput, nodeSize);
+                ROLAttachNodeUtils.UpdateAttachNodePosition(part, noseInterstage, pos, Vector3.up, userInput, nodeSize);
             ROLModelModule<ModuleROTank> nodeModule = coreModule;
 
             // Update the Mount Interstage Node
@@ -732,7 +732,7 @@ namespace ROLib
             pos = new Vector3(0, coreModule.ModuleBottom, 0);
             ROLSelectableNodes.updateNodePosition(part, mountInterstageNode, pos);
             if (part.FindAttachNode(mountInterstageNode) is AttachNode mountInterstage)
-                ROLAttachNodeUtils.updateAttachNodePosition(part, mountInterstage, pos, Vector3.down, userInput, nodeSize);
+                ROLAttachNodeUtils.UpdateAttachNodePosition(part, mountInterstage, pos, Vector3.down, userInput, nodeSize);
 
             //update surface attach node position, part position, and any surface attached children
             if (part.srfAttachNode is AttachNode surfaceNode)

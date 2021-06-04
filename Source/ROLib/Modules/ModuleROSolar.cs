@@ -436,7 +436,7 @@ namespace ROLib
                 float y = def.surfaceNode.position.y * (lengthWidth ? panelLength / def.panelLength : panelScale);
                 float z = def.surfaceNode.position.z * (lengthWidth ? panelWidth / def.panelWidth : panelScale);
                 Vector3 pos = new Vector3(x, y, z);
-                ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, surfNodeData.orientation, userInput, node.size);
+                ROLAttachNodeUtils.UpdateAttachNodePosition(part, node, pos, surfNodeData.orientation, userInput, node.size);
             }
         }
 
