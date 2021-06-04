@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
-namespace ROLib
+namespace ROLib.ModelDef
 {
     /// <summary>
     /// Wrapper for animation handling and UI setup.  Should include all functions needed to support save, load, and UI interaction.
@@ -73,7 +72,7 @@ namespace ROLib
         /// <summary>
         /// Internal cache of the current animation position.
         /// </summary>
-        private float animationPosition = 0f;
+        private float animationPosition;
 
         /// <summary>
         /// Cache of info for display through GetInfo()

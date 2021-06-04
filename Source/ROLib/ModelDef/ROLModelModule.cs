@@ -706,22 +706,11 @@ namespace ROLib
             }
         }
 
-        /// <summary>
-        /// Update the input surface attach node for current model diameter, adjusted for model-def specified positioning.<para/>
-        /// Also updates any surface-attached children on the part, by the delta of (oldDiam - newDiam)
-        /// </summary>
-        /// <param name="node"></param>
-        /// <param name="prevDiameter"></param>
-        /// <param name="prevLength"></param>
-        /// <param name="userInput"></param>
-        public void updateSurfaceAttachNode(AttachNode node, float prevDiameter, float prevLength, bool userInput)
+        public void UpdateSurfaceAttachNode(AttachNode node, float prevDiam, float prevNose, float prevCore, float prevMount, float newNose, float newCore, float newMount)
         {
             if (node is AttachNode && definition.surfaceNode is AttachNodeBaseData surfNodeData)
             {
-                Vector3 pos = surfNodeData.position * moduleHorizontalScale;
-                ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, surfNodeData.orientation, userInput, node.size);
-                if (userInput)
-                    ROLAttachNodeUtils.updateSurfaceAttachedChildren(part, prevDiameter, moduleDiameter, prevLength, moduleHeight);
+                ROLAttachNodeUtils.UpdateSurfaceAttachedChildren(part, prevDiam, moduleDiameter, prevNose, prevCore, prevMount, newNose, newCore, newMount);
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using ROLib.ModelDef;
 
 namespace ROLib.Modules
 {

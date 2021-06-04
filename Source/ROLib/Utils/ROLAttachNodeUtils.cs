@@ -86,34 +86,44 @@ namespace ROLib
             }
         }
 
-        //TODO clean this up to handle children that are attached to top or bottom faces rather than sides.  Will need to include inputs for heights.
-        /// <summary>
-        /// Updates surface attached children of the input part.
-        /// </summary>
-        /// <param name="part"></param>
-        /// <param name="oldDiameter"></param>
-        /// <param name="newDiameter"></param>
-        public static void updateSurfaceAttachedChildren(Part part, float oldDiameter, float newDiameter, float oldLength, float newLength)
+        public static void UpdateSurfaceAttachedChildren(Part part, float oldDiam, float newDiam, float oldNoseLen,
+            float oldCoreLen, float oldMountLen, float newNoseLen, float newCoreLen, float newMountLen)
         {
-            float delta = (newDiameter - oldDiameter) / 2;
-            float lengthDelta = (newLength - oldLength) / 2;
-            Vector3 parentLS = part.transform.localPosition;
+            float diamDelta = (newDiam - oldDiam) * 0.5f;
+            Vector3 parentPos = part.transform.localPosition;
+            
             foreach (Part child in part.children)
             {
-                if (child.srfAttachNode is AttachNode n && n.attachedPart == part)//has surface attach node, and surface attach node is attached to the input part
+                if (child.FindAttachNodeByPart(part) is AttachNode node)
                 {
-                    // The child must displace radially in the coordinate system of the parent
-                    // Work in the parent coordinate space, then translate in world.
-                    Vector3 childInParentSpace = part.transform.InverseTransformPoint(child.transform.position);
-                    Vector3 dir = childInParentSpace - parentLS;
-                    dir.y = 0;
-                    dir.Normalize();
-                    // Debug.Log($"[ROLAttachNode] Moving surface-attached children by {delta} in dir {dir} in parent space");
-                    Vector3 dir_w = part.transform.TransformDirection(dir);
-                    Vector3 dir_y = part.transform.TransformDirection(0f, 1f, 0f);
-                    child.transform.Translate(dir_w * delta, Space.World);
-                    child.transform.Translate(dir_y * lengthDelta, Space.World);
-                    child.attPos0 = child.transform.localPosition;
+                    if (node.nodeType == AttachNode.NodeType.Surface)
+                    {
+                        Vector3 childPos = child.transform.position;
+                        Vector3 childInParentSpace = part.transform.InverseTransformPoint(childPos);
+                        Vector3 dir = childInParentSpace - parentPos;
+                        dir.y = 0;
+                        dir.Normalize();
+
+                        Vector3 dirW = part.transform.TransformDirection(dir);
+
+                        child.transform.Translate(dirW * diamDelta, Space.World);
+
+                        if (oldNoseLen != newNoseLen || oldCoreLen != newCoreLen || oldMountLen != newMountLen)
+                        {
+                            float noseDelta = (newNoseLen - oldNoseLen) * 0.5f;
+                            //float coreDelta = (newCoreLen - oldCoreLen) * 0.5f * Math.Sign(childInParentSpace.y);
+                            float coreDelta = (newCoreLen - oldCoreLen) * 0.5f;
+                            Debug.Log($"childInParentSpace.y: {childInParentSpace.y}");
+                            Debug.Log($"Math.Sign(childInParentSpace.y): {Math.Sign(childInParentSpace.y)}");
+                            float mountDelta = (newMountLen - oldMountLen) * 0.5f;
+                            float coreMoveY = (noseDelta + coreDelta + mountDelta) * Math.Sign(childInParentSpace.y);
+                            Vector3 dirY = part.transform.TransformDirection(0f, coreMoveY, 0f);
+                            Debug.Log($"childPos: {childPos}, localPos: {childInParentSpace}, noseDelta: {noseDelta}, coreDelta: {coreDelta}, mountDelta: {mountDelta}, coreMoveY: {coreMoveY}");
+                            child.transform.Translate(dirY, Space.World);
+                        }
+                        
+                        child.attPos0 = child.transform.localPosition;
+                    }
                 }
             }
         }

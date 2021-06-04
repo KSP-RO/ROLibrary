@@ -18,8 +18,8 @@ namespace ROLib
     {
         private const string GroupDisplayName = "RO-Tanks";
         private const string GroupName = "ModuleROTank";
-        private const float minModelRatio = 0.5f;
-        private const float maxModelRatio = 8;
+        private const float MinModelRatio = 0.5f;
+        private const float MaxModelRatio = 8;
 
         #region KSPFields
 
@@ -200,8 +200,11 @@ namespace ROLib
         /// <summary>
         /// Previous diameter value, used for surface attach position updates.
         /// </summary>
-        private float prevDiameter = -1;
-        private float prevLength = -1;
+        private float prevDiameter = 0;
+        private float prevLength = 0;
+        private float prevNose = 0;
+        private float prevCore = 0;
+        private float prevMount = 0;
 
         private string[] noseNodeNames;
         private string[] coreNodeNames;
@@ -263,7 +266,7 @@ namespace ROLib
             UpdateModelMeshes();
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
-            //UpdateFairing(true);
+            SetPreviousModuleLength();
             UpdateDragCubes();
             if (scaleMass)
                 UpdateMass();
@@ -385,9 +388,6 @@ namespace ROLib
             if (initialized) { return; }
             initialized = true;
 
-            prevDiameter = currentDiameter;
-            prevLength = currentLength;
-
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
             mountNodeNames = ROLUtils.parseCSV(mountManagedNodes);
@@ -451,7 +451,12 @@ namespace ROLib
             noseModule.volumeScalar = volumeScalingPower;
             coreModule.volumeScalar = volumeScalingPower;
             mountModule.volumeScalar = volumeScalingPower;
-
+            
+            prevDiameter = currentDiameter;
+            prevLength = 1;
+            prevCore = 1;
+            prevNose = 0;
+            prevMount = 0;
 
             //set up the model lists and load the currently selected model
             noseModule.setupModelList(noseDefs);
@@ -581,8 +586,19 @@ namespace ROLib
             }
         }
 
+        private void SetPreviousModuleLength()
+        {
+            prevDiameter = currentDiameter;
+            prevLength = currentLength;
+            prevNose = noseModule.moduleHeight;
+            prevCore = coreModule.moduleHeight;
+            prevMount = mountModule.moduleHeight;
+            log($"SetPreviousModuleLength() prevDiameter: {prevDiameter}, prevLength: {currentLength}, prevNose: {prevNose}, prevCore: {prevCore}, prevMount: {prevMount}");
+        }
+        
         private void OnModelSelectionChanged(BaseField f, object o)
         {
+            log($"OnModelSelectionChanged()");
             if (f.name == Fields[nameof(currentMount)].name) mountModule.modelSelected(currentMount);
             else if (f.name == Fields[nameof(currentCore)].name) coreModule.modelSelected(currentCore);
             else if (f.name == Fields[nameof(currentNose)].name) noseModule.modelSelected(currentNose);
@@ -603,8 +619,6 @@ namespace ROLib
                 SetModelFromDimensions();
             }
             ModelChangedHandler(true);
-            prevDiameter = currentDiameter;
-            prevLength = currentLength;
         }
 
         private void OnLengthChanged(BaseField f, object o) 
@@ -613,7 +627,6 @@ namespace ROLib
             ValidateLength();
             SetModelFromDimensions();
             ModelChangedHandler(true);
-            prevLength = currentLength;
         }
 
         /// <summary>
@@ -724,7 +737,7 @@ namespace ROLib
 
             //update surface attach node position, part position, and any surface attached children
             if (part.srfAttachNode is AttachNode surfaceNode)
-                coreModule.updateSurfaceAttachNode(surfaceNode, prevDiameter, prevLength, userInput);
+                coreModule.UpdateSurfaceAttachNode(surfaceNode, prevDiameter, prevNose, prevCore, prevMount, noseModule.moduleHeight, coreModule.moduleHeight, mountModule.moduleHeight);
         }
 
         /// <summary>
@@ -771,7 +784,7 @@ namespace ROLib
             // Round to nearest 0.5: Multiply by 2, round to nearest int, divide by 2.
             float dimRatio = currentLength / currentDiameter;
             float modelRatio = Mathf.Round(dimRatio * 2) / 2;
-            modelRatio = Mathf.Clamp(modelRatio, minModelRatio, maxModelRatio);
+            modelRatio = Mathf.Clamp(modelRatio, MinModelRatio, MaxModelRatio);
 
             string ratioName = $"{modelRatio:0.0}";
             string s = $"{ratioName}x-{currentVariant}";
@@ -780,6 +793,7 @@ namespace ROLib
             currentVScale = (dimRatio / modelRatio) - 1;
             if (coreModule.modelName != s)
                 coreModule.modelSelected(s);
+            MonoUtilities.RefreshPartContextWindow(part);
         }
 
         private float GetPartTopY()
