@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ROLib.ModelDef
+namespace ROLib
 {
     /// <summary>
     /// Wrapper for animation handling and UI setup.  Should include all functions needed to support save, load, and UI interaction.

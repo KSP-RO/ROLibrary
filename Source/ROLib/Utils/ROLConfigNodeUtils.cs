@@ -4,11 +4,11 @@ using UnityEngine;
 namespace ROLib
 {
 
-    public class ROLConfigNodeUtils
+    public static class ROLConfigNodeUtils
     {
         //input is the string output from ConfigNode.ToString()
         //any other input will result in undefined behavior
-        public static ConfigNode parseConfigNode(String input)
+        public static ConfigNode ParseConfigNode(String input)
         {
             ConfigNode baseCfn = ConfigNode.Parse(input);
             if (baseCfn == null) { MonoBehaviour.print("ERROR: Base config node was null!!\n" + input); }

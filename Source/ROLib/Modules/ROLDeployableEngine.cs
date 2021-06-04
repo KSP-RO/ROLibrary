@@ -1,7 +1,6 @@
 ﻿using System.Linq;
-using ROLib.ModelDef;
 
-namespace ROLib.Modules
+namespace ROLib
 {
     /// <summary>
     /// This is the module that allows engines (like the RL10-B2) to deploy. This code is orignally written by

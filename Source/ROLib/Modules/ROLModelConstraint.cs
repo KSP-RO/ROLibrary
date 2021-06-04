@@ -46,7 +46,7 @@ namespace ROLib
         private void initialize()
         {
             constraints.Clear();
-            ConfigNode node = ROLConfigNodeUtils.parseConfigNode(configNodeData);
+            ConfigNode node = ROLConfigNodeUtils.ParseConfigNode(configNodeData);
 
             ConfigNode[] lookConstraintNodes = node.GetNodes("LOOK_CONST");
             foreach (ConfigNode lcn in lookConstraintNodes)

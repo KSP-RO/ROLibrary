@@ -4,7 +4,6 @@ using System.Linq;
 using UnityEngine;
 using KSPShaderTools;
 using static ROLib.ROLLog;
-using ROLib.Utils;
 
 namespace ROLib
 {
@@ -393,7 +392,7 @@ namespace ROLib
             mountNodeNames = ROLUtils.parseCSV(mountManagedNodes);
 
             //model-module setup/initialization
-            ConfigNode node = ROLConfigNodeUtils.parseConfigNode(configNodeData);
+            ConfigNode node = ROLConfigNodeUtils.ParseConfigNode(configNodeData);
 
             //list of CORE model nodes from config
             //each one may contain multiple 'model=modelDefinitionName' entries
