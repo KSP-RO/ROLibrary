@@ -17,7 +17,7 @@ namespace ROLib
         /// <param name="node"></param>
         /// <param name="newPos"></param>
         /// <param name="orientation"></param>
-        public static void updateAttachNodePosition(Part part, AttachNode node, Vector3 newPos, Vector3 orientation, bool updatePartPosition, int size)
+        public static void UpdateAttachNodePosition(Part part, AttachNode node, Vector3 newPos, Vector3 orientation, bool updatePartPosition, int size)
         {
             Vector3 diff = newPos - node.position;
             node.position = node.originalPosition = newPos;

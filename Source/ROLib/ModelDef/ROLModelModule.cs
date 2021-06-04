@@ -700,7 +700,7 @@ namespace ROLib
             if (node is AttachNode && definition.surfaceNode is AttachNodeBaseData surfNodeData)
             {
                 Vector3 pos = surfNodeData.position * moduleHorizontalScale;
-                ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, surfNodeData.orientation, userInput, node.size);
+                ROLAttachNodeUtils.UpdateAttachNodePosition(part, node, pos, surfNodeData.orientation, userInput, node.size);
                 if (userInput)
                     ROLAttachNodeUtils.updateSurfaceAttachedChildren(part, prevDiameter, moduleDiameter);
             }
@@ -710,6 +710,8 @@ namespace ROLib
         {
             if (node is AttachNode && definition.surfaceNode is AttachNodeBaseData surfNodeData)
             {
+                Vector3 pos = surfNodeData.position * moduleHorizontalScale;
+                ROLAttachNodeUtils.UpdateAttachNodePosition(part, node, pos, surfNodeData.orientation, true, node.size);
                 ROLAttachNodeUtils.UpdateSurfaceAttachedChildren(part, prevDiam, moduleDiameter, prevNose, prevCore, prevMount, newNose, newCore, newMount);
             }
         }
@@ -744,7 +746,7 @@ namespace ROLib
                 if (node == null && create)//create it
                     ROLAttachNodeUtils.createAttachNode(part, nodeName, pos, ori, size);
                 else
-                    ROLAttachNodeUtils.updateAttachNodePosition(part, node, pos, ori, userInput, size);
+                    ROLAttachNodeUtils.UpdateAttachNodePosition(part, node, pos, ori, userInput, size);
             }
         }
 
