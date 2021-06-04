@@ -1,4 +1,4 @@
-namespace ROLib.ModelDef
+namespace ROLib
 {
     public enum ROLAnimState
     {

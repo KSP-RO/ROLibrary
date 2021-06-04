@@ -1,5 +1,4 @@
-﻿using ROLib.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -211,7 +210,7 @@ namespace ROLib
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
 
             // Model-Module Setup / Initialization
-            ConfigNode node = ROLConfigNodeUtils.parseConfigNode(configNodeData);
+            ConfigNode node = ROLConfigNodeUtils.ParseConfigNode(configNodeData);
 
             // List of CORE model nodes from config
             // each one may contain multiple 'model=modelDefinitionName' entries

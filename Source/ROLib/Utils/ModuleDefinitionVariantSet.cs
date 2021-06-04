@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ROLib.Utils
+namespace ROLib
 {
     /// <summary>
     /// Data storage for a group of model definitions that share the same 'variant' type.  Used by modular-part in variant-defined configurations.
