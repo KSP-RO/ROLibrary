@@ -9,7 +9,7 @@ namespace ROLib
     /// <summary>
     /// Static loading/management class for ModelBaseData.  This class is responsible for loading ModelBaseData from configs and returning ModelBaseData instances for an input model name.
     /// </summary>
-    public static class ROLModelData
+    public class ROLModelData
     {
         private static Dictionary<String, ROLModelDefinition> baseModelData = new Dictionary<String, ROLModelDefinition>();
         private static bool defsLoaded = false;

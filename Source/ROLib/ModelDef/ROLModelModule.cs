@@ -706,13 +706,14 @@ namespace ROLib
             }
         }
 
-        public void UpdateSurfaceAttachNode(AttachNode node, float prevDiam, float prevNose, float prevCore, float prevMount, float newNose, float newCore, float newMount)
+        public void UpdateSurfaceAttachNode(AttachNode node, float prevDiam, float prevNose, float prevCore, float prevMount, float newNose, float newCore, float newMount, bool userInput)
         {
             if (node is AttachNode && definition.surfaceNode is AttachNodeBaseData surfNodeData)
             {
                 Vector3 pos = surfNodeData.position * moduleHorizontalScale;
                 ROLAttachNodeUtils.UpdateAttachNodePosition(part, node, pos, surfNodeData.orientation, true, node.size);
-                ROLAttachNodeUtils.UpdateSurfaceAttachedChildren(part, prevDiam, moduleDiameter, prevNose, prevCore, prevMount, newNose, newCore, newMount);
+                if (userInput)
+                    ROLAttachNodeUtils.UpdateSurfaceAttachedChildren(part, prevDiam, moduleDiameter, prevNose, prevCore, prevMount, newNose, newCore, newMount);
             }
         }
 

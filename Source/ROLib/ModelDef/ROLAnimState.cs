@@ -5,7 +5,7 @@ namespace ROLib
         STOPPED_START,
         STOPPED_END,
         PLAYING_FORWARD,
-        PLAYING_BACKWARD
+        PLAYING_BACKWARD,
     }
 }
 

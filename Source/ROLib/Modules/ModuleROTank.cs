@@ -736,7 +736,7 @@ namespace ROLib
 
             //update surface attach node position, part position, and any surface attached children
             if (part.srfAttachNode is AttachNode surfaceNode)
-                coreModule.UpdateSurfaceAttachNode(surfaceNode, prevDiameter, prevNose, prevCore, prevMount, noseModule.moduleHeight, coreModule.moduleHeight, mountModule.moduleHeight);
+                coreModule.UpdateSurfaceAttachNode(surfaceNode, prevDiameter, prevNose, prevCore, prevMount, noseModule.moduleHeight, coreModule.moduleHeight, mountModule.moduleHeight, userInput);
         }
 
         /// <summary>
