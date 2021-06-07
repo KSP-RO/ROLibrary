@@ -356,7 +356,6 @@ namespace ROLib
                 error("Now using model: " + modelName + " for: "+GetErrorReportModuleName());
             }
         }
-
         /// <summary>
         /// Initialization method.  Creates the model transforms, and sets their position and scale to the current config values.<para/>
         /// Initializes texture set, including 'defualts' handling.  Initializes animation module with the animation data for the current model.<para/>
