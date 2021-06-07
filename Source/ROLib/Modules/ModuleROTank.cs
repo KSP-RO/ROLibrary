@@ -71,6 +71,12 @@ namespace ROLib
 
         [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = GroupName)]
         public void OpenTankDimensionGUIEvent() => EditDimensions();
+        
+        [KSPEvent(guiName = "Select Nose", guiActiveEditor = true, groupName = GroupName)]
+        public void SelectNoseModelGUIEvent() => SelectModelWindow(noseModule, noseDefs, "Nose");
+        
+        [KSPEvent(guiName = "Select Mount", guiActiveEditor = true, groupName = GroupName)]
+        public void SelectMountModelGUIEvent() => SelectModelWindow(mountModule, mountDefs, "Mount");
 
         [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Nose Fairing", groupName = GroupName, groupDisplayName = GroupDisplayName), UI_Toggle(disabledText = "Disabled", enabledText = "Enabled", suppressEditorShipModified = true)]
         public bool hasNoseFairing = false;
@@ -210,9 +216,9 @@ namespace ROLib
         private string[] mountNodeNames;
 
         //Main module slots for nose/core/mount
-        private ROLModelModule<ModuleROTank> noseModule;
-        private ROLModelModule<ModuleROTank> coreModule;
-        private ROLModelModule<ModuleROTank> mountModule;
+        internal ROLModelModule<ModuleROTank> noseModule;
+        internal ROLModelModule<ModuleROTank> coreModule;
+        internal ROLModelModule<ModuleROTank> mountModule;
 
         /// <summary>
         /// Mapping of all of the variant sets available for this part.  When variant list length > 0, an additional 'variant' UI slider is added to allow for switching between variants.
@@ -246,11 +252,12 @@ namespace ROLib
         private ModelDefinitionVariantSet GetVariantSet(ModelDefinitionLayoutOptions def) =>
             variantSets.Values.FirstOrDefault(a => a.definitions.Contains(def));
 
-        ModelDefinitionLayoutOptions[] coreDefs;
-        ModelDefinitionLayoutOptions[] noseDefs;
-        ModelDefinitionLayoutOptions[] mountDefs;
+        internal ModelDefinitionLayoutOptions[] coreDefs;
+        internal ModelDefinitionLayoutOptions[] noseDefs;
+        internal ModelDefinitionLayoutOptions[] mountDefs;
 
         private DimensionWindow dimWindow;
+        private ModelWindow modWindow;
 
         #endregion Private Variables
 
@@ -595,7 +602,7 @@ namespace ROLib
             log($"SetPreviousModuleLength() prevDiameter: {prevDiameter}, prevLength: {currentLength}, prevNose: {prevNose}, prevCore: {prevCore}, prevMount: {prevMount}");
         }
         
-        private void OnModelSelectionChanged(BaseField f, object o)
+        public void OnModelSelectionChanged(BaseField f, object o)
         {
             log($"OnModelSelectionChanged()");
             if (f.name == Fields[nameof(currentMount)].name) mountModule.modelSelected(currentMount);
@@ -954,7 +961,7 @@ namespace ROLib
 
 #region GUI
 
-private void OnGUI()
+        private void OnGUI()
         {
             GUI.depth = 0;
 
@@ -973,6 +980,11 @@ private void OnGUI()
                 dimWindow.Hide();
                 dimWindow = null;
             }
+            if (modWindow != null)
+            {
+                modWindow.Hide();
+                modWindow = null;
+            }
         }
 
         private void OnSceneChange(GameScenes _) => HideGUI();
@@ -987,8 +999,19 @@ private void OnGUI()
                 dimWindow.Show();
             }
         }
+        
+        public void SelectModelWindow(ROLModelModule<ModuleROTank> m, ModelDefinitionLayoutOptions[] defs, string theName)
+        {
+            if (modWindow != null)
+                HideGUI();
+            else 
+            {
+                modWindow = new ModelWindow(this, m, defs, theName);
+                modWindow.Show();
+            }
+        }
 
-        private bool _isRecoloringWindowOpen = false;
+        private bool isRecoloringWindowOpen = false;
 
         private void OnMouseOver()
         {
@@ -999,15 +1022,15 @@ private void OnGUI()
 
             if (!Input.GetKeyDown(onHoverKeyCode)) return;
 
-            if (Input.GetKeyDown(onHoverKeyCode) && _isRecoloringWindowOpen)
+            if (Input.GetKeyDown(onHoverKeyCode) && isRecoloringWindowOpen)
             {
                 gameObject.AddComponent<SSTURecolorGUI>().recolorClose();
-                _isRecoloringWindowOpen = false;
+                isRecoloringWindowOpen = false;
                 return;
             }
 
             gameObject.AddComponent<SSTURecolorGUI>().recolorGUIEvent();
-            _isRecoloringWindowOpen = true;
+            isRecoloringWindowOpen = true;
         }
 
         #endregion GUI

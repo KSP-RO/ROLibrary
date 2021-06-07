@@ -99,7 +99,7 @@
     <Compile Include="ModelDef\ROLModelLayout.cs" />
     <Compile Include="ModelDef\ROLModelModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <None Include="UI\ModelWindow.cs.bak" />
+    <Compile Include="UI\ModelWindow.cs" />
     <Compile Include="Utils\ModuleDefinitionVariantSet.cs" />
     <Compile Include="Utils\ROLAttachNodeUtils.cs" />
     <Compile Include="Utils\ROLConfigNodeUtils.cs" />
