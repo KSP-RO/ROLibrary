@@ -55,9 +55,6 @@ namespace ROLib
         [KSPField] public bool hasNoseToRotate = false;
         [KSPField] public bool hasMountToRotate = false;
 
-        [KSPField] public int topFairingIndex = -1;
-        [KSPField] public int bottomFairingIndex = -1;
-
         /// <summary>
         /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
         /// </summary>
@@ -77,12 +74,6 @@ namespace ROLib
         
         [KSPEvent(guiName = "Select Mount", guiActiveEditor = true, groupName = GroupName)]
         public void SelectMountModelGUIEvent() => SelectModelWindow(mountModule, mountDefs, "Mount");
-
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Nose Fairing", groupName = GroupName, groupDisplayName = GroupDisplayName), UI_Toggle(disabledText = "Disabled", enabledText = "Enabled", suppressEditorShipModified = true)]
-        public bool hasNoseFairing = false;
-
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Mount Fairing", groupName = GroupName, groupDisplayName = GroupDisplayName), UI_Toggle(disabledText = "Disabled", enabledText = "Enabled", suppressEditorShipModified = true)]
-        public bool hasMountFairing = false;
 
         /// <summary>
         /// Adjustment to the vertical-scale of v-scale compatible models/module-slots.
@@ -106,14 +97,14 @@ namespace ROLib
         /// <summary>
         /// Allows for the rotation of the nose model
         /// </summary>
-        [KSPField(isPersistant = true, guiName = "Nose Rot.", groupName = GroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiName = "Nose Rot.", groupName = GroupName),
          UI_FloatEdit(sigFigs = 0, suppressEditorShipModified = true, minValue = -180f, maxValue = 180f, incrementLarge = 45f, incrementSmall = 15f, incrementSlide = 1f)]
         public float currentNoseRotation = 0f;
 
         /// <summary>
         /// Allows for the rotation of the mount model
         /// </summary>
-        [KSPField(isPersistant = true, guiName = "Mount Rot.", groupName = GroupName),
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiName = "Mount Rot.", groupName = GroupName),
          UI_FloatEdit(sigFigs = 0, suppressEditorShipModified = true, minValue = -180f, maxValue = 180f, incrementLarge = 45f, incrementSmall = 15f, incrementSlide = 1f)]
         public float currentMountRotation = 0f;
 
@@ -533,20 +524,6 @@ namespace ROLib
                 ModelChangedHandler(true);
             };
 
-            Fields[nameof(hasNoseFairing)].uiControlEditor.onFieldChanged =
-            Fields[nameof(hasNoseFairing)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
-            {
-                log($"CHANGED hasNoseFairing: {hasNoseFairing}");
-                //UpdateFairing(true);
-            };
-
-            Fields[nameof(hasMountFairing)].uiControlEditor.onFieldChanged =
-            Fields[nameof(hasMountFairing)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
-            {
-                log($"CHANGED hasMountFairing: {hasMountFairing}");
-                //UpdateFairing(true);
-            };
-
             Fields[nameof(currentNose)].uiControlEditor.onFieldChanged =
             Fields[nameof(currentNose)].uiControlEditor.onSymmetryFieldChanged = OnModelSelectionChanged;
             Fields[nameof(currentCore)].uiControlEditor.onFieldChanged =
@@ -561,8 +538,8 @@ namespace ROLib
             Fields[nameof(currentDiameter)].guiActiveEditor = maxDiameter != minDiameter;
             Fields[nameof(currentLength)].guiActiveEditor = lengthWidth && maxLength != minLength;
             Fields[nameof(currentVScale)].guiActiveEditor = enableVScale && !lengthWidth;
-            Fields[nameof(currentNoseRotation)].guiActiveEditor = hasNoseToRotate;
-            Fields[nameof(currentMountRotation)].guiActiveEditor = hasMountToRotate;
+            Fields[nameof(currentNoseRotation)].guiActiveEditor = false;
+            Fields[nameof(currentMountRotation)].guiActiveEditor = false;
             Events[nameof(ResetModel)].guiActiveEditor = !lengthWidth;
 
             //------------------MODULE TEXTURE SWITCH UI INIT---------------------//
@@ -611,6 +588,8 @@ namespace ROLib
 
             noseModuleCanRotate = noseModule.moduleCanRotate;
             mountModuleCanRotate = mountModule.moduleCanRotate;
+            Fields[nameof(currentNoseRotation)].guiActiveEditor = noseModuleCanRotate;
+            Fields[nameof(currentMountRotation)].guiActiveEditor = mountModuleCanRotate;
             ModelChangedHandler(true);
             MonoUtilities.RefreshPartContextWindow(part);
         }
@@ -766,11 +745,6 @@ namespace ROLib
             noseModule.updateSelections();
             coreModule.updateSelections();
             mountModule.updateSelections();
-
-            bool isFairing = hasFairing;
-
-            Fields[nameof(hasNoseFairing)].guiActiveEditor = isFairing;
-            Fields[nameof(hasMountFairing)].guiActiveEditor = isFairing;
         }
 
         /// <summary>
@@ -881,41 +855,7 @@ namespace ROLib
             data.Set<double>("newTotalVolume", newVol);
             part.SendEvent("OnPartVolumeChanged", data, 0);
         }
-
-        /*
-        private void UpdateFairing(bool userInput)
-        {
-            log($"Updating Fairing...");
-            ModuleROLNodeFairing[] modules = part.GetComponents<ModuleROLNodeFairing>();
-            if (topFairingIndex >= 0 && topFairingIndex < modules.Length)
-            {
-                bool enabled = hasNoseFairing;
-                log($"hasNoseFairing: {hasNoseFairing}");
-                ModuleROLNodeFairing topFairing = modules[topFairingIndex];
-                ROLFairingUpdateData data = new ROLFairingUpdateData();
-                data.SetBottomY(coreModule.ModuleTop);
-                data.SetBottomRadius(coreModule.moduleUpperDiameter / 2);
-                data.SetNoseFairingNode(noseFairingNode);
-                data.SetEnable(enabled);
-                if (userInput) { data.SetTopRadius(coreModule.moduleUpperDiameter / 2); }
-                topFairing.UpdateExternal(data);
-            }
-            if (bottomFairingIndex >= 0 && bottomFairingIndex < modules.Length)
-            {
-                bool enabled = hasMountFairing;
-                log($"hasMountFairing: {hasMountFairing}");
-                ModuleROLNodeFairing bottomFairing = modules[bottomFairingIndex];
-                ROLFairingUpdateData data = new ROLFairingUpdateData();
-                data.SetTopRadius(coreModule.moduleLowerDiameter / 2);
-                data.SetTopY(coreModule.ModuleBottom);
-                data.SetMountFairingNode(mountFairingNode);
-                data.SetEnable(enabled);
-                if (userInput) { data.SetBottomRadius(coreModule.moduleLowerDiameter / 2); }
-                bottomFairing.UpdateExternal(data);
-            }
-        }
-        */
-
+        
         /// <summary>
         /// Return the ModelModule slot responsible for upper attach point of lower fairing module
         /// </summary>
@@ -936,25 +876,6 @@ namespace ROLib
             float coreBaseDiam = coreModule.moduleDiameter;
             if (coreModule.moduleUpperDiameter < coreBaseDiam) { return coreModule; }
             return noseModule;
-        }
-
-        private void InitializeFairingTextureData(RecoloringHandler recolor, string curTex, bool initialized, string[] name, string[] title)
-        {
-            TextureSet curTexData = TexturesUnlimitedLoader.getTextureSet(curTex);
-            string currentTexture = curTex;
-            if (curTexData == null)
-            {
-                curTex = name[0];
-                curTexData = TexturesUnlimitedLoader.getTextureSet(curTex);
-                initialized = false;
-            }
-            if (!initialized)
-            {
-                initialized = true;
-                recolor.setColorData(curTexData.maskColors);
-            }
-            this.updateUIChooseOptionControl(nameof(currentTexture), name, title, true, name[0]);
-            Fields[nameof(currentTexture)].guiActiveEditor = name.Length > 1;
         }
 
 #endregion ENDREGION - Custom Update Methods
