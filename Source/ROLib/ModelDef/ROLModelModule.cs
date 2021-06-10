@@ -465,7 +465,7 @@ namespace ROLib
             ActionWithSymmetry(m =>
             {
                 m.textureSetName = textureSetName;
-                m.ApplyTextureSet(m.textureSetName, !ROLGameSettings.persistRecolor());
+                m.ApplyTextureSet(m.textureSetName, !ROLGameSettings.PersistRecolor());
                 if (m.textureField != null)
                 {
                     m.partModule.ROLupdateUIChooseOptionControl(m.textureField.name, m.definition.GetTextureSetNames(), m.definition.GetTextureSetTitles());

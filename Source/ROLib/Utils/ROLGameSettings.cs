@@ -7,6 +7,9 @@ namespace ROLib
 
         [GameParameters.CustomParameterUI("Persistent Recolor Selections", toolTip = "If true, custom recolor selections will persist across texture set changes.")]
         public bool persistRecolorSelections = false;
+        
+        [GameParameters.CustomParameterUI("Flag Decal Enabled", toolTip = "If selected, the Flag Decal will default to enabled on models where it is present.")]
+        public bool enableFlagDecalDefault = true;
 
         public override string Section { get { return "RO Mods Settings"; } }
 
@@ -45,12 +48,22 @@ namespace ROLib
             }
         }
 
-        public static bool persistRecolor()
+        public static bool PersistRecolor()
         {
             if (HighLogic.CurrentGame != null)
             {
                 return HighLogic.CurrentGame.Parameters.CustomParams<ROLGameSettings>().persistRecolorSelections;
             }
+            return false;
+        }
+
+        public static bool FlagDecalDefault()
+        {
+            if (HighLogic.CurrentGame != null)
+            {
+                return HighLogic.CurrentGame.Parameters.CustomParams<ROLGameSettings>().enableFlagDecalDefault;
+            }
+
             return false;
         }
 
