@@ -47,11 +47,8 @@ namespace ROLib
         [KSPField] public string mountManagedNodes = string.Empty;
         [KSPField] public string noseInterstageNode = "noseinterstage";
         [KSPField] public string mountInterstageNode = "mountinterstage";
-        [KSPField] public string noseFairingNode = "nosefairing";
-        [KSPField] public string mountFairingNode = "mountfairing";
         [KSPField] public bool validateNose = true;
         [KSPField] public bool validateMount = true;
-        [KSPField] public bool hasFairing = false;
         [KSPField] public bool hasNoseToRotate = false;
         [KSPField] public bool hasMountToRotate = false;
 
