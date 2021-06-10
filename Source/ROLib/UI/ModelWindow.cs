@@ -24,7 +24,8 @@ namespace ROLib
         {
             foreach (ModelDefinitionLayoutOptions options in def)
             {
-                if (GUILayout.Button($"{options.definition.title}"))
+                
+                if (RenderToggleButton($"{options.definition.title}", options.definition.name == module.modelName))
                 {
                     modelName = options.definition.name;
                     SelectCurrentModel(modelName);

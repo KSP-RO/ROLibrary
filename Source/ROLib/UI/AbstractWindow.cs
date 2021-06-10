@@ -13,7 +13,7 @@ namespace ROLib
         public static GUIStyle Frame = new GUIStyle(HighLogic.Skin.window);
         private readonly Guid mGuid;
         public static Dictionary<Guid, AbstractWindow> Windows = new Dictionary<Guid, AbstractWindow>();
-        public static GUIStyle headingStyle, boldBtnStyle, boldLblStyle;
+        public static GUIStyle headingStyle, boldBtnStyle, boldLblStyle, pressedButton;
 
         // Initial width and height of the window
         public float mInitialWidth;
@@ -35,6 +35,11 @@ namespace ROLib
             {
                 fontStyle = FontStyle.Bold,
             };
+            pressedButton = new GUIStyle(HighLogic.Skin.button)
+            {
+                fontStyle = FontStyle.Bold,
+            };
+            pressedButton.normal = pressedButton.active;
             boldLblStyle = new GUIStyle(HighLogic.Skin.label)
             {
                 fontStyle = FontStyle.Bold,
@@ -152,6 +157,11 @@ namespace ROLib
         {
             if (Enabled) Hide();
             else Show();
+        }
+        
+        public bool RenderToggleButton(string text, bool selected, params GUILayoutOption[] options)
+        {
+            return GUILayout.Button(text, selected ? pressedButton : HighLogic.Skin.button, options);
         }
     }
 }

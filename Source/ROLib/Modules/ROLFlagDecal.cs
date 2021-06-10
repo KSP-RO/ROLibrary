@@ -11,7 +11,7 @@ namespace ROLib
         public String transformName = String.Empty;
 
         [KSPField(isPersistant = true)]
-        public bool flagEnabled = true;
+        public bool flagEnabled = ROLGameSettings.FlagDecalDefault();
 
         [KSPEvent(guiName = "Toggle Flag Visibility", guiActiveEditor = true)]
         public void ToggleFlagEvent() => OnFlagToggled(true);
