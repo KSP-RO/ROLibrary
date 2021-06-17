@@ -58,6 +58,7 @@ namespace ROLib
             //ROLLog.debug($"fld: {fld.guiName}");
             fld.SetValue(model, pm);
             fld.uiControlEditor.onFieldChanged.Invoke(fld, oldModel);
+            fld.uiControlEditor.onSymmetryFieldChanged.Invoke(fld, oldModel);
             MonoUtilities.RefreshContextWindows(pm.part);
         }
 
