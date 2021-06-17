@@ -131,10 +131,5 @@ namespace ROLib
                 part.RefreshHighlighter();
             }
         }
-
-        public static void fireEditorUpdate()
-        {
-            fireEditorEvent = HighLogic.LoadedSceneIsEditor;
-        }
     }
 }
