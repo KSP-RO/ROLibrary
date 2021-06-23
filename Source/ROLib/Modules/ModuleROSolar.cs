@@ -137,6 +137,8 @@ namespace ROLib
         /// Mapping of all of the variant sets available for this part.  When variant list length > 0, an additional 'variant' UI slider is added to allow for switching between variants.
         /// </summary>
         private readonly Dictionary<string, ModelDefinitionVariantSet> variantSets = new Dictionary<string, ModelDefinitionVariantSet>();
+        
+        public ROLDragCubeUpdater dragCubeUpdater;
 
         /// <summary>
         /// Helper method to get or create a variant set for the input variant name.  If no set currently exists, a new set is empty set is created and returned.
@@ -202,6 +204,7 @@ namespace ROLib
             if (initialized) return;
             initialized = true;
             stl ??= SolarTechLimit.GetTechLevel(techLevel);
+            dragCubeUpdater = new ROLDragCubeUpdater(part);
 
             prevLength = panelLength;
             prevWidth = panelWidth;
@@ -449,7 +452,7 @@ namespace ROLib
         /// <summary>
         /// Calls the generic ROT procedural drag-cube updating routines.  Will update the drag cubes for whatever the current model state is.
         /// </summary>
-        private void UpdateDragCubes() => ROLModInterop.OnPartGeometryUpdate(part, true);
+        private void UpdateDragCubes() => dragCubeUpdater.Update();
 
         #endregion Custom Update Methods
 
