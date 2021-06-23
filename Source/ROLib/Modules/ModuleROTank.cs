@@ -8,7 +8,6 @@ using static ROLib.ROLLog;
 namespace ROLib
 {
 
-    // TODO: prevDiameter allows the surface attached parts to update, so I should make a prevHeight to allow the surface attached parts on the top and bottom to update as well.
     /// <summary>
     /// PartModule that manages multiple models/meshes and accompanying features for model switching - resources, modules, textures, recoloring.<para/>
     /// Includes 3 stack-mounted modules.  All modules support model-switching, texture-switching, recoloring.
@@ -231,6 +230,7 @@ namespace ROLib
         private bool noseModuleCanRotate = false;
         private bool mountModuleCanRotate = false;
         public KeyCode onHoverKeyCode = KeyCode.J;
+        public ROLDragCubeUpdater dragCubeUpdater;
 
         /// <summary>
         /// Find the first variant set containing a definition with ModelDefinitionLayoutOptions def.  Will not create a new set if not found.
@@ -381,6 +381,8 @@ namespace ROLib
         {
             if (initialized) { return; }
             initialized = true;
+            
+            dragCubeUpdater = new ROLDragCubeUpdater(part);
 
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
@@ -747,10 +749,7 @@ namespace ROLib
         /// <summary>
         /// Calls the generic ROT procedural drag-cube updating routines.  Will update the drag cubes for whatever the current model state is.
         /// </summary>
-        private void UpdateDragCubes()
-        {
-            ROLModInterop.OnPartGeometryUpdate(part, true);
-        }
+        private void UpdateDragCubes() => dragCubeUpdater.Update();
 
         private void SetModelFromDimensions()
         {

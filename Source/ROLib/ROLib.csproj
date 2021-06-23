@@ -104,6 +104,7 @@
     <Compile Include="Utils\ModuleDefinitionVariantSet.cs" />
     <Compile Include="Utils\ROLAttachNodeUtils.cs" />
     <Compile Include="Utils\ROLConfigNodeUtils.cs" />
+    <Compile Include="Utils\ROLDragCubeUpdater.cs" />
     <Compile Include="Utils\ROLExtensions.cs" />
     <Compile Include="Utils\ROLGameSettings.cs" />
     <Compile Include="Utils\ROLInterfaces.cs" />
