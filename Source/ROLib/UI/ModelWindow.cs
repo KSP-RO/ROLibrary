@@ -10,6 +10,7 @@ namespace ROLib
         private readonly ROLModelModule<ModuleROTank> module;
         private readonly ModelDefinitionLayoutOptions[] def;
         private string modelName;
+        private string oldModel;
 
         public ModelWindow (ModuleROTank m, ROLModelModule<ModuleROTank> mod, ModelDefinitionLayoutOptions[] d, string name) :
             base(new Guid(), $"ROTanks {name} Selection", new Rect(300, 300, 400, 600))
@@ -33,33 +34,44 @@ namespace ROLib
             }
         }
 
-        private void SelectCurrentModel(string model)
+        private BaseField SetField(ModuleROTank mod)
         {
-            //ROLLog.debug($"module.name: {module.name}");
-            BaseField fld;
-            string oldModel;
+            BaseField theField;
             switch (module.name)
             {
                 case "ModuleROTank-Mount":
-                    fld = pm.Fields[nameof(pm.currentMount)];
-                    oldModel = pm.currentMount;
+                    theField = mod.Fields[nameof(mod.currentMount)];
+                    oldModel = mod.currentMount;
                     break;
                 case "ModuleROTank-Nose":
-                    fld = pm.Fields[nameof(pm.currentNose)];
-                    oldModel = pm.currentNose;
+                    theField = mod.Fields[nameof(mod.currentNose)];
+                    oldModel = mod.currentNose;
                     break;
                 default:
-                    fld = pm.Fields[nameof(pm.currentCore)];
-                    oldModel = pm.currentCore;
+                    theField = mod.Fields[nameof(mod.currentCore)];
+                    oldModel = mod.currentCore;
                     break;
             }
-            //ROLLog.debug($"oldModel: {oldModel}");
-            //ROLLog.debug($"Set the value of the Current Model to: {model}");
-            //ROLLog.debug($"fld: {fld.guiName}");
+            return theField;
+        }
+
+        private void SelectCurrentModel(string model)
+        {
+            BaseField fld = SetField(pm);
             fld.SetValue(model, pm);
             fld.uiControlEditor.onFieldChanged.Invoke(fld, oldModel);
-            fld.uiControlEditor.onSymmetryFieldChanged.Invoke(fld, oldModel);
-            MonoUtilities.RefreshContextWindows(pm.part);
+
+            if (pm.part.symmetryCounterparts.Count > 0)
+            {
+                foreach (var p in pm.part.symmetryCounterparts)
+                {
+                    ModuleROTank m = (ModuleROTank)p.Modules["ModuleROTank"];
+                    fld = SetField(m);
+                    fld.SetValue(model, m);
+                    fld.uiControlEditor.onFieldChanged.Invoke(fld, oldModel);
+                }
+            }
+            //MonoUtilities.RefreshContextWindows(pm.part);
         }
 
         public void SelectModel()
