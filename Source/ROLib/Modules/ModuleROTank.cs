@@ -559,7 +559,7 @@ namespace ROLib
                 if (def == null) { error("Could not locate valid definition for NOSE"); }
                 noseModule.modelSelected(def.name);
             }
-            if (validateNose && !coreModule.isValidModel(mountModule, coreModule.definition.style))
+            if (validateMount && !coreModule.isValidModel(mountModule, coreModule.definition.style))
             {
                 String coreStyle = coreModule.definition.style;
                 ROLModelDefinition def = coreModule.findFirstValidModel(mountModule, coreStyle);
