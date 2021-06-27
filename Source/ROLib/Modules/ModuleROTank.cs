@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Keramzit;
 using UnityEngine;
 using KSPShaderTools;
 using static ROLib.ROLLog;
@@ -36,7 +37,7 @@ namespace ROLib
         [KSPField] public bool lengthWidth = false;
         [KSPField] public bool scaleMass = false;
         [KSPField] public bool scaleCost = false;
-        [KSPField] public bool hasNodeFairing = false;
+        [KSPField] public bool hasProcFairing = false;
 
         [KSPField] public int coreContainerIndex = 0;
         [KSPField] public int noseContainerIndex = 0;
@@ -231,6 +232,7 @@ namespace ROLib
         private bool mountModuleCanRotate = false;
         public KeyCode onHoverKeyCode = KeyCode.J;
         public ROLDragCubeUpdater dragCubeUpdater;
+        public ProceduralFairingBase fairingBase;
 
         /// <summary>
         /// Find the first variant set containing a definition with ModelDefinitionLayoutOptions def.  Will not create a new set if not found.
@@ -251,8 +253,7 @@ namespace ROLib
 
         internal void ModelChangedHandler(bool pushNodes)
         {
-            if (validateNose || validateMount)
-                ValidateModules();
+            if (validateNose || validateMount) ValidateModules();
             ValidateLength();
             UpdateModulePositions();
             UpdateTankVolume(lengthWidth);
@@ -262,10 +263,9 @@ namespace ROLib
             UpdateAvailableVariants();
             SetPreviousModuleLength();
             UpdateDragCubes();
-            if (scaleMass)
-                UpdateMass();
-            if (scaleCost)
-                UpdateCost();
+            if (scaleMass) UpdateMass();
+            if (scaleCost) UpdateCost();
+            if (hasProcFairing) UpdateFairings();
             ROLStockInterop.UpdatePartHighlighting(part);
             if (HighLogic.LoadedSceneIsEditor)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -383,6 +383,9 @@ namespace ROLib
             initialized = true;
             
             dragCubeUpdater = new ROLDragCubeUpdater(part);
+            ROLLog.debug($"hasProcFairing: {hasProcFairing}");
+            if (hasProcFairing) fairingBase = ROLProcFairingsCompat.GetPFBModule(part);
+            ROLLog.debug($"fairingBase: {fairingBase}");
 
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
@@ -540,6 +543,9 @@ namespace ROLib
             Fields[nameof(currentNoseRotation)].guiActiveEditor = false;
             Fields[nameof(currentMountRotation)].guiActiveEditor = false;
             Events[nameof(ResetModel)].guiActiveEditor = !lengthWidth;
+            
+            ROLLog.debug($"hasProcFairing: {hasProcFairing}");
+            if (hasProcFairing) ROLProcFairingsCompat.HidePAW(fairingBase);
 
             //------------------MODULE TEXTURE SWITCH UI INIT---------------------//
             Fields[nameof(currentNoseTexture)].uiControlEditor.onFieldChanged = noseModule.textureSetSelected;
@@ -652,22 +658,10 @@ namespace ROLib
             coreModule.UpdateModelScalesAndLayoutPositions();
             mountModule.UpdateModelScalesAndLayoutPositions();
         }
-
-        /// <summary>
-        /// Update the cached modifiedMass field values.  Used with stock mass modifier interface.<para/>
-        /// </summary>
-        public void UpdateMass()
-        {
-            modifiedMass = coreModule.moduleMass + noseModule.moduleMass + mountModule.moduleMass;
-        }
-
-        /// <summary>
-        /// Update the cached modifiedCost field values.  Used with stock cost modifier interface.<para/>
-        /// </summary>
-        public void UpdateCost()
-        {
-            modifiedCost = coreModule.moduleCost + noseModule.moduleCost + mountModule.moduleCost;
-        }
+        
+        public void UpdateMass() => modifiedMass = coreModule.moduleMass + noseModule.moduleMass + mountModule.moduleMass;
+        public void UpdateCost() => modifiedCost = coreModule.moduleCost + noseModule.moduleCost + mountModule.moduleCost;
+        public void UpdateFairings() => ROLProcFairingsCompat.SetBaseSize(fairingBase, currentDiameter);
 
         /// <summary>
         /// Updates all dimensions for the PAW and tooling.

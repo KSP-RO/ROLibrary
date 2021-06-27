@@ -715,6 +715,17 @@ namespace ROLib
                     ROLAttachNodeUtils.UpdateSurfaceAttachedChildren(part, prevDiam, moduleDiameter, prevNose, prevCore, prevMount, newNose, newCore, newMount);
             }
         }
+        
+        public void UpdateSurfaceAttachNode(AttachNode node, float prevDiam, float prevNose, float prevCore, float newNose, float newCore, bool userInput)
+        {
+            if (node is AttachNode && definition.surfaceNode is AttachNodeBaseData surfNodeData)
+            {
+                Vector3 pos = surfNodeData.position * moduleHorizontalScale;
+                ROLAttachNodeUtils.UpdateAttachNodePosition(part, node, pos, surfNodeData.orientation, true, node.size);
+                if (userInput)
+                    ROLAttachNodeUtils.UpdateSurfaceAttachedChildren(part, prevDiam, moduleDiameter, prevNose, prevCore, newNose, newCore);
+            }
+        }
 
         /// <summary>
         /// Internal helper method for updating of an attach node from attach-node data

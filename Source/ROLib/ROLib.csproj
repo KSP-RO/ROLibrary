@@ -42,6 +42,9 @@
     <Reference Include="Assembly-CSharp">
       <Private>False</Private>
     </Reference>
+    <Reference Include="ProceduralFairings, Version=6.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\..\KSP DLL\1.8.1\ProceduralFairings.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -110,6 +113,7 @@
     <Compile Include="Utils\ROLInterfaces.cs" />
     <Compile Include="Utils\ROLLog.cs" />
     <Compile Include="Utils\ROLModInterop.cs" />
+    <Compile Include="Utils\ROLProcFairingsCompat.cs" />
     <Compile Include="Utils\ROLStockInterop.cs" />
     <Compile Include="Utils\ROLUtils.cs" />
   </ItemGroup>
