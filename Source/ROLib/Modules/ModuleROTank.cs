@@ -769,7 +769,7 @@ namespace ROLib
             currentVScale = (dimRatio / modelRatio) - 1;
             if (coreModule.modelName != s)
                 coreModule.modelSelected(s);
-            MonoUtilities.RefreshPartContextWindow(part);
+            //MonoUtilities.RefreshPartContextWindow(part);
         }
 
         private float GetPartTopY()
