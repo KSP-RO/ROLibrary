@@ -24,6 +24,27 @@ namespace ROLib
             ROLLog.debug($"pfb.Fields[nameof(pfb.baseSize)].guiActiveEditor: {pfb.Fields[nameof(pfb.baseSize)].guiActiveEditor}");
         }
 
+        public static void SetBaseSize(ProceduralFairingBase fb, float oldDiam, float newDiam)
+        {
+            ROLLog.debug("SetBaseSize");
+            var fld = fb.Fields["baseSize"];
+            ROLLog.debug($"fld: {fld}");
+            fld.SetValue(newDiam, fb);
+            fld.uiControlEditor.onFieldChanged.Invoke(fld, oldDiam);
+            
+            if (fb.part.symmetryCounterparts.Count > 0)
+            {
+                foreach (var p in fb.part.symmetryCounterparts)
+                {
+                    ProceduralFairingBase f = (ProceduralFairingBase)p.Modules["ProceduralFairingBase"];
+                    fld = f.Fields["baseSize"];
+                    fld.SetValue(newDiam, f);
+                    fld.uiControlEditor.onFieldChanged.Invoke(fld, oldDiam);
+                }
+            }
+        }
+        
+        /*
         public static void SetBaseSize(ProceduralFairingBase fairing, float diam)
         {
             var pai = fairing.Fields[nameof(fairing.baseSize)].uiControlEditor.partActionItem;
@@ -50,5 +71,6 @@ namespace ROLib
                 }
             }
         }
+        */
     }
 }

@@ -386,6 +386,8 @@ namespace ROLib
             ROLLog.debug($"hasProcFairing: {hasProcFairing}");
             if (hasProcFairing) fairingBase = ROLProcFairingsCompat.GetPFBModule(part);
             ROLLog.debug($"fairingBase: {fairingBase}");
+            
+            prevDiameter = currentDiameter;
 
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
@@ -451,7 +453,6 @@ namespace ROLib
             coreModule.volumeScalar = volumeScalingPower;
             mountModule.volumeScalar = volumeScalingPower;
             
-            prevDiameter = currentDiameter;
             prevLength = 1;
             prevCore = 1;
             prevNose = 0;
@@ -661,7 +662,7 @@ namespace ROLib
         
         public void UpdateMass() => modifiedMass = coreModule.moduleMass + noseModule.moduleMass + mountModule.moduleMass;
         public void UpdateCost() => modifiedCost = coreModule.moduleCost + noseModule.moduleCost + mountModule.moduleCost;
-        public void UpdateFairings() => ROLProcFairingsCompat.SetBaseSize(fairingBase, currentDiameter);
+        public void UpdateFairings() => ROLProcFairingsCompat.SetBaseSize(fairingBase, 1, currentDiameter);
 
         /// <summary>
         /// Updates all dimensions for the PAW and tooling.
