@@ -14,18 +14,18 @@ namespace ROLib
 
         public static void log(string line)
         {
-            MonoBehaviour.print("ROL-LOG  : " + line);
+            MonoBehaviour.print($"<color=#00FF00>ROL-LOG: </color>{line}");
         }
 
         public static void error(string line)
         {
-            MonoBehaviour.print("ROL-ERROR: " + line);
+            MonoBehaviour.print($"<color=#FF0000>ROL-ERROR: {line}</color>");
         }
 
         public static void debug(string line)
         {
             if (!debugMode) { return; }
-            MonoBehaviour.print("ROL-DEBUG: " + line);
+            MonoBehaviour.print($"<color=#0000FF>ROL-DEBUG: </color>{line}");
         }
 
         public static void exc(Exception e)
