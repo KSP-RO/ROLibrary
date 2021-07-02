@@ -442,6 +442,9 @@ namespace ROLib
             if (node.HasNode("CONSTRAINT"))
                 constraintData = new ModelConstraintData(node.GetNode("CONSTRAINT"));
 
+            if (node.HasNode("RCSDATA"))
+                rcsModuleData = new ModelRCSModuleData(node.GetNode("RCSDATA"));
+
             if (node.HasNode("ENGINE_THRUST"))
                 engineThrustData = new ModelEngineThrustData(node.GetNode("ENGINE_THRUST"));
 
@@ -627,10 +630,17 @@ namespace ROLib
     }
 
     /// <summary>
-    /// Container for RCS position related data for a standard structural model definition.
+    /// Container for RCS position related data for a standard structural model definition. The details on calculating the masses and thrust come from the RO design of RCS Configs.
+    /// Mass and Cost is scaling by SQRT(thrust). Mass is then modified again by the number of nozzles. (OriginalMass / 4.5) * (NozzleCount + 0.5)
+    /// Cost is determined by the Base Cost and then modified by the number of the Nozzles. ==> BaseCost * Multiplier * CostMult * Nozzles
+    /// Base thrust is based on the Apollo RCS which is 275/445N depending on the fuel. For all calculations, we will use 275N.
     /// </summary>
     public class ModelRCSModuleData
     {
+
+        public const float BaseThrust = 0.275f;
+        public const float BaseMass = 0.016f;
+        public const float BaseCost = 8f;
 
         /// <summary>
         /// The name of the thrust transforms as they are in the model hierarchy.  These will be renamed at runtime to match whatever the RCS module is expecting.
@@ -640,23 +650,45 @@ namespace ROLib
         /// <summary>
         /// The thrust of the RCS model at its base scale.
         /// </summary>
-        public readonly float rcsThrust;
-
+        public readonly float multiplier, nozzles;
+        public float rcsThrust, mass, cost;
         public readonly bool enableX, enableY, enableZ, enablePitch, enableYaw, enableRoll;
 
         public ModelRCSModuleData(ConfigNode node)
         {
             thrustTransformName = node.GetStringValue("thrustTransformName");
-            rcsThrust = node.GetFloatValue("thrust");
+            multiplier = node.GetFloatValue("multiplier", 1);
+            nozzles = node.GetFloatValue("nozzles", 1);
+            mass = CalculateMass(multiplier, nozzles);
             enableX = node.GetBoolValue("enableX", true);
             enableY = node.GetBoolValue("enableY", true);
             enableZ = node.GetBoolValue("enableZ", true);
             enablePitch = node.GetBoolValue("enablePitch", true);
             enableYaw = node.GetBoolValue("enableYaw", true);
             enableRoll = node.GetBoolValue("enableRoll", true);
+            rcsThrust = BaseThrust * multiplier;
+        }
+
+        private float CalculateMass(float mult, float noz)
+        {
+            var massMult = Mathf.Sqrt(mult) / mult;
+            var currentMass = BaseMass * mult;
+            currentMass *= massMult;
+            currentMass /= 4.5f;
+            currentMass *= (noz + 0.5f);
+            return currentMass;
+        }
+        
+        private float CalculateCost(float mult, float noz)
+        {
+            var costMult = Mathf.Sqrt((mult) / mult);
+            var currentCost = Mathf.Round(BaseCost * mult * costMult * noz);
+            return currentCost;
         }
 
         public float GetThrust(float scale) => rcsThrust * scale * scale;
+        public float GetMass(float scale) => mass * scale;
+        public float GetCost(float scale) => Mathf.Round(cost * scale);
 
         public void RenameTransforms(Transform root, string destinationName)
         {

@@ -413,7 +413,14 @@ namespace ROLib
         /// This allows for the model's transforms to be properly found by the ModuleRCS when it is (re)initialized.
         /// </summary>
         /// <param name="destinationName"></param>
-        public void RenameRCSThrustTransforms(string destinationName) => definition?.rcsModuleData?.RenameTransforms(root, destinationName);
+        public void RenameRCSThrustTransforms(string destinationName)
+        {
+            if (definition.rcsModuleData == null)
+            {
+                return;
+            }
+            definition.rcsModuleData.RenameTransforms(root, destinationName);
+        }
 
         /// <summary>
         /// If the model definition contains engine-thrust-transform data, will rename the model's engine thrust transforms to match the input 'destinationName'.<para/>
@@ -598,6 +605,8 @@ namespace ROLib
             float vScale = newHeight / (solar ? definition.panelLength : definition.height);
             SetScale(hScale, vScale);
         }
+
+        public void SetScale(float newScale) => SetScale(newScale, newScale);
 
         /// <summary>
         /// Updates the current internal scale values for the input scales.  Updates x,z with the 'horizontal scale' and updates 'y' with the 'vertical scale'.
