@@ -302,7 +302,7 @@ namespace ROLib
             if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
                 GameEvents.onFlightReady.Add(UpdateDragCubes);
         }
-
+        
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -679,7 +679,6 @@ namespace ROLib
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
-            // ROLLog.debug($"UpdateDimensions() currentMount: {currentMount}  Largest Diameter: {largestDiameter}.  Total Tank length: {totalTankLength}");
         }
 
         /// <summary>
@@ -764,7 +763,6 @@ namespace ROLib
 
             string ratioName = $"{modelRatio:0.0}";
             string s = $"{ratioName}x-{currentVariant}";
-            //ROLLog.debug($"dimRatio: {dimRatio}, modelRatio: {modelRatio}, {ratioName}x-{currentVariant}");
 
             currentVScale = (dimRatio / modelRatio) - 1;
             if (coreModule.modelName != s)
@@ -797,7 +795,6 @@ namespace ROLib
         private float EffectiveCylinderLength() //=> currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
         {
             float effectiveLength = currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
-            //ROLLog.debug($"EffectiveLength() horScale: {currentDiameter / coreModule.definition.diameter}.  Nose: {NoseEffectiveLength:F1}, mount: {MountEffectiveLength:F1}, core: {currentLength:F1}, dome: {DomeLength:F1}, result: {effectiveLength}");
             return effectiveLength;
         }
 
@@ -839,7 +836,6 @@ namespace ROLib
             float r = currentDiameter / 2;
             float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, EffectiveCylinderLength())) * 1000f;
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
-            //ROLLog.debug($"UpdateTankVolume() Nose scale: {noseScale:F3} -> Vol: {noseAdditionalVol:F1}.  Mount scale: {mountScale:F3} -> Vol: {mountAdditionalVol:F1}.  Total volume: {effectiveVolume}");
 
             ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
         }
