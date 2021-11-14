@@ -186,9 +186,7 @@ namespace ROLib
         /// </summary>
         public float moduleVolume { get; private set; }
 
-        public bool moduleCanRotate { get; private set; }
-
-        public Vector3 moduleDefaultRotation { get; private set; }
+        public bool moduleCanRotate => definition.canRotate;
 
         /// <summary>
         /// Return the current diameter of the model in this module slot.  This is the base diamter as specified in the model definition, modified by the currently specified scale.
@@ -200,7 +198,7 @@ namespace ROLib
         /// <summary>
         /// Return true/false if fairings are enabled for this module in its current configuration.
         /// </summary>
-        public bool fairingEnabled { get { return definition.fairingData == null ? false : definition.fairingData.fairingsSupported; } }
+        public bool fairingEnabled => definition.fairingData == null ? false : definition.fairingData.fairingsSupported;
 
         /// <summary>
         /// Return the current upper-mounting diamter of the model in this module slot.  This value is to be used for sizing/scaling of any module slot used for an upper-adapter/nose option for this slot.
@@ -760,8 +758,6 @@ namespace ROLib
             moduleMass = definition.mass * mScalar * positions;
             moduleCost = definition.cost * cScalar * positions;
             moduleVolume = definition.volume * vScalar * positions;
-            moduleCanRotate = definition.canRotate;
-            moduleDefaultRotation = definition.rotationOffset;
         }
 
         /// <summary>
@@ -877,7 +873,7 @@ namespace ROLib
                 Transform model = models[i];
                 ModelPositionData mpd = layout.positions[i];
                 model.transform.localPosition = mpd.localPosition * posScalar;
-                model.transform.localRotation = Quaternion.Euler(moduleRotation);
+                model.transform.localRotation = Quaternion.Euler(mpd.localRotation) * Quaternion.Euler(moduleRotation);
                 float xScale = doNotRescaleX ? 1 : moduleHorizontalScale;
 
                 if (definition.compoundModelData != null)

@@ -622,20 +622,20 @@ namespace ROLib
 
             //position of each module is set such that the vertical center of the models is at part origin/COM
             float pos = totalHeight * 0.5f;//abs top of model
-            Vector3 vect = new Vector3(0f, 0f, 0f);
+            Vector3 rot = new Vector3(0f, 0f, 0f);
 
             pos -= noseModule.moduleHeight;//bottom of nose model
-            vect.y = currentNoseRotation + noseModule.moduleDefaultRotation.y;
+            rot.y = currentNoseRotation;
             noseModule.SetPosition(pos);
-            noseModule.SetRotation(vect);
+            noseModule.SetRotation(rot);
 
             pos -= coreModule.moduleHeight * 0.5f;//center of 'core' model
             coreModule.SetPosition(pos);
 
             pos -= coreModule.moduleHeight * 0.5f;//bottom of 'core' model
-            vect.y = currentMountRotation + mountModule.moduleDefaultRotation.y;
+            rot.y = currentMountRotation;
             mountModule.SetPosition(pos);
-            mountModule.SetRotation(vect);
+            mountModule.SetRotation(rot);
         }
 
         public void UpdateModelMeshes()
