@@ -48,8 +48,6 @@ namespace ROLib
         [KSPField] public string mountInterstageNode = "mountinterstage";
         [KSPField] public bool validateNose = true;
         [KSPField] public bool validateMount = true;
-        [KSPField] public bool hasNoseToRotate = false;
-        [KSPField] public bool hasMountToRotate = false;
 
         /// <summary>
         /// The current user selected diamater of the part.  Drives the scaling and positioning of everything else in the model.
@@ -64,10 +62,10 @@ namespace ROLib
 
         [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = GroupName)]
         public void OpenTankDimensionGUIEvent() => EditDimensions();
-        
+
         [KSPEvent(guiName = "Select Nose", guiActiveEditor = true, groupName = GroupName)]
         public void SelectNoseModelGUIEvent() => SelectModelWindow(noseModule, noseDefs, "Nose");
-        
+
         [KSPEvent(guiName = "Select Mount", guiActiveEditor = true, groupName = GroupName)]
         public void SelectMountModelGUIEvent() => SelectModelWindow(mountModule, mountDefs, "Mount");
 
@@ -145,9 +143,9 @@ namespace ROLib
             if (lengthWidth) return;
 
             currentDiameter = coreModule.definition.diameter;
-            currentVScale = 0;
-            currentNoseRotation = noseModule.moduleDefaultRotation.y;
-            currentMountRotation = mountModule.moduleDefaultRotation.y;
+            currentVScale = 0f;
+            currentNoseRotation = 0f;
+            currentMountRotation = 0f;
 
             this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep);
             this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f);
@@ -227,8 +225,6 @@ namespace ROLib
             return set;
         }
 
-        private bool noseModuleCanRotate = false;
-        private bool mountModuleCanRotate = false;
         public KeyCode onHoverKeyCode = KeyCode.J;
         public ROLDragCubeUpdater dragCubeUpdater;
 
@@ -254,6 +250,7 @@ namespace ROLib
             if (validateNose || validateMount)
                 ValidateModules();
             ValidateLength();
+            ValidateRotation();
             UpdateModulePositions();
             UpdateTankVolume(lengthWidth);
             UpdateDimensions();
@@ -302,7 +299,7 @@ namespace ROLib
             if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
                 GameEvents.onFlightReady.Add(UpdateDragCubes);
         }
-        
+
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -381,7 +378,7 @@ namespace ROLib
         {
             if (initialized) { return; }
             initialized = true;
-            
+
             dragCubeUpdater = new ROLDragCubeUpdater(part);
 
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
@@ -419,8 +416,6 @@ namespace ROLib
             noseModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-NOSE"), ModelOrientation.TOP, nameof(currentNose), null, nameof(currentNoseTexture), nameof(noseModulePersistentData));
             noseModule.name = "ModuleROTank-Nose";
             noseModule.getSymmetryModule = m => m.noseModule;
-            currentNoseRotation = noseModule.moduleDefaultRotation.y;
-            noseModuleCanRotate = noseModule.moduleCanRotate;
             if (validateNose)
             {
                 noseModule.getValidOptions = () => noseModule.getValidModels(noseDefs, coreModule.definition.style);
@@ -433,8 +428,6 @@ namespace ROLib
             mountModule = new ROLModelModule<ModuleROTank>(part, this, ROLUtils.GetRootTransform(part, "ModularPart-MOUNT"), ModelOrientation.BOTTOM, nameof(currentMount), null, nameof(currentMountTexture), nameof(mountModulePersistentData));
             mountModule.name = "ModuleROTank-Mount";
             mountModule.getSymmetryModule = m => m.mountModule;
-            currentMountRotation = mountModule.moduleDefaultRotation.y;
-            mountModuleCanRotate = mountModule.moduleCanRotate;
             if (validateMount)
             {
                 mountModule.getValidOptions = () => mountModule.getValidModels(mountDefs, coreModule.definition.style);
@@ -447,7 +440,7 @@ namespace ROLib
             noseModule.volumeScalar = volumeScalingPower;
             coreModule.volumeScalar = volumeScalingPower;
             mountModule.volumeScalar = volumeScalingPower;
-            
+
             prevDiameter = currentDiameter;
             prevLength = 1;
             prevCore = 1;
@@ -537,8 +530,8 @@ namespace ROLib
             Fields[nameof(currentDiameter)].guiActiveEditor = maxDiameter != minDiameter;
             Fields[nameof(currentLength)].guiActiveEditor = lengthWidth && maxLength != minLength;
             Fields[nameof(currentVScale)].guiActiveEditor = enableVScale && !lengthWidth;
-            Fields[nameof(currentNoseRotation)].guiActiveEditor = false;
-            Fields[nameof(currentMountRotation)].guiActiveEditor = false;
+            Fields[nameof(currentNoseRotation)].guiActiveEditor = noseModule.moduleCanRotate;
+            Fields[nameof(currentMountRotation)].guiActiveEditor = mountModule.moduleCanRotate;
             Events[nameof(ResetModel)].guiActiveEditor = !lengthWidth;
 
             //------------------MODULE TEXTURE SWITCH UI INIT---------------------//
@@ -577,7 +570,7 @@ namespace ROLib
             prevMount = mountModule.moduleHeight;
             log($"SetPreviousModuleLength() prevDiameter: {prevDiameter}, prevLength: {currentLength}, prevNose: {prevNose}, prevCore: {prevCore}, prevMount: {prevMount}");
         }
-        
+
         public void OnModelSelectionChanged(BaseField f, object o)
         {
             log($"OnModelSelectionChanged()");
@@ -585,10 +578,6 @@ namespace ROLib
             else if (f.name == Fields[nameof(currentCore)].name) coreModule.modelSelected(currentCore);
             else if (f.name == Fields[nameof(currentNose)].name) noseModule.modelSelected(currentNose);
 
-            noseModuleCanRotate = noseModule.moduleCanRotate;
-            mountModuleCanRotate = mountModule.moduleCanRotate;
-            Fields[nameof(currentNoseRotation)].guiActiveEditor = noseModuleCanRotate;
-            Fields[nameof(currentMountRotation)].guiActiveEditor = mountModuleCanRotate;
             ModelChangedHandler(true);
             MonoUtilities.RefreshPartContextWindow(part);
         }
@@ -605,7 +594,7 @@ namespace ROLib
             ModelChangedHandler(true);
         }
 
-        private void OnLengthChanged(BaseField f, object o) 
+        private void OnLengthChanged(BaseField f, object o)
         {
             if ((float)f.GetValue(this) == prevLength) return;
             ValidateLength();
@@ -634,14 +623,17 @@ namespace ROLib
             //position of each module is set such that the vertical center of the models is at part origin/COM
             float pos = totalHeight * 0.5f;//abs top of model
             Vector3 vect = new Vector3(0f, 0f, 0f);
+
             pos -= noseModule.moduleHeight;//bottom of nose model
-            vect.Set(0f, currentNoseRotation, 0f);
+            vect.y = currentNoseRotation + noseModule.moduleDefaultRotation.y;
             noseModule.SetPosition(pos);
             noseModule.SetRotation(vect);
+
             pos -= coreModule.moduleHeight * 0.5f;//center of 'core' model
             coreModule.SetPosition(pos);
+
             pos -= coreModule.moduleHeight * 0.5f;//bottom of 'core' model
-            vect.Set(0f, currentMountRotation, 0f);
+            vect.y = currentMountRotation + mountModule.moduleDefaultRotation.y;
             mountModule.SetPosition(pos);
             mountModule.SetRotation(vect);
         }
@@ -775,7 +767,7 @@ namespace ROLib
             return GetTotalHeight() * 0.5f;
         }
 
-        #nullable enable
+#nullable enable
         private float ModuleEffectiveLength(ROLModelModule<ModuleROTank>? module, bool nose)
         {
             if (module is null) return 0;
@@ -787,7 +779,7 @@ namespace ROLib
 
             return module.definition.effectiveLength * currentDiameter / diam;
         }
-        #nullable disable
+#nullable disable
 
         private float DomeLength => currentDiameter / 2;
         private float NoseEffectiveLength => ModuleEffectiveLength(noseModule, true);
@@ -809,6 +801,14 @@ namespace ROLib
             float minL = Mathf.Max(minLength, CalcMinLength());
             this.ROLupdateUIFloatEditControl(nameof(currentLength), minL, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep);
             currentLength = Mathf.Max(currentLength, minL);
+        }
+
+        private void ValidateRotation()
+        {
+            Fields[nameof(currentNoseRotation)].guiActiveEditor = noseModule.moduleCanRotate;
+            Fields[nameof(currentMountRotation)].guiActiveEditor = mountModule.moduleCanRotate;
+            if (!noseModule.moduleCanRotate) currentNoseRotation = 0f;
+            if (!mountModule.moduleCanRotate) currentMountRotation = 0f;
         }
 
         private void UpdateTankVolume(bool lw)
@@ -834,7 +834,7 @@ namespace ROLib
 
             // Calculate the volume of the main tank
             float r = currentDiameter / 2;
-            float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r/2) + ROLUtils.CylinderVolume(r, EffectiveCylinderLength())) * 1000f;
+            float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r / 2) + ROLUtils.CylinderVolume(r, EffectiveCylinderLength())) * 1000f;
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
 
             ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
@@ -847,7 +847,7 @@ namespace ROLib
             data.Set<double>("newTotalVolume", newVol);
             part.SendEvent("OnPartVolumeChanged", data, 0);
         }
-        
+
         /// <summary>
         /// Return the ModelModule slot responsible for upper attach point of lower fairing module
         /// </summary>
@@ -870,9 +870,9 @@ namespace ROLib
             return noseModule;
         }
 
-#endregion ENDREGION - Custom Update Methods
+        #endregion ENDREGION - Custom Update Methods
 
-#region GUI
+        #region GUI
 
         private void OnGUI()
         {
@@ -906,18 +906,18 @@ namespace ROLib
         {
             if (dimWindow != null)
                 HideGUI();
-            else 
+            else
             {
                 dimWindow = new DimensionWindow(this);
                 dimWindow.Show();
             }
         }
-        
+
         public void SelectModelWindow(ROLModelModule<ModuleROTank> m, ModelDefinitionLayoutOptions[] defs, string theName)
         {
             if (modWindow != null)
                 HideGUI();
-            else 
+            else
             {
                 modWindow = new ModelWindow(this, m, defs, theName);
                 modWindow.Show();

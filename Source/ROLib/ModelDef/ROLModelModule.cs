@@ -351,9 +351,9 @@ namespace ROLib
             }
             else if (!Array.Exists(optionsCache, m => m.definition.name == modelName))
             {
-                error("Currently configured model name: " + modelName + " was not located while setting up: "+GetErrorReportModuleName());
+                error("Currently configured model name: " + modelName + " was not located while setting up: " + GetErrorReportModuleName());
                 modelName = optionsCache[0].definition.name;
-                error("Now using model: " + modelName + " for: "+GetErrorReportModuleName());
+                error("Now using model: " + modelName + " for: " + GetErrorReportModuleName());
             }
         }
         /// <summary>
@@ -373,7 +373,7 @@ namespace ROLib
             currentLayout = layoutOptions.getLayout(layoutName);
             if (!layoutOptions.isValidLayout(layoutName))
             {
-                log("Existing layout: "+layoutName+" for " + GetErrorReportModuleName() + " was null.  Assigning default layout: " + layoutOptions.getDefaultLayout().name);
+                log("Existing layout: " + layoutName + " for " + GetErrorReportModuleName() + " was null.  Assigning default layout: " + layoutOptions.getDefaultLayout().name);
                 layoutName = layoutOptions.getDefaultLayout().name;
             }
             ConstructModels();
@@ -638,14 +638,7 @@ namespace ROLib
         /// <param name="originPos"></param>
         public void SetPosition(float originPos) => modulePosition = originPos;
 
-        public void SetRotation(Vector3 newRotation)
-        {
-            //log($"Set Rotation to: {newRotation.ToString()}");
-            //root.transform.localRotation = Quaternion.Euler(newRotation);
-            moduleRotation = newRotation;
-            
-
-        }
+        public void SetRotation(Vector3 newRotation) => moduleRotation = newRotation;
 
         /// <summary>
         /// Updates the attach nodes on the part for the input list of attach nodes and the current specified nodes for this model.
@@ -922,9 +915,6 @@ namespace ROLib
                 ConstructSubModels(models[i]);
             }
             Vector3 rotation = definition.shouldInvert(orientation) ? definition.invertAxis * 180f : Vector3.zero;
-            log("Creating the localRotation");
-            log($"{Quaternion.Euler(moduleRotation + rotation).ToString()}");
-            rotation.y = moduleRotation.y;
             root.transform.localRotation = Quaternion.Euler(rotation);
         }
 
@@ -954,7 +944,7 @@ namespace ROLib
                 }
                 else
                 {
-                    error("Could not clone model for url: " + smd.modelURL + " while constructing meshes for model definition" + definition.name+" for: "+GetErrorReportModuleName());
+                    error("Could not clone model for url: " + smd.modelURL + " while constructing meshes for model definition" + definition.name + " for: " + GetErrorReportModuleName());
                 }
             }
             if (definition?.mergeData is MeshMergeData[])
@@ -1019,7 +1009,7 @@ namespace ROLib
 
         #endregion ENDREGION - Private/Internal methods
 
-        public ModelDefinitionLayoutOptions[] getValidModels (ModelDefinitionLayoutOptions[] inputOptions, String coreName)
+        public ModelDefinitionLayoutOptions[] getValidModels(ModelDefinitionLayoutOptions[] inputOptions, String coreName)
         {
             List<ModelDefinitionLayoutOptions> validDefs = new List<ModelDefinitionLayoutOptions>();
             ModelDefinitionLayoutOptions def;
@@ -1054,12 +1044,12 @@ namespace ROLib
             return null;
         }
 
-        public bool isValidModel (ROLModelModule<U> module, String coreName)
+        public bool isValidModel(ROLModelModule<U> module, String coreName)
         {
             return isValidModel(module.definition, coreName);
         }
 
-        public bool isValidModel (ROLModelDefinition def, String coreName)
+        public bool isValidModel(ROLModelDefinition def, String coreName)
         {
             if (def.requiredCore.Contains(coreName) || def.requiredCore.Contains("ALL"))
             {
