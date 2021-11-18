@@ -225,7 +225,8 @@ namespace ROLib
             return set;
         }
 
-        public KeyCode onHoverKeyCode = KeyCode.J;
+        public const KeyCode hoverRecolorKeyCode = KeyCode.J;
+        public const KeyCode hoverPresetKeyCode = KeyCode.N;
         public ROLDragCubeUpdater dragCubeUpdater;
 
         /// <summary>
@@ -303,7 +304,10 @@ namespace ROLib
         public void OnDestroy()
         {
             if (HighLogic.LoadedSceneIsEditor)
+            {
                 GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
+                GameEvents.onPartActionUIDismiss.Remove(OnPawClose);
+            }
             GameEvents.onFlightReady.Remove(UpdateDragCubes);
         }
 
@@ -540,7 +544,10 @@ namespace ROLib
             Fields[nameof(currentMountTexture)].uiControlEditor.onFieldChanged = mountModule.textureSetSelected;
 
             if (HighLogic.LoadedSceneIsEditor)
+            {
                 GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
+                GameEvents.onPartActionUIDismiss.Add(OnPawClose);
+            }
         }
 
         private void ValidateModules()
@@ -876,17 +883,11 @@ namespace ROLib
 
         private void OnGUI()
         {
-            GUI.depth = 0;
-
-            Action windows = delegate { };
             foreach (var window in AbstractWindow.Windows.Values)
-            {
-                windows += window.Draw;
-            }
-            windows.Invoke();
+                window.Draw();
         }
 
-        private void HideGUI()
+        private void HideAllWindows()
         {
             if (dimWindow != null)
             {
@@ -900,12 +901,16 @@ namespace ROLib
             }
         }
 
-        private void OnSceneChange(GameScenes _) => HideGUI();
+        private void OnSceneChange(GameScenes _) => HideAllWindows();
+        private void OnPawClose(Part p) { if (p == part) HideAllWindows(); }
 
         public void EditDimensions()
         {
-            if (dimWindow != null)
-                HideGUI();
+            if (dimWindow != null && dimWindow.Enabled)
+            {
+                dimWindow.Hide();
+                dimWindow = null;
+            }
             else
             {
                 dimWindow = new DimensionWindow(this);
@@ -913,40 +918,28 @@ namespace ROLib
             }
         }
 
-        public void SelectModelWindow(ROLModelModule<ModuleROTank> m, ModelDefinitionLayoutOptions[] defs, string theName)
+        public void SelectModelWindow(ROLModelModule<ModuleROTank> m, ModelDefinitionLayoutOptions[] defs, string name)
         {
-            if (modWindow != null)
-                HideGUI();
-            else
+            if (modWindow != null && modWindow.Enabled)
             {
-                modWindow = new ModelWindow(this, m, defs, theName);
-                modWindow.Show();
+                bool openedDifferentWindow = modWindow.module != m;
+                modWindow.Hide();
+                modWindow = null;
+                if (!openedDifferentWindow) return;
             }
+            modWindow = new ModelWindow(this, m, defs, name);
+            modWindow.Show();
         }
-
-        private bool isRecoloringWindowOpen = false;
 
         private void OnMouseOver()
         {
-            if (!HighLogic.LoadedSceneIsEditor)
-            {
-                return;
-            }
-
-            if (!Input.GetKeyDown(onHoverKeyCode)) return;
-
-            if (Input.GetKeyDown(onHoverKeyCode) && isRecoloringWindowOpen)
-            {
-                gameObject.AddComponent<SSTURecolorGUI>().recolorClose();
-                isRecoloringWindowOpen = false;
-                return;
-            }
-
-            gameObject.AddComponent<SSTURecolorGUI>().recolorGUIEvent();
-            isRecoloringWindowOpen = true;
+            if (!HighLogic.LoadedSceneIsEditor) return;
+            if (Input.GetKeyDown(hoverRecolorKeyCode))
+                part.Modules.GetModule<SSTURecolorGUI>().recolorGUIEvent();
+            else if (Input.GetKeyDown(hoverPresetKeyCode))
+                EditDimensions();
         }
 
         #endregion GUI
-
     }
 }

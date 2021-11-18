@@ -29,7 +29,8 @@ namespace ROLib
             headingStyle = new GUIStyle(HighLogic.Skin.label)
             {
                 fontStyle = FontStyle.Bold,
-                fontSize = 14,
+                fontSize = 16,
+                padding = new RectOffset(0, 0, 0, 10),
             };
             boldBtnStyle = new GUIStyle(HighLogic.Skin.button)
             {
@@ -94,7 +95,23 @@ namespace ROLib
                 /* Block clicks through window onto ship or other editor UI */
                 if (this.backupPosition.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)))
                     InputLockManager.SetControlLock(ControlTypes.EDITOR_LOCK, "ROLWindowLock");
-                Window(uid);
+
+                GUI.skin = HighLogic.Skin;
+
+                using (new GUILayout.VerticalScope())
+                {
+                    using (new GUILayout.HorizontalScope())
+                    {
+                        GUILayout.FlexibleSpace();
+                        GUILayout.Label(Title ?? "Window", headingStyle);
+                        GUILayout.FlexibleSpace();
+                        // Close button.
+                        if (GUI.Button(GUILayoutUtility.GetRect(18, 18), "\u00d7")) // U+00D7 MULTIPLICATION SIGN
+                            Hide();
+                    }
+                    Window(uid);
+                }
+
             }
             catch (Exception e)
             {
@@ -104,10 +121,7 @@ namespace ROLib
 
         public virtual void Window(int uid)
         {
-            if (Title != null)
-            {
-                GUI.DragWindow(new Rect(0, 0, Single.MaxValue, 20));
-            }
+            GUI.DragWindow();
             Tooltip = GUI.tooltip;
         }
 
@@ -120,15 +134,8 @@ namespace ROLib
                 Position.height = 0;
             }
 
-            Position = GUILayout.Window(mGuid.GetHashCode(), Position, WindowPre, Title, Title == null ? Frame : HighLogic.Skin.window);
+            Position = GUILayout.Window(mGuid.GetHashCode(), Position, WindowPre, new GUIContent(), Frame);
 
-            if (Title != null)
-            {
-                if (GUI.Button(new Rect(Position.x + Position.width - 18, Position.y + 2, 16, 16), ""))
-                {
-                    Hide();
-                }
-            }
             if (Event.current.type == EventType.Repaint)
             {
                 if (Tooltip != "")
@@ -158,10 +165,23 @@ namespace ROLib
             if (Enabled) Hide();
             else Show();
         }
-        
+
         public bool RenderToggleButton(string text, bool selected, params GUILayoutOption[] options)
         {
             return GUILayout.Button(text, selected ? pressedButton : HighLogic.Skin.button, options);
+        }
+
+        public void RenderGrid(int columns, IEnumerable<Action> items)
+        {
+            int idx = 0;
+            foreach (Action drawItem in items)
+            {
+                if (idx % columns == 0) GUILayout.BeginHorizontal();
+                drawItem();
+                if (idx % columns == columns - 1) GUILayout.EndHorizontal();
+                idx++;
+            }
+            if (idx % columns != 0) GUILayout.EndHorizontal(); // Ended on half a row -- close it.
         }
     }
 }

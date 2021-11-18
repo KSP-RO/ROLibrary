@@ -1,272 +1,219 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
-using System.Globalization;
+using System.Linq;
 
 namespace ROLib
 {
     public class DimensionWindow : AbstractWindow
     {
-        Vector2 presetScroll;
         ModuleROTank module;
-        string nameString, diameterString;
-        float curDiameter, diameterMeters, diameterFeet, diameter, tempDiameter = 0.0f;
-        bool feet, deleteEnabled = false;
-        string[] files;
-        SortedList<string, float> sortedFiles = new SortedList<string, float>();
-        string file;
-        string deleteFile = "";
 
-        public DimensionWindow (ModuleROTank m) :
-            base (new Guid(), "ROTanks Dimension Selection", new Rect (300, 300, 400, 600))
+        private float MetersToFeet(float m) => (float)Math.Round(m * 3.28084f, 3);
+        private float FeetToMeters(float ft) => (float)Math.Round(ft * 0.3048f, 3);
+
+        float diameter;
+        bool useFeet = false;
+        float diameterFeet => MetersToFeet(diameter);
+        string diameterBuf;
+
+        List<(string File, string Name, float Diameter)> presets = new List<(string, string, float)>();
+        Vector2 presetScroll = new Vector2();
+        bool presetCreateMode = false;
+        bool presetDeleteMode = false;
+        bool showPresetNameOnly = true;
+        string presetNameBuf = "";
+
+        static Dictionary<string, float> DiameterRescaleFactors = new Dictionary<string, float>()
         {
-            presetScroll = new Vector2();
-            module = m;
-            nameString = "";
-            diameterString = m.currentDiameter.ToString("N3");
-            UpdatePresetList();
+            ["1/4 of"] = 0.25f,
+            ["1/3 of"] = 1f / 3f,
+            ["1/2 of"] = 0.5f,
+            ["2/3 of"] = 2f / 3f,
+            ["3/4 of"] = 0.75f,
+            ["3/2 of"] = 1.5f,
+            ["4/3 of"] = 4f / 3f,
+            ["2x"] = 2f,
+            ["3x"] = 3f,
+        };
+
+        public DimensionWindow(ModuleROTank mod) :
+            base(Guid.NewGuid(), "ROTanks Diameter Selection", new Rect(300, 300, 400, 600))
+        {
+            module = mod;
+            diameter = mod.currentDiameter;
+            ResetDiameterBuf();
+            LoadPresetsFromConfigs();
         }
 
-        private void UpdatePresetList()
+        private void LoadPresetsFromConfigs()
         {
-            files = Directory.GetFiles($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/", "*.cfg");
-            Array.Sort(files, new NumericComparer());
+            presets.Clear();
+            foreach (string file in Directory.GetFiles($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/", "*.cfg"))
+            {
+                var node = ConfigNode.Load(file);
+                presets.Add((
+                    file,
+                    node.GetValue("name"),
+                    (float)Math.Round(float.Parse(node.GetValue("diameter")), 3)));
+            }
+            presets.Sort((a, b) => a.Diameter.CompareTo(b.Diameter));
         }
 
-        public void CreateNew()
+        private string PresetDescription(string name, float diam) => showPresetNameOnly ? name : $"{name} [{diam:N1}m / {MetersToFeet(diam):N1}ft]";
+
+        private void ResetDiameterBuf() => diameterBuf = (useFeet ? diameterFeet : diameter).ToString("N3");
+
+        private void DrawControls()
         {
-            //ROLLog.debug("TankDimensionGUI: CreateNew()");
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Name: ", boldLblStyle, GUILayout.Width(100));
-            nameString = GUILayout.TextField(nameString);
-            //ROLLog.debug("TankDimensionGUI: CreateNew().nameString " + nameString);
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Diameter: ", boldLblStyle, GUILayout.Width(100));
-            diameterString = GUILayout.TextField(diameterString);
-            //diameterString = Regex.Replace(diameterString, @"[^0-9\.?]", "");
-            //ROLLog.debug("TankDimensionGUI: CreateNew().diameterString " + diameterString);
-            GUILayout.EndHorizontal();
-
-            feet = GUILayout.Toggle(feet, "Use Feet?");
-            //ROLLog.debug("TankDimensionGUI: CreateNew().feet " + feet);
-
-            if (!feet)
+            using (new GUILayout.HorizontalScope())
             {
-                diameter = diameterMeters = (float)Math.Round(float.Parse(diameterString, CultureInfo.InvariantCulture.NumberFormat), 3);
-                diameterFeet = (float)Math.Round(diameterMeters * 3.28084f, 3);
-                //ROLLog.debug("TankDimensionGUI: CreateNew() Not Inches diameterMeters " + diameterMeters);
-            }
-            else
-            {
-                diameterFeet = (float)Math.Round(float.Parse(diameterString, CultureInfo.InvariantCulture.NumberFormat), 3);
-                diameter = diameterMeters = (float)Math.Round(diameterFeet * 0.3048f, 3);
-                //ROLLog.debug("TankDimensionGUI: CreateNew() Inches diameterMeters " + diameterMeters);
-            }
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Meters: " + diameterMeters.ToString("N3"), GUILayout.Width(100));
-            //ROLLog.debug("TankDimensionGUI: CreateNew() Meters: " + diameterMeters.ToString("N3"));
-            GUILayout.Label("Feet: " + diameterFeet.ToString("N3"), GUILayout.Width(100));
-            //ROLLog.debug("TankDimensionGUI: CreateNew() Feet: " + diameterFeet.ToString("N3"));
-            GUILayout.EndHorizontal();
-
-            curDiameter = feet ? module.currentDiameter * 3.281f : module.currentDiameter;
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("1:2 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(0.5f, "1-2 of ");
-            }
-            if (GUILayout.Button("1:3 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(0.33f, "1-3 of ");
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("2:3 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(0.66f, "2-3 of ");
-            }
-            if (GUILayout.Button("1:4 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(0.25f, "1-4 of ");
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("3:4 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(0.75f, "3-4 of ");
-            }
-            if (GUILayout.Button("2:1 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(2f, "2-1 of ");
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("3:1 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(3f, "3-1 of ");
-            }
-            if (GUILayout.Button("3:2 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(1.5f, "3-2 of ");
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("4:3 of Current", GUILayout.Width(125)))
-            {
-                CalculateDiameter(1.33f, "4-3 of ");
-            }
-            if (GUILayout.Button("Set to Current", GUILayout.Width(125)))
-            {
-                diameterString = curDiameter.ToString("N3");
-                nameString = "";
-            }
-            GUILayout.EndHorizontal();
-
-            if (GUILayout.Button("Set Diameter", HighLogic.Skin.button))
-            {
-                //ROLLog.debug("TankDimensionGUI: Set Diameter Button Made");
-                if (diameterMeters > 0.1)
+                GUILayout.Label("Diameter: ", boldLblStyle, GUILayout.Width(100));
+                using (new GUILayout.VerticalScope())
                 {
-                    // Set currentDiameter of ROTank
-                    SetCurrentDiameter(diameter);
+                    using (new GUILayout.HorizontalScope())
+                    {
+                        diameterBuf = GUILayout.TextField(diameterBuf);
+                        GUILayout.Label(useFeet ? "ft" : "m", GUILayout.Width(18));
+
+                        if (float.TryParse(diameterBuf, out float parsed))
+                            diameter = useFeet ? FeetToMeters(parsed) : (float)Math.Round(parsed, 3);
+                        else if (diameterBuf != "")
+                            ScreenMessages.PostScreenMessage("Cannot parse entered diameter.", 0.2f, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
+                    }
+                    GUILayout.Label(useFeet ? $"= {diameter:N3} m" : $"= {diameterFeet:N3} ft");
+                }
+            }
+
+            var prevUseFeet = useFeet;
+            useFeet = GUILayout.Toggle(useFeet, "Input in feet");
+            if (prevUseFeet != useFeet) ResetDiameterBuf();
+
+            IEnumerable<Action> drawRescaleButtons = DiameterRescaleFactors
+                .Select(kvp => (Action)(() =>
+                {
+                    string desc = kvp.Key;
+                    float mult = kvp.Value;
+                    if (GUILayout.Button($"{desc} current", GUILayout.Width(125)))
+                    {
+                        diameter *= mult;
+                        ResetDiameterBuf();
+                    }
+                }))
+                .Append(() =>
+                {
+                    if (GUILayout.Button("Currently applied", GUILayout.Width(125)))
+                    {
+                        diameter = module.currentDiameter;
+                        ResetDiameterBuf();
+                    }
+                });
+            RenderGrid(2, drawRescaleButtons);
+
+            // Only allow the button to be clicked if the input value is different from the applied value.
+            GUI.enabled = Mathf.Abs((diameter - module.currentDiameter) / diameter) > 0.0005;
+            if (GUILayout.Button("Apply diameter"))
+            {
+                if (diameter >= 0.1)
+                {
+                    ApplyDiameter();
+                    ResetDiameterBuf();
                 }
                 else
+                    ScreenMessages.PostScreenMessage("The entered diameter is too small, please enter a new value.", 5, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
+            }
+            GUI.enabled = true;
+
+            if (RenderToggleButton("Create preset...", presetCreateMode))
+            {
+                if (presetCreateMode)
+                    presetCreateMode = false;
+                else if (diameter >= 0.1)
                 {
-                    ScreenMessages.PostScreenMessage("The entered diameter is invalid. Please enter a new value.", 5, ScreenMessageStyle.UPPER_CENTER);
-                }
-            }
-
-            // If there is no name entered or diameter set, do not activate the button
-            if (nameString == "" || diameterMeters < 0.1)
-            {
-                GUI.enabled = false;
-                //ROLLog.debug("TankDimensionGUI: Save as Preset Not Enabled");
-            }
-            if (GUILayout.Button("Save as Preset"))
-            {
-                //ROLLog.debug("TankDimensionGUI: Save as Preset Button Made");
-                var newName = nameString;
-                var newDiameter = diameterMeters.ToString("N3");
-                ConfigNode config = new ConfigNode(newName);
-                config.AddValue("name", newName);
-                config.AddValue("diameter", newDiameter);
-                config.Save(KSPUtil.ApplicationRootPath + "GameData/ROLib/PluginData/" + newName + ".cfg");
-                ScreenMessages.PostScreenMessage("Preset Saved. You can edit the preset later by using the same name in the Tank Dimension UI.", 5, ScreenMessageStyle.UPPER_CENTER);
-                UpdatePresetList();
-            }
-
-            // If there are no presets, do not activate the Delete button
-            GUI.enabled = !(files.Length == 0);
-
-            if (GUILayout.Button(deleteEnabled ? "Disable Deletion" : "Enable Deletion"))
-            {
-                deleteEnabled = !deleteEnabled;
-                //ROLLog.debug($"TankDimensionGUI: Toggled deleteEnabled to {deleteEnabled}");
-            }
-            //ROLLog.debug("TankDimensionGUI: End CreateNew()");
-        }
-
-        private void CalculateDiameter(float f, string s)
-        {
-            tempDiameter = (float)Math.Round(curDiameter * f, 3);
-            diameterString = $"{tempDiameter:N3}";
-            string units = feet ? "ft" : " m";
-            nameString = $"{s}{diameterString} {units}";
-        }
-
-        public void CreatePresets()
-        {
-            //ROLLog.debug("TankDimensionGUI: CreatePresets()");
-            presetScroll = GUILayout.BeginScrollView(presetScroll);
-
-            //ROLLog.debug("TankDimensionGUI: ForEach through Files.");
-            foreach (string f in files)
-            {
-                file = f;
-                //ROLLog.debug("TankDimensionGUI: Load ConfigNode");
-                ConfigNode config = ConfigNode.Load(file);
-
-                // If the player is deleting the files, append the names
-                if (deleteEnabled)
-                {
-                    if (GUILayout.Button($"Delete {config.GetValue("name")} [{config.GetValue("diameter")}m]"))
-                    {
-                        deleteFile = file;
-                        File.Delete(deleteFile);
-                        UpdatePresetList();
-                    }
+                    presetNameBuf = useFeet ? $"{diameterFeet:N1} ft" : $"{diameter:N1} m";
+                    presetCreateMode = true;
                 }
                 else
+                    ScreenMessages.PostScreenMessage("Cannot create preset; diameter is too small.", 5, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
+            }
+
+            if (presetCreateMode)
+            {
+                using (new GUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button($"{config.GetValue("name")} [{config.GetValue("diameter")} m]"))
-                    {
-                        // Set currentDiameter of ROTank
-                        diameter = ROLUtils.safeParseFloat(config.GetValue("diameter"));
-                        nameString = config.GetValue("name");
-                        diameterString = diameter.ToString("N3");
-                        feet = false;
-                        SetCurrentDiameter(diameter);
-                    }
+                    GUILayout.Label("Name:", GUILayout.Width(100));
+                    presetNameBuf = GUILayout.TextField(presetNameBuf);
+                }
+                GUI.enabled = presetNameBuf != "";
+                if (GUILayout.Button("Save preset"))
+                {
+                    ConfigNode config = new ConfigNode(presetNameBuf);
+                    config.AddValue("name", presetNameBuf);
+                    config.AddValue("diameter", diameter.ToString("N3"));
+                    config.Save($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/{presetNameBuf}.cfg");
+                    ScreenMessages.PostScreenMessage("Preset Saved. You can edit the preset later by using the same name in the Tank Diameter UI.", 5, ScreenMessageStyle.UPPER_CENTER, Color.green);
+                    LoadPresetsFromConfigs();
+                    presetCreateMode = false;
                 }
             }
-            GUILayout.EndScrollView();
-            //ROLLog.debug("TankDimensionGUI: Ending CreatePresets()");
+
+            // If there are no presets, do not activate the Delete button.
+            GUI.enabled = presets.Count > 0;
+            presetDeleteMode = GUILayout.Toggle(presetDeleteMode, "Delete presets...");
         }
 
-        public void SetCurrentDiameter(float f)
+        private void DrawPresets()
+        {
+            using (new GUILayout.VerticalScope())
+            {
+                presetScroll = GUILayout.BeginScrollView(presetScroll);
+                foreach (var (file, name, diam) in presets)
+                {
+                    if (presetDeleteMode)
+                    {
+                        if (GUILayout.Button($"Delete {PresetDescription(name, diam)}"))
+                        {
+                            File.Delete(file);
+                            LoadPresetsFromConfigs();
+                        }
+                    }
+                    else if (GUILayout.Button(PresetDescription(name, diam)))
+                    {
+                        diameter = diam;
+                        ApplyDiameter();
+                        ResetDiameterBuf();
+                    }
+                }
+                GUILayout.EndScrollView();
+
+                showPresetNameOnly = GUILayout.Toggle(showPresetNameOnly, "Show preset names only");
+            }
+        }
+
+        private void ApplyDiameter()
         {
             float oldDiameter = module.currentDiameter;
-            module.currentDiameter = f;
+            module.currentDiameter = diameter;
             BaseField fld = module.Fields[nameof(module.currentDiameter)];
             fld.uiControlEditor.onFieldChanged.Invoke(fld, oldDiameter);
-
             MonoUtilities.RefreshContextWindows(module.part);
-            ROLLog.log("ModuleROTank - Diameter set to: " + f);
         }
 
         public override void Window(int id)
         {
-            //ROLLog.debug("TankDimensionGUI: DrawWindow()");
-            GUI.skin = HighLogic.Skin;
-            try
+            using (new GUILayout.HorizontalScope())
             {
-                GUILayout.BeginHorizontal();
-                try
+                using (new GUILayout.VerticalScope(GUILayout.Width(250)))
                 {
-                    GUILayout.BeginVertical(GUILayout.Width(250));
-                    CreateNew();
+                    DrawControls();
                 }
-                finally
+                using (new GUILayout.VerticalScope(GUILayout.Width(250)))
                 {
-                    GUILayout.EndVertical();
-                }
-
-                try
-                {
-                    GUILayout.BeginVertical(GUILayout.Width(200));
-                    CreatePresets();
-                }
-                finally
-                {
-                    GUILayout.EndVertical();
+                    DrawPresets();
                 }
             }
-            finally
-            {
-                GUILayout.EndHorizontal();
-                GUI.DragWindow();
-                base.Window(id);
-                //ROLLog.debug("TankDimensionGUI: End DrawWindow()");
-            }
+            base.Window(id);
         }
     }
 }

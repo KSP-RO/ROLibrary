@@ -7,25 +7,25 @@ namespace ROLib
     {
         Vector2 selectModelScroll;
         private readonly ModuleROTank pm;
-        private readonly ROLModelModule<ModuleROTank> module;
+        public readonly ROLModelModule<ModuleROTank> module;
         private readonly ModelDefinitionLayoutOptions[] def;
         private string modelName;
         private string oldModel;
 
-        public ModelWindow (ModuleROTank m, ROLModelModule<ModuleROTank> mod, ModelDefinitionLayoutOptions[] d, string name) :
-            base(new Guid(), $"ROTanks {name} Selection", new Rect(300, 300, 400, 600))
+        public ModelWindow(ModuleROTank m, ROLModelModule<ModuleROTank> mod, ModelDefinitionLayoutOptions[] d, string name) :
+            base(Guid.NewGuid(), $"ROTanks {name} Selection", new Rect(800, 350, 250, 600))
         {
             selectModelScroll = new Vector2();
             pm = m;
             module = mod;
             def = d;
         }
-        
+
         private void UpdateModelSelections()
         {
             foreach (ModelDefinitionLayoutOptions options in def)
             {
-                
+
                 if (RenderToggleButton($"{options.definition.title}", options.definition.name == module.modelName))
                 {
                     modelName = options.definition.name;
@@ -83,28 +83,11 @@ namespace ROLib
 
         public override void Window(int id)
         {
-            //ROLLog.debug("ModelWindow: DrawWindow()");
-            GUI.skin = HighLogic.Skin;
-            try
+            using (new GUILayout.VerticalScope(GUILayout.Width(250), GUILayout.Height(500)))
             {
-                GUILayout.BeginHorizontal();
-                try
-                {
-                    GUILayout.BeginVertical(GUILayout.Width(250), GUILayout.Height(500));
-                    SelectModel();
-                }
-                finally
-                {
-                    GUILayout.EndVertical();
-                }
+                SelectModel();
             }
-            finally
-            {
-                GUILayout.EndHorizontal();
-                GUI.DragWindow();
-                base.Window(id);
-                //ROLLog.debug("ModelWindow: End DrawWindow()");
-            }
+            base.Window(id);
         }
     }
 }
