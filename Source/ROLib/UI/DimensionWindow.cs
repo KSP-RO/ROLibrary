@@ -148,11 +148,15 @@ namespace ROLib
                 GUI.enabled = presetNameBuf != "";
                 if (GUILayout.Button("Save preset"))
                 {
-                    ConfigNode config = new ConfigNode(presetNameBuf);
+                    ConfigNode config = new ConfigNode();
                     config.AddValue("name", presetNameBuf);
                     config.AddValue("diameter", diameter.ToString("N3"));
-                    config.Save($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/{presetNameBuf}.cfg");
-                    ScreenMessages.PostScreenMessage("Preset Saved. You can edit the preset later by using the same name in the Tank Diameter UI.", 5, ScreenMessageStyle.UPPER_CENTER, Color.green);
+
+                    var newFile = string.Concat(presetNameBuf.Select(c => Char.IsLetterOrDigit(c) ? c : '-'));
+                    config.Save($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/{newFile}.cfg");
+
+                    ScreenMessages.PostScreenMessage("Preset Saved. You can overwrite it by creating a new preset with the same name.", 5, ScreenMessageStyle.UPPER_CENTER, Color.green);
+
                     LoadPresetsFromConfigs();
                     presetCreateMode = false;
                 }
