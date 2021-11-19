@@ -183,5 +183,28 @@ namespace ROLib
             }
             if (idx % columns != 0) GUILayout.EndHorizontal(); // Ended on half a row -- close it.
         }
+
+        public T RenderRadioSelectors<T>(T selected, Dictionary<T, string> options, params GUILayoutOption[] toggleOptions)
+        where T : Enum
+        {
+            using (new GUILayout.HorizontalScope())
+            {
+                foreach (var kvp in options)
+                {
+                    T option = kvp.Key;
+                    string display = kvp.Value;
+
+                    bool isCurrentlySelected = option.Equals(selected);
+                    bool toggledOn = GUILayout.Toggle(isCurrentlySelected, display, toggleOptions);
+
+                    // Un-clicked currently selected one, no-op.
+                    if (isCurrentlySelected && !toggledOn) return selected;
+                    // Clicked a different one, return it.
+                    if (!isCurrentlySelected && toggledOn) return option;
+                }
+            }
+            // Nothing clicked; return original selection.
+            return selected;
+        }
     }
 }
