@@ -227,7 +227,6 @@ namespace ROLib
 
         public const KeyCode hoverRecolorKeyCode = KeyCode.J;
         public const KeyCode hoverPresetKeyCode = KeyCode.N;
-        public ROLDragCubeUpdater dragCubeUpdater;
 
         /// <summary>
         /// Find the first variant set containing a definition with ModelDefinitionLayoutOptions def.  Will not create a new set if not found.
@@ -297,8 +296,6 @@ namespace ROLib
             Initialize();
             ModelChangedHandler(false);
             InitializeUI();
-            if (HighLogic.LoadedSceneIsFlight && vessel is Vessel && vessel.rootPart == part)
-                GameEvents.onFlightReady.Add(UpdateDragCubes);
         }
 
         public void OnDestroy()
@@ -308,7 +305,6 @@ namespace ROLib
                 GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
                 GameEvents.onPartActionUIDismiss.Remove(OnPawClose);
             }
-            GameEvents.onFlightReady.Remove(UpdateDragCubes);
         }
 
         private void OnEditorVesselModified(ShipConstruct ship) => UpdateAvailableVariants();
@@ -382,8 +378,6 @@ namespace ROLib
         {
             if (initialized) { return; }
             initialized = true;
-
-            dragCubeUpdater = new ROLDragCubeUpdater(part);
 
             noseNodeNames = ROLUtils.parseCSV(noseManagedNodes);
             coreNodeNames = ROLUtils.parseCSV(coreManagedNodes);
@@ -747,7 +741,7 @@ namespace ROLib
         /// <summary>
         /// Calls the generic ROT procedural drag-cube updating routines.  Will update the drag cubes for whatever the current model state is.
         /// </summary>
-        private void UpdateDragCubes() => dragCubeUpdater.Update();
+        private void UpdateDragCubes() => ROLModInterop.OnPartGeometryUpdate(part, true);
 
         private void SetModelFromDimensions()
         {

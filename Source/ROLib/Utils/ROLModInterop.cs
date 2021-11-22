@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Reflection;
 using KSPShaderTools;
 using System.Linq;
+using ProceduralTools;
 
 namespace ROLib
 {
@@ -40,15 +41,11 @@ namespace ROLib
             ROLStockInterop.UpdatePartHighlighting(part);
             part.airlock = LocateAirlock(part);
             PartGeometryUpdate(part);
-            if (createDefaultCube && (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight))
-            {
-                ROLStockInterop.UpdatePartDragCube(part);
-            }
-            if (IsFARInstalled())
-            {
+            if (createDefaultCube)
+                DragCubeTool.UpdateDragCubes(part);
+            else if (IsFARInstalled()) // DragCubeTool calls this.
                 part.SendMessage("GeometryPartModuleRebuildMeshData");
-            }
-            if (HighLogic.LoadedSceneIsEditor && part.parent==null && part!=EditorLogic.RootPart)//likely the part under the cursor; this fixes problems with modular parts not wanting to attach to stuff
+            if (HighLogic.LoadedSceneIsEditor && part.parent == null && part != EditorLogic.RootPart) //likely the part under the cursor; this fixes problems with modular parts not wanting to attach to stuff
             {
                 part.gameObject.SetLayerRecursive(1, 2097152);//1<<21 = Part Triggers get skipped by the relayering (hatches, ladders, ??)
             }
@@ -85,7 +82,8 @@ namespace ROLib
                 UpdatePartResourceDisplay(part);
                 ROLLog.debug($"ROTModInterop - Set RF/MFT total tank volume to: {volumeLiters} Liters for part: {part.name}");
                 return true;
-            } else
+            }
+            else
             {
                 ROLLog.error($"Could not find ModuleFuelTank in part {part} for RealFuels/MFT!");
                 return false;
@@ -111,7 +109,7 @@ namespace ROLib
             ModuleEngines engine = null;
             if (IsSolverEnginesInstalled() && SolverEngineType is Type)
             {
-                engine = Array.ConvertAll(part.GetComponents(SolverEngineType), x => (ModuleEngines) x).FirstOrDefault(x => x.engineID == engineID);
+                engine = Array.ConvertAll(part.GetComponents(SolverEngineType), x => (ModuleEngines)x).FirstOrDefault(x => x.engineID == engineID);
                 engine ??= part.GetComponent(SolverEngineType) as ModuleEngines;
             }
             return engine;
@@ -158,7 +156,7 @@ namespace ROLib
 
         public static bool IsSolverEnginesInstalled()
         {
-            if(!initialized) Init();
+            if (!initialized) Init();
             return SolverEnginesAssembly is Assembly;
         }
 
