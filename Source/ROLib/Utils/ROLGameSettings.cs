@@ -7,9 +7,12 @@ namespace ROLib
 
         [GameParameters.CustomParameterUI("Persistent Recolor Selections", toolTip = "If true, custom recolor selections will persist across texture set changes.")]
         public bool persistRecolorSelections = false;
-        
+
         [GameParameters.CustomParameterUI("Flag Decal Enabled", toolTip = "If selected, the Flag Decal will default to enabled on models where it is present.")]
         public bool enableFlagDecalDefault = true;
+
+        [GameParameters.CustomParameterUI("ROTanks Keyboard Shortcuts", toolTip = "When enabled, N toggles the diameter selector window and J toggles the recolor window when hovering over an ROTank.")]
+        public bool enableROTanksEditorShortcuts = true;
 
         public override string Section { get { return "RO Mods Settings"; } }
 
@@ -67,5 +70,11 @@ namespace ROLib
             return false;
         }
 
+        public static bool ROTanksEditorShortcuts()
+        {
+            if (HighLogic.CurrentGame != null)
+                return HighLogic.CurrentGame.Parameters.CustomParams<ROLGameSettings>().enableROTanksEditorShortcuts;
+            return false;
+        }
     }
 }

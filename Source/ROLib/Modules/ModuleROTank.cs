@@ -928,6 +928,7 @@ namespace ROLib
         private void OnMouseOver()
         {
             if (!HighLogic.LoadedSceneIsEditor) return;
+            if (!ROLGameSettings.ROTanksEditorShortcuts()) return;
             if (Input.GetKeyDown(hoverRecolorKeyCode))
                 part.Modules.GetModule<SSTURecolorGUI>().recolorGUIEvent();
             else if (Input.GetKeyDown(hoverPresetKeyCode))
