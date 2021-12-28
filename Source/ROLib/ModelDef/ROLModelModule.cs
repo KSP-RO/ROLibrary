@@ -458,16 +458,10 @@ namespace ROLib
         /// Update the input moduleRCS enabled, thrust and axis enable/disable status.  Calls rcs.OnStart() to update
         /// </summary>
         /// <param name="rcs"></param>
-        /// <param name="thrustScaleFactor"></param>
-        public void UpdateRCSModule(ModuleRCS rcs, float thrustScaleFactor)
+        public void UpdateRCSModule(ModuleRCS rcs)
         {
-            float power = 0;
             if (definition.rcsModuleData is ModelRCSModuleData data)
             {
-                power = data.rcsThrust;
-                float scale = Mathf.Sqrt(moduleHorizontalScale * moduleVerticalScale);
-                scale *= layout.modelScalarAverage();
-                power *= Mathf.Pow(scale, thrustScaleFactor);
                 rcs.enableX = data.enableX;
                 rcs.enableY = data.enableY;
                 rcs.enableZ = data.enableZ;
@@ -475,8 +469,6 @@ namespace ROLib
                 rcs.enableYaw = data.enableYaw;
                 rcs.enableRoll = data.enableRoll;
             }
-            rcs.thrusterPower = power;
-            rcs.moduleIsEnabled = power > 0;
             rcs.OnStart(PartModule.StartState.Flying);
         }
 
