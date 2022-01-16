@@ -23,7 +23,7 @@ namespace ROLib
             foreach (ConfigNode node in modelDatas)
             {
                 data = new ROLModelDefinition(node);
-                ROLLog.log("Loading model definition data for name: " + data.name + " with model URL: " + data.modelName);
+                ROLLog.log($"Loading model definition {data.name} for model {data.modelName}");
                 if (baseModelData.ContainsKey(data.name))
                 {
                     ROLLog.error("Model defs already contains def for name: " + data.name + ".  Please check your configs as this is an error.  The duplicate entry was found in the config node of:\n"+node);

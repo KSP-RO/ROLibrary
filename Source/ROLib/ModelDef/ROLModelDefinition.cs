@@ -306,28 +306,16 @@ namespace ROLib
                 }
                 requiredCore = compatibleCores.ToArray();
             }
-
-            if (node.HasValue("style"))
+            style = node.HasValue("style") ? node.ROLGetStringValue("style") : "NONE";
+            disableTransforms = node.ROLGetStringValues("disableTransform");
+            if (disableTransforms.Length > 0)
             {
-                style = node.ROLGetStringValue("style");
+                var sb = StringBuilderCache.Acquire();
+                sb.Append($"Disabled Transforms ({disableTransforms.Length}): ");
+                foreach (var s in disableTransforms)
+                    sb.Append($"{s}  ");
+                ROLLog.log(sb.ToStringAndRelease());
             }
-            else
-            {
-                style = "NONE";
-            }
-
-            List<String> disableMeshes = new List<String>();
-            foreach (string trans in node.ROLGetStringValues("disableTransform"))
-            {
-                ROLLog.log($"trans: {trans}");
-                disableMeshes.Add(trans);
-            }
-            disableTransforms = disableMeshes.ToArray();
-            foreach (string dt in disableTransforms)
-            {
-                ROLLog.log($"disableTransforms: {dt}");
-            }
-            ROLLog.log($"disableTransforms.Length: {disableTransforms.Length}");
 
             //load sub-model definitions
             ConfigNode[] subModelNodes = node.GetNodes("SUBMODEL");
@@ -492,16 +480,7 @@ namespace ROLib
             return (orientation == ModelOrientation.BOTTOM && this.orientation == ModelOrientation.TOP) || (orientation == ModelOrientation.TOP && this.orientation == ModelOrientation.BOTTOM);
         }
 
-        private bool canAttach(string[] compatible, String coreName)
-        {
-            bool foundAll = true;
-            int len = compatible.Length;
-            if (!compatible.Contains(coreName))
-            {
-                foundAll = false;
-            }
-            return foundAll;
-        }
+        private bool CanAttach(string[] compatible, string coreName) => compatible.Contains(coreName);
 
         public override string ToString() => $"ModelDef[ {name} ]";
 
