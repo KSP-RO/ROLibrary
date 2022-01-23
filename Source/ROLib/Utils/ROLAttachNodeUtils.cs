@@ -91,7 +91,7 @@ namespace ROLib
         {
             float diamDelta = (newDiam - oldDiam) * 0.5f;
             Vector3 parentPos = part.transform.localPosition;
-            
+
             foreach (Part child in part.children)
             {
                 if (child.FindAttachNodeByPart(part) is AttachNode node)
@@ -113,15 +113,15 @@ namespace ROLib
                             float noseDelta = (newNoseLen - oldNoseLen) * 0.5f;
                             //float coreDelta = (newCoreLen - oldCoreLen) * 0.5f * Math.Sign(childInParentSpace.y);
                             float coreDelta = (newCoreLen - oldCoreLen) * 0.5f;
-                            Debug.Log($"childInParentSpace.y: {childInParentSpace.y}");
-                            Debug.Log($"Math.Sign(childInParentSpace.y): {Math.Sign(childInParentSpace.y)}");
+                            // Debug.Log($"childInParentSpace.y: {childInParentSpace.y}");
+                            // Debug.Log($"Math.Sign(childInParentSpace.y): {Math.Sign(childInParentSpace.y)}");
                             float mountDelta = (newMountLen - oldMountLen) * 0.5f;
                             float coreMoveY = (noseDelta + coreDelta + mountDelta) * Math.Sign(childInParentSpace.y);
                             Vector3 dirY = part.transform.TransformDirection(0f, coreMoveY, 0f);
-                            Debug.Log($"childPos: {childPos}, localPos: {childInParentSpace}, noseDelta: {noseDelta}, coreDelta: {coreDelta}, mountDelta: {mountDelta}, coreMoveY: {coreMoveY}");
+                            // Debug.Log($"childPos: {childPos}, localPos: {childInParentSpace}, noseDelta: {noseDelta}, coreDelta: {coreDelta}, mountDelta: {mountDelta}, coreMoveY: {coreMoveY}");
                             child.transform.Translate(dirY, Space.World);
                         }
-                        
+
                         child.attPos0 = child.transform.localPosition;
                     }
                 }

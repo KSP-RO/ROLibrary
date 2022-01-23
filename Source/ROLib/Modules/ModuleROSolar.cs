@@ -171,7 +171,6 @@ namespace ROLib
 
         public override void OnStart(StartState state)
         {
-            Debug.Log($"{modName}: {part} OnStart({state})");
             SetMaxTechLevel();
             Initialize();
             ModelChangedHandler(false);

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KSPShaderTools;
-using static ROLib.ROLLog;
 
 namespace ROLib
 {
@@ -550,14 +549,14 @@ namespace ROLib
             {
                 String coreStyle = coreModule.definition.style;
                 ROLModelDefinition def = coreModule.findFirstValidModel(noseModule, coreStyle);
-                if (def == null) { error("Could not locate valid definition for NOSE"); }
+                if (def == null) { ROLLog.error("Could not locate valid definition for NOSE"); }
                 noseModule.modelSelected(def.name);
             }
             if (validateMount && !coreModule.isValidModel(mountModule, coreModule.definition.style))
             {
                 String coreStyle = coreModule.definition.style;
                 ROLModelDefinition def = coreModule.findFirstValidModel(mountModule, coreStyle);
-                if (def == null) { error("Could not locate valid definition for MOUNT"); }
+                if (def == null) { ROLLog.error("Could not locate valid definition for MOUNT"); }
                 mountModule.modelSelected(def.name);
             }
         }
@@ -569,12 +568,11 @@ namespace ROLib
             prevNose = noseModule.moduleHeight;
             prevCore = coreModule.moduleHeight;
             prevMount = mountModule.moduleHeight;
-            log($"SetPreviousModuleLength() prevDiameter: {prevDiameter}, prevLength: {currentLength}, prevNose: {prevNose}, prevCore: {prevCore}, prevMount: {prevMount}");
+            // ROLLog.log($"SetPreviousModuleLength() prevDiameter: {prevDiameter}, prevLength: {currentLength}, prevNose: {prevNose}, prevCore: {prevCore}, prevMount: {prevMount}");
         }
 
         public void OnModelSelectionChanged(BaseField f, object o)
         {
-            log($"OnModelSelectionChanged()");
             if (f.name == Fields[nameof(currentMount)].name) mountModule.modelSelected(currentMount);
             else if (f.name == Fields[nameof(currentCore)].name) coreModule.modelSelected(currentCore);
             else if (f.name == Fields[nameof(currentNose)].name) noseModule.modelSelected(currentNose);

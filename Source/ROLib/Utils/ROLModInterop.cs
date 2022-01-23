@@ -80,7 +80,7 @@ namespace ROLib
                 MFTChangeTotalVolumeMI.Invoke(pm, new object[] { volumeLiters, false });
                 MFTCalculateMassMI.Invoke(pm, new object[] { });
                 UpdatePartResourceDisplay(part);
-                ROLLog.debug($"ROTModInterop - Set RF/MFT total tank volume to: {volumeLiters} Liters for part: {part.name}");
+                // ROLLog.debug($"ROTModInterop - Set RF/MFT total tank volume to: {volumeLiters} Liters for part: {part.name}");
                 return true;
             }
             else
