@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using KSPShaderTools;
@@ -646,6 +646,9 @@ namespace ROLib
         /// </summary>
         public readonly string thrustTransformName;
 
+        public readonly Vector3 thrustTransformPositionOffset;
+        public readonly float thrustTransformScaleOffset;
+
         /// <summary>
         /// The thrust of the RCS model at its base scale.
         /// </summary>
@@ -654,14 +657,16 @@ namespace ROLib
 
         public ModelRCSModuleData(ConfigNode node)
         {
-            thrustTransformName = node.GetStringValue("thrustTransformName");
-            nozzles = node.GetFloatValue("nozzles", 1);
-            enableX = node.GetBoolValue("enableX", true);
-            enableY = node.GetBoolValue("enableY", true);
-            enableZ = node.GetBoolValue("enableZ", true);
-            enablePitch = node.GetBoolValue("enablePitch", true);
-            enableYaw = node.GetBoolValue("enableYaw", true);
-            enableRoll = node.GetBoolValue("enableRoll", true);
+            thrustTransformName = node.GetStringValue(nameof(thrustTransformName));
+            thrustTransformPositionOffset = node.GetVector3(nameof(thrustTransformPositionOffset), Vector3.zero);
+            thrustTransformScaleOffset = node.GetFloatValue(nameof(thrustTransformScaleOffset), 1f);
+            nozzles = node.GetFloatValue(nameof(nozzles), 1);
+            enableX = node.GetBoolValue(nameof(enableX), true);
+            enableY = node.GetBoolValue(nameof(enableY), true);
+            enableZ = node.GetBoolValue(nameof(enableZ), true);
+            enablePitch = node.GetBoolValue(nameof(enablePitch), true);
+            enableYaw = node.GetBoolValue(nameof(enableYaw), true);
+            enableRoll = node.GetBoolValue(nameof(enableRoll), true);
         }
         
         public void RenameTransforms(Transform root, string destinationName)

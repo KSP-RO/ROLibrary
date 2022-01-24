@@ -924,12 +924,12 @@ namespace ROLib
                 else
                 {
                     //normal models, apply all scales to the model root transform
-                    model.transform.localScale = Mult(mpd.localScale, new Vector3(xScale, moduleVerticalScale, moduleHorizontalScale)) * scaleScalar;
+                    model.transform.localScale = TermwiseProduct(mpd.localScale, new Vector3(xScale, moduleVerticalScale, moduleHorizontalScale)) * scaleScalar;
                 }
             }
         }
 
-        private Vector3 Mult(Vector3 a, Vector3 b)
+        private static Vector3 TermwiseProduct(Vector3 a, Vector3 b)
         {
             return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
         }
@@ -971,6 +971,14 @@ namespace ROLib
                     if (!string.IsNullOrEmpty(smd.parent) && parent.transform.ROLFindRecursive(smd.parent) is Transform localParent)
                     {
                         clonedModel.transform.parent = localParent;
+                    }
+                    if (definition.rcsModuleData is ModelRCSModuleData rcsData)
+                    {
+                        foreach (var thrustTransform in clonedModel.transform.FindChildren(rcsData.thrustTransformName))
+                        {
+                            thrustTransform.localPosition += rcsData.thrustTransformPositionOffset;
+                            thrustTransform.localScale *= rcsData.thrustTransformScaleOffset;
+                        }
                     }
                     //de-activate any non-active sub-model transforms
                     //iterate through all transforms for the model and deactivate(destroy?) any not on the active mesh list
