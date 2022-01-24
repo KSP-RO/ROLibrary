@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using KSPShaderTools;
@@ -338,6 +338,13 @@ namespace ROLib
                     sb.Append($"{s}  ");
                 ROLLog.log(sb.ToStringAndRelease());
             }
+
+            List<String> disableMeshes = new List<String>();
+            foreach (string trans in node.ROLGetStringValues("disableTransform"))
+            {
+                disableMeshes.Add(trans);
+            }
+            disableTransforms = disableMeshes.ToArray();
 
             //load sub-model definitions
             ConfigNode[] subModelNodes = node.GetNodes("SUBMODEL");
