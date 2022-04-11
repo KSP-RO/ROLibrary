@@ -27,9 +27,9 @@ namespace ROLib
 
         public static string ROLGetStringValue(this ConfigNode node, string name, string defaultValue = "") => node.HasValue(name) ? node.GetValue(name) : defaultValue;
 
-        public static bool[] ROLGetBoolValues(this ConfigNode node, String name)
+        public static bool[] ROLGetBoolValues(this ConfigNode node, string name)
         {
-            String[] values = node.GetValues(name);
+            string[] values = node.GetValues(name);
             int len = values.Length;
             bool[] vals = new bool[len];
             for (int i = 0; i < len; i++)
@@ -44,12 +44,12 @@ namespace ROLib
             return node.GetValue(name) is string value && bool.TryParse(value, out bool result) ? result : defaultValue;
         }
 
-        public static float[] ROLGetFloatValues(this ConfigNode node, String name, float[] defaults)
+        public static float[] ROLGetFloatValues(this ConfigNode node, string name, float[] defaults)
         {
-            String baseVal = node.ROLGetStringValue(name);
-            if (!String.IsNullOrEmpty(baseVal))
+            string baseVal = node.ROLGetStringValue(name);
+            if (!string.IsNullOrEmpty(baseVal))
             {
-                String[] split = baseVal.Split(new char[] { ',' });
+                string[] split = baseVal.Split(new char[] { ',' });
                 float[] vals = new float[split.Length];
                 for (int i = 0; i < split.Length; i++) { vals[i] = ROLUtils.safeParseFloat(split[i]); }
                 return vals;
@@ -60,7 +60,7 @@ namespace ROLib
         public static float[] ROLGetFloatValues(this ConfigNode node, string name) => ROLGetFloatValues(node, name, new float[] { });
         public static float[] ROLGetFloatValuesCSV(this ConfigNode node, string name) => ROLGetFloatValuesCSV(node, name, new float[] { });
 
-        public static float[] ROLGetFloatValuesCSV(this ConfigNode node, String name, float[] defaults)
+        public static float[] ROLGetFloatValuesCSV(this ConfigNode node, string name, float[] defaults)
         {
             float[] values = defaults;
             if (node.HasValue(name))
@@ -81,12 +81,12 @@ namespace ROLib
             return node.GetValue(name) is string value && float.TryParse(value, out float result) ? result : defaultValue;
         }
 
-        public static double ROLGetDoubleValue(this ConfigNode node, String name, double defaultValue = 0)
+        public static double ROLGetDoubleValue(this ConfigNode node, string name, double defaultValue = 0)
         {
             return node.GetValue(name) is string value && double.TryParse(value, out double result) ? result : defaultValue;
         }
 
-        public static int ROLGetIntValue(this ConfigNode node, String name, int defaultValue = 0)
+        public static int ROLGetIntValue(this ConfigNode node, string name, int defaultValue = 0)
         {
             return node.GetValue(name) is string value && int.TryParse(value, out int result) ? result : defaultValue;
         }
@@ -112,17 +112,17 @@ namespace ROLib
                 : defaultValue;
         }
 
-        public static Vector3 ROLGetVector3(this ConfigNode node, String name) => ROLGetVector3(node, name, Vector3.zero);
+        public static Vector3 ROLGetVector3(this ConfigNode node, string name) => ROLGetVector3(node, name, Vector3.zero);
 
-        public static FloatCurve ROLGetFloatCurve(this ConfigNode node, String name, FloatCurve defaultValue = null)
+        public static FloatCurve ROLGetFloatCurve(this ConfigNode node, string name, FloatCurve defaultValue = null)
         {
             FloatCurve curve = new FloatCurve();
             if (node.HasNode(name))
             {
                 ConfigNode curveNode = node.GetNode(name);
-                String[] values = curveNode.GetValues("key");
+                string[] values = curveNode.GetValues("key");
                 int len = values.Length;
-                String[] splitValue;
+                string[] splitValue;
                 float a, b, c, d;
                 for (int i = 0; i < len; i++)
                 {
@@ -168,7 +168,7 @@ namespace ROLib
             return node;
         }
 
-        public static Color getColor(this ConfigNode node, String name)
+        public static Color getColor(this ConfigNode node, string name)
         {
             Color color = new Color();
             float[] vals = node.ROLGetFloatValuesCSV(name);
@@ -179,7 +179,7 @@ namespace ROLib
             return color;
         }
 
-        public static Color ROLgetColorFromByteValues(this ConfigNode node, String name)
+        public static Color ROLgetColorFromByteValues(this ConfigNode node, string name)
         {
             Color color = new Color();
             float[] vals = node.ROLGetFloatValuesCSV(name);
@@ -207,10 +207,10 @@ namespace ROLib
         /// <param name="transform"></param>
         /// <param name="modelName"></param>
         /// <returns></returns>
-        public static Transform[] ROLFindModels(this Transform transform, String modelName)
+        public static Transform[] ROLFindModels(this Transform transform, string modelName)
         {
             Transform[] trs = transform.ROLFindChildren(modelName);
-            Transform[] trs2 = transform.ROLFindChildren(modelName + "(Clone)");
+            Transform[] trs2 = transform.ROLFindChildren($"{modelName}(Clone)");
             Transform[] trs3 = new Transform[trs.Length + trs2.Length];
             trs3.AddUniqueRange(trs);
             trs3.AddUniqueRange(trs2);
@@ -223,10 +223,10 @@ namespace ROLib
         /// <param name="transform"></param>
         /// <param name="modelName"></param>
         /// <returns></returns>
-        public static Transform ROLFindModel(this Transform transform, String modelName)
+        public static Transform ROLFindModel(this Transform transform, string modelName)
         {
             if (transform.ROLFindRecursive(modelName) is Transform tr) return tr;
-            return transform.ROLFindRecursive(modelName + "(Clone)");
+            return transform.ROLFindRecursive($"{modelName}(Clone)");
         }
 
         /// <summary>
@@ -235,7 +235,7 @@ namespace ROLib
         /// <param name="transform"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static Transform[] ROLFindChildren(this Transform transform, String name)
+        public static Transform[] ROLFindChildren(this Transform transform, string name)
         {
             List<Transform> trs = new List<Transform>();
             if (transform.name == name) trs.Add(transform);
@@ -243,7 +243,7 @@ namespace ROLib
             return trs.ToArray();
         }
 
-        private static void ROLlocateTransformsRecursive(Transform tr, String name, List<Transform> output)
+        private static void ROLlocateTransformsRecursive(Transform tr, string name, List<Transform> output)
         {
             foreach (Transform child in tr)
             {
@@ -258,7 +258,7 @@ namespace ROLib
         /// <param name="transform"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static Transform ROLFindRecursive(this Transform transform, String name)
+        public static Transform ROLFindRecursive(this Transform transform, string name)
         {
             if (transform.name == name) { return transform; }//was the original input transform
             if (transform.Find(name) is Transform tr) return tr;    //found as a direct child
@@ -275,7 +275,7 @@ namespace ROLib
         /// <param name="transform"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static Transform ROLFindOrCreate(this Transform transform, String name)
+        public static Transform ROLFindOrCreate(this Transform transform, string name)
         {
             if (transform.ROLFindRecursive(name) is Transform t) return t;
             GameObject newGO = new GameObject(name);
@@ -508,7 +508,7 @@ namespace ROLib
             }
             //return default in order to properly handle value types (structs)
             //should return either null for reference types or default value for structs
-            return default(T);
+            return default;
         }
 
 

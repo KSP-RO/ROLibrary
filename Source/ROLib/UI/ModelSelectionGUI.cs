@@ -6,7 +6,6 @@ namespace ROLib
 {
     public class ModelSelectionGUI : AbstractWindow
     {
-        Vector2 windowScroll, mountScroll, textureScroll, filterScroll;
         private string diameterStr;
         private float diameter;
         private ModuleROTank ROTank;
@@ -22,10 +21,6 @@ namespace ROLib
         public ModelSelectionGUI (ModuleROTank m) :
             base(new Guid(), $"ROTanks Model Selection", new Rect(300, 300, 800, 600))
         {
-            windowScroll = new Vector2();
-            mountScroll = new Vector2();
-            textureScroll = new Vector2();
-            filterScroll = new Vector2();
             ROTank = m;
             diameterStr = m.currentDiameter.ToString("N3");
         }

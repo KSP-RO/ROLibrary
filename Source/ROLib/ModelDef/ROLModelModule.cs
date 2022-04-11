@@ -198,7 +198,7 @@ namespace ROLib
         /// <summary>
         /// Return true/false if fairings are enabled for this module in its current configuration.
         /// </summary>
-        public bool fairingEnabled => definition.fairingData == null ? false : definition.fairingData.fairingsSupported;
+        public bool fairingEnabled => definition.fairingData != null && definition.fairingData.fairingsSupported;
 
         /// <summary>
         /// Return the current upper-mounting diamter of the model in this module slot.  This value is to be used for sizing/scaling of any module slot used for an upper-adapter/nose option for this slot.
@@ -345,13 +345,13 @@ namespace ROLib
             optionsCache = modelDefs;
             if (modelDefs.Length <= 0)
             {
-                error("No models found for: " + GetErrorReportModuleName());
+                error($"No models found for: {GetErrorReportModuleName()}");
             }
             else if (!Array.Exists(optionsCache, m => m.definition.name == modelName))
             {
-                error("Currently configured model name: " + modelName + " was not located while setting up: " + GetErrorReportModuleName());
+                error($"Currently configured model name: {modelName} was not located while setting up: {GetErrorReportModuleName()}");
                 modelName = optionsCache[0].definition.name;
-                error("Now using model: " + modelName + " for: " + GetErrorReportModuleName());
+                error($"Now using model: {modelName} for: {GetErrorReportModuleName()}");
             }
         }
         /// <summary>
@@ -365,13 +365,13 @@ namespace ROLib
             layoutOptions = Array.Find(optionsCache, m => m.definition.name == modelName);
             if (layoutOptions == null)
             {
-                error("Could not locate model definition for: " + modelName + " for " + GetErrorReportModuleName());
+                error($"Could not locate model definition for: {modelName} for {GetErrorReportModuleName()}");
             }
             definition = layoutOptions.definition;
             currentLayout = layoutOptions.getLayout(layoutName);
             if (!layoutOptions.isValidLayout(layoutName))
             {
-                log("Existing layout: " + layoutName + " for " + GetErrorReportModuleName() + " was null.  Assigning default layout: " + layoutOptions.getDefaultLayout().name);
+                log($"Existing layout: {layoutName} for {GetErrorReportModuleName()} was null.  Assigning default layout: {layoutOptions.getDefaultLayout().name}");
                 layoutName = layoutOptions.getDefaultLayout().name;
             }
             ConstructModels();
@@ -458,7 +458,7 @@ namespace ROLib
         /// </summary>
         /// <param name="field"></param>
         /// <param name="oldValue"></param>
-        public void textureSetSelected(BaseField field, System.Object oldValue)
+        public void textureSetSelected(BaseField field, object oldValue)
         {
             ActionWithSymmetry(m =>
             {
@@ -816,7 +816,7 @@ namespace ROLib
                 textureSetName = definition.GetDefaultTextureSet() is TextureSet def ? def.name : "none";
                 if (!IsValidTextureSet(textureSetName))
                 {
-                    error("Default texture set: " + textureSetName + " set for model: " + definition.name + " is invalid.  This is a configuration level error in the model definition that needs to be corrected.  Bad things are about to happen....");
+                    error($"Default texture set: {textureSetName} set for model: {definition.name} is invalid.  This is a configuration level error in the model definition that needs to be corrected.  Bad things are about to happen....");
                 }
                 useDefaultTextureColors = true;
             }
@@ -940,7 +940,7 @@ namespace ROLib
                 }
                 else
                 {
-                    error("Could not clone model for url: " + smd.modelURL + " while constructing meshes for model definition" + definition.name + " for: " + GetErrorReportModuleName());
+                    error($"Could not clone model for url: {smd.modelURL} while constructing meshes for model definition{definition.name} for: {GetErrorReportModuleName()}");
                 }
             }
             if (definition?.mergeData is MeshMergeData[])
@@ -1005,7 +1005,7 @@ namespace ROLib
 
         #endregion ENDREGION - Private/Internal methods
 
-        public ModelDefinitionLayoutOptions[] getValidModels(ModelDefinitionLayoutOptions[] inputOptions, String coreName)
+        public ModelDefinitionLayoutOptions[] getValidModels(ModelDefinitionLayoutOptions[] inputOptions, string coreName)
         {
             List<ModelDefinitionLayoutOptions> validDefs = new List<ModelDefinitionLayoutOptions>();
             ModelDefinitionLayoutOptions def;
@@ -1014,7 +1014,7 @@ namespace ROLib
             {
                 def = inputOptions[i];
                 //String reqCore = def.definition.requiredCore;
-                foreach (String reqCore in def.definition.requiredCore)
+                foreach (string reqCore in def.definition.requiredCore)
                 {
                     if (reqCore == "ALL" || reqCore == coreName)
                     {
@@ -1025,7 +1025,7 @@ namespace ROLib
             return validDefs.ToArray();
         }
 
-        public ROLModelDefinition findFirstValidModel(ROLModelModule<U> module, String coreName)
+        public ROLModelDefinition findFirstValidModel(ROLModelModule<U> module, string coreName)
         {
             //return module.optionsCache.FirstOrDefault(x => x.definition.requiredCore == coreName || x.definition.requiredCore == "ALL")?.definition;
             int len = module.optionsCache.Length;
@@ -1040,12 +1040,12 @@ namespace ROLib
             return null;
         }
 
-        public bool isValidModel(ROLModelModule<U> module, String coreName)
+        public bool isValidModel(ROLModelModule<U> module, string coreName)
         {
             return isValidModel(module.definition, coreName);
         }
 
-        public bool isValidModel(ROLModelDefinition def, String coreName)
+        public bool isValidModel(ROLModelDefinition def, string coreName)
         {
             if (def.requiredCore.Contains(coreName) || def.requiredCore.Contains("ALL"))
             {

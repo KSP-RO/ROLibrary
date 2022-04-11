@@ -33,8 +33,7 @@ namespace ROLib
             {
                 load();
             }
-            ModelLayoutData mld;
-            if (!layouts.TryGetValue(name, out mld))
+            if (!layouts.TryGetValue(name, out ModelLayoutData mld))
             {
                 ROLLog.error("Could not find layout by name: " + name);
             }
@@ -226,7 +225,7 @@ namespace ROLib
 
         public override string ToString()
         {
-            return "Model Definition Layout: " + definition + ":[" + layouts.Length+"]";
+            return $"Model Definition Layout: {definition}:[{layouts.Length}]";
         }
 
     }

@@ -9,7 +9,7 @@ namespace ROLib
 
         public static void stacktrace()
         {
-            MonoBehaviour.print(System.Environment.StackTrace);
+            MonoBehaviour.print(Environment.StackTrace);
         }
 
         public static void log(string line)

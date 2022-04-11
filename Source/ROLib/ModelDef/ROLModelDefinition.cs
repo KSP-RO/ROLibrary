@@ -200,12 +200,12 @@ namespace ROLib
         /// </summary>
         public readonly AttachNodeBaseData surfaceNode;
 
-        public readonly String[] disableTransforms;
+        public readonly string[] disableTransforms;
 
         /// <summary>
         /// The 'default' texture set for this model definition.  If unspecified, is set to the first available texture set if any are present in the model definition.
         /// </summary>
-        public readonly String defaultTextureSet;
+        public readonly string defaultTextureSet;
 
         /// <summary>
         /// The texture sets that are applicable to this model definition.  Will be null if no texture sets are defined in the config.
@@ -238,8 +238,8 @@ namespace ROLib
         /// </summary>
         public readonly ModelRCSModuleData rcsModuleData;
 
-        public readonly String[] requiredCore;
-        public readonly String style;
+        public readonly string[] requiredCore;
+        public readonly string style;
 
         public readonly bool canRotate = false;
 
@@ -252,7 +252,7 @@ namespace ROLib
         {
             //load basic model definition values -- data that pertains to every model definition regardless of end-use.
             configNode = node;
-            name = node.ROLGetStringValue("name", String.Empty);
+            name = node.ROLGetStringValue("name", string.Empty);
             if (string.IsNullOrEmpty(name))
             {
                 ROLLog.error("ERROR: Cannot load ROLModelDefinition with null or empty name.  Full config:\n" + node.ToString());
@@ -297,7 +297,7 @@ namespace ROLib
             orientation = (ModelOrientation)Enum.Parse(typeof(ModelOrientation), node.ROLGetStringValue("orientation", ModelOrientation.TOP.ToString()));
             invertAxis = node.ROLGetVector3("invertAxis", invertAxis);
 
-            List<String> compatibleCores = new List<String>();
+            List<string> compatibleCores = new List<string>();
             if (node.HasValue("requiredCore"))
             {
                 foreach (string core in node.ROLGetStringValues("requiredCore"))
@@ -479,8 +479,6 @@ namespace ROLib
         {
             return (orientation == ModelOrientation.BOTTOM && this.orientation == ModelOrientation.TOP) || (orientation == ModelOrientation.TOP && this.orientation == ModelOrientation.BOTTOM);
         }
-
-        private bool CanAttach(string[] compatible, string coreName) => compatible.Contains(coreName);
 
         public override string ToString() => $"ModelDef[ {name} ]";
 

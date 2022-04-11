@@ -547,14 +547,14 @@ namespace ROLib
         {
             if (validateNose && !coreModule.isValidModel(noseModule, coreModule.definition.style))
             {
-                String coreStyle = coreModule.definition.style;
+                string coreStyle = coreModule.definition.style;
                 ROLModelDefinition def = coreModule.findFirstValidModel(noseModule, coreStyle);
                 if (def == null) { ROLLog.error("Could not locate valid definition for NOSE"); }
                 noseModule.modelSelected(def.name);
             }
             if (validateMount && !coreModule.isValidModel(mountModule, coreModule.definition.style))
             {
-                String coreStyle = coreModule.definition.style;
+                string coreStyle = coreModule.definition.style;
                 ROLModelDefinition def = coreModule.findFirstValidModel(mountModule, coreStyle);
                 if (def == null) { ROLLog.error("Could not locate valid definition for MOUNT"); }
                 mountModule.modelSelected(def.name);
@@ -698,7 +698,6 @@ namespace ROLib
             ROLSelectableNodes.updateNodePosition(part, noseInterstageNode, pos);
             if (part.FindAttachNode(noseInterstageNode) is AttachNode noseInterstage)
                 ROLAttachNodeUtils.UpdateAttachNodePosition(part, noseInterstage, pos, Vector3.up, userInput, nodeSize);
-            ROLModelModule<ModuleROTank> nodeModule = coreModule;
 
             // Update the Mount Interstage Node
             //y = mountModule.modulePosition + mountModule.moduleVerticalScale;

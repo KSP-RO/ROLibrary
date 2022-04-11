@@ -53,7 +53,7 @@ namespace ROLib
         public string engineID = "Engine";
 
         [KSPField]
-        public String meshName = String.Empty;
+        public string meshName = string.Empty;
 
         [KSPField(isPersistant = true)]
         public float currentHeat = 0;
@@ -114,8 +114,7 @@ namespace ROLib
             engineModule = null;
             engineModule = part.GetComponents<ModuleEngines>().FirstOrDefault(x => x.engineID == engineID);
             if (engineModule == null)
-                MonoBehaviour.print("ERROR: Could not locate engine by ID: " + engineID + " for part: " + part +
-                                    " for ROLAnimateEngineHeat.  This will cause errors during gameplay.  Setting engine to first engine module (if present)");
+                print($"ERROR: Could not locate engine by ID: {engineID} for part: {part} for ROLAnimateEngineHeat.  This will cause errors during gameplay.  Setting engine to first engine module (if present)");
 
             engineModule ??= part.GetComponent<ModuleEngines>();
         }

@@ -86,9 +86,9 @@ namespace ROLib
             decouplers = part.GetComponents<ModuleDecouple>();
             topDecoupler = decouplers[0];
             bottomDecoupler = decouplers[1];
-            ROLLog.log($"decouplers: {decouplers.ToString()}");
-            ROLLog.log($"topDecoupler: {topDecoupler.explosiveNodeID}, {topDecoupler.explosiveDir.ToString()}");
-            ROLLog.log($"bottomDecoupler: {bottomDecoupler.explosiveNodeID}, {bottomDecoupler.explosiveDir.ToString()}");
+            ROLLog.log($"decouplers: {decouplers}");
+            ROLLog.log($"topDecoupler: {topDecoupler.explosiveNodeID}, {topDecoupler.explosiveDir}");
+            ROLLog.log($"bottomDecoupler: {bottomDecoupler.explosiveNodeID}, {bottomDecoupler.explosiveDir}");
 
             modularPart = part.FindModuleImplementing<ModuleROTank>();
             if (!(topDecoupler is ModuleDecouple && bottomDecoupler is ModuleDecouple && modularPart is ModuleROTank))
@@ -114,13 +114,13 @@ namespace ROLib
             {
                 isCountingDown = true;
                 triggerTime = Planetarium.GetUniversalTime();
-                ROLLog.log($"triggerTime: {triggerTime.ToString()}");
+                ROLLog.log($"triggerTime: {triggerTime}");
             }
 
             if (isCountingDown && triggerTime > 0)
             {
                 remainingTime = triggerTime + autoDecoupleDelay - Planetarium.GetUniversalTime();
-                ROLLog.log($"remainingTime: {remainingTime.ToString()}");
+                ROLLog.log($"remainingTime: {remainingTime}");
 
                 if (remainingTime <= 0)
                 {

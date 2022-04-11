@@ -8,7 +8,7 @@ namespace ROLib
     {
 
         [KSPField]
-        public String transformName = String.Empty;
+        public string transformName = string.Empty;
 
         [KSPField(isPersistant = true)]
         public bool flagEnabled = ROLGameSettings.FlagDecalDefault();
@@ -34,7 +34,7 @@ namespace ROLib
             GameEvents.onMissionFlagSelect.Add(OnFlagChanged);
         }
 
-        private void OnDestroy() => GameEvents.onMissionFlagSelect.Remove(OnFlagChanged);
+        public void OnDestroy() => GameEvents.onMissionFlagSelect.Remove(OnFlagChanged);
 
         public void OnFlagChanged(string flagUrl) => UpdateFlagTransform();
 

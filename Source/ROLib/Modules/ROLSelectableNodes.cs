@@ -6,7 +6,7 @@ namespace ROLib
     public class ROLSelectableNodes : PartModule
     {
         [KSPField]
-        public String nodeName = "top";
+        public string nodeName = "top";
 
         [KSPField]
         public bool startsEnabled = true;
@@ -31,11 +31,11 @@ namespace ROLib
             toggleNode();
             if (currentlyEnabled)
             {
-                tEvent.guiName = nodeName + ": Enabled";
+                tEvent.guiName = $"{nodeName}: Enabled";
                 return;
             }
             else
-                tEvent.guiName = nodeName + ": Disabled";
+                tEvent.guiName = $"{nodeName}: Disabled";
         }
 
         public override void OnAwake()
@@ -86,7 +86,7 @@ namespace ROLib
                 }
             }
 
-            tEvent.guiName = currentlyEnabled ? nodeName + ": Enabled" : nodeName + ": Disabled";
+            tEvent.guiName = currentlyEnabled ? $"{nodeName}: Enabled" : $"{nodeName}: Disabled";
         }
 
         public void toggleNode()
@@ -105,7 +105,7 @@ namespace ROLib
             }
         }
 
-        public static void updateNodePosition(Part part, String nodeName, Vector3 pos)
+        public static void updateNodePosition(Part part, string nodeName, Vector3 pos)
         {
             ROLSelectableNodes[] modules = part.GetComponents<ROLSelectableNodes>();
             int len = modules.Length;

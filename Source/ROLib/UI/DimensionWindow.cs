@@ -202,7 +202,7 @@ namespace ROLib
                     config.AddValue("name", presetNameBuf);
                     config.AddValue("diameter", diameter);
 
-                    var newFile = string.Concat(presetNameBuf.Select(c => Char.IsLetterOrDigit(c) ? c : '-'));
+                    var newFile = string.Concat(presetNameBuf.Select(c => char.IsLetterOrDigit(c) ? c : '-'));
                     config.Save($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/{newFile}.cfg");
 
                     ScreenMessages.PostScreenMessage("Preset Saved. You can overwrite it by creating a new preset with the same name.", 5, ScreenMessageStyle.UPPER_CENTER, Color.green);

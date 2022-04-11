@@ -103,8 +103,6 @@ namespace ROLib
 
         #region Custom Fields
 
-        private const string modName = "[ROSOlar]";
-
         ModelDefinitionLayoutOptions[] coreDefs;
         private SolarTechLimit stl;
 

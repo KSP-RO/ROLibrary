@@ -11,7 +11,7 @@ namespace ROLib
     /// </summary>
     public class ROLModelData
     {
-        private static Dictionary<String, ROLModelDefinition> baseModelData = new Dictionary<String, ROLModelDefinition>();
+        private static Dictionary<string, ROLModelDefinition> baseModelData = new Dictionary<string, ROLModelDefinition>();
         private static bool defsLoaded = false;
 
         private static void loadDefs()
@@ -26,7 +26,7 @@ namespace ROLib
                 ROLLog.log($"Loading model definition {data.name} for model {data.modelName}");
                 if (baseModelData.ContainsKey(data.name))
                 {
-                    ROLLog.error("Model defs already contains def for name: " + data.name + ".  Please check your configs as this is an error.  The duplicate entry was found in the config node of:\n"+node);
+                    ROLLog.error($"Model defs already contains def for name: {data.name}.  Please check your configs as this is an error.  The duplicate entry was found in the config node of:\n{node}");
                     continue;
                 }
                 baseModelData.Add(data.name, data);
@@ -45,11 +45,10 @@ namespace ROLib
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static ROLModelDefinition getModelDefinition(String name)
+        public static ROLModelDefinition getModelDefinition(string name)
         {
             if (!defsLoaded) { loadDefs(); }
-            ROLModelDefinition data = null;
-            baseModelData.TryGetValue(name, out data);
+            baseModelData.TryGetValue(name, out ROLModelDefinition data);
             return data;
         }
 
@@ -127,7 +126,7 @@ namespace ROLib
                 len2 = groupedNames.Length;
                 for (int k = 0; k < len2; k++)
                 {
-                    def = ROLModelData.getModelDefinition(groupedNames[k]);
+                    def = getModelDefinition(groupedNames[k]);
                     layoutDataList.AddRange(ROLModelLayout.findLayouts(groupedLayouts));
                     if (nodes[i].HasValue("position") || nodes[i].HasValue("rotation") || nodes[i].HasValue("scale"))
                     {
@@ -145,7 +144,7 @@ namespace ROLib
                     }
                     if (def == null)
                     {
-                        ROLLog.error("Model definition was null for name: " + groupedNames[k]+". Skipping definition during loading of part");
+                        ROLLog.error($"Model definition was null for name: {groupedNames[k]}. Skipping definition during loading of part");
                     }
                     else
                     {

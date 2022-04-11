@@ -7,7 +7,6 @@ namespace ROLib
     public class ROLStockInterop : MonoBehaviour
     {
         private static readonly List<Part> dragCubeUpdateParts = new List<Part>();
-        private static readonly List<Part> delayedUpdateDragCubeParts = new List<Part>();
         private static readonly List<Part> FARUpdateParts = new List<Part>();
 
         private static bool fireEditorEvent = false;
@@ -18,8 +17,8 @@ namespace ROLib
         {
             INSTANCE = this;
             KSPShaderTools.TexturesUnlimitedLoader.addPostLoadCallback(KSPShaderToolsPostLoad);
-            GameObject.DontDestroyOnLoad(this);
-            MonoBehaviour.print("ROLStockInterop Start");
+            DontDestroyOnLoad(this);
+            print("ROLStockInterop Start");
         }
 
         public static void FireEditorUpdate()
@@ -75,7 +74,7 @@ namespace ROLib
         //called from the ModuleManagerPostLoad() callback for KSPShaderTools
         public void KSPShaderToolsPostLoad()
         {
-            MonoBehaviour.print("Reloading config databases (fuel types, model data, etc...)");
+            print("Reloading config databases (fuel types, model data, etc...)");
             //FuelTypes.INSTANCE.loadConfigData();
             //VolumeContainerLoader.loadConfigData();//needs to be loaded after fuel types
             ROLModelLayout.load();

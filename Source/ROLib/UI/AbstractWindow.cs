@@ -7,8 +7,8 @@ namespace ROLib
     public abstract class AbstractWindow
     {
         public Rect Position;
-        public String Title { get; set; }
-        public String Tooltip { get; set; }
+        public string Title { get; set; }
+        public string Tooltip { get; set; }
         public bool Enabled = false;
         public static GUIStyle Frame = new GUIStyle(HighLogic.Skin.window);
         private readonly Guid mGuid;
@@ -47,7 +47,7 @@ namespace ROLib
             };
         }
 
-        public AbstractWindow(Guid id, String title, Rect position)
+        public AbstractWindow(Guid id, string title, Rect position)
         {
             mGuid = id;
             Title = title;

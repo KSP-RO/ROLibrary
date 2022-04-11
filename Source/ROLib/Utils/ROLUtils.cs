@@ -24,7 +24,7 @@ namespace ROLib
             return root;
         }
 
-        public static ConfigNode parseConfigNode(String input)
+        public static ConfigNode parseConfigNode(string input)
         {
             ConfigNode baseCfn = ConfigNode.Parse(input);
             if (baseCfn == null) { MonoBehaviour.print("ERROR: Base config node was null!!\n" + input); }
@@ -56,7 +56,7 @@ namespace ROLib
             return jettisonedObject;
         }
 
-        public static bool isTechUnlocked(String techName)
+        public static bool isTechUnlocked(string techName)
         {
             if (HighLogic.CurrentGame == null) { return true; }
             else if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX)
@@ -86,7 +86,7 @@ namespace ROLib
             int len = array.Length;
             if (index < 0 || index >= len)
             {
-                return default(T);//invalid
+                return default;//invalid
             }
             int iter = iterateBackwards ? -1 : 1;
             index += iter;
@@ -101,7 +101,7 @@ namespace ROLib
             int len = list.Count;
             if (index < 0 || index >= len)
             {
-                return default(T);//invalid
+                return default;//invalid
             }
             int iter = iterateBackwards ? -1 : 1;
             index += iter;
@@ -127,7 +127,7 @@ namespace ROLib
                     return list[index];
                 }
             }
-            return default(T);
+            return default;
         }
 
         public static T findNextEligible<T>(T[] list, System.Predicate<T> matchCurrent, System.Predicate<T> matchEligible, bool iterateBackwards)
@@ -147,7 +147,7 @@ namespace ROLib
                     return list[index];
                 }
             }
-            return default(T);
+            return default;
         }
 
         public static double safeParseDouble(string val)
@@ -175,9 +175,9 @@ namespace ROLib
             return res;
         }
 
-        public static String[] parseCSV(string input, string split=",")
+        public static string[] parseCSV(string input, string split=",")
         {
-            String[] vals = input.Split(new String[] { split }, StringSplitOptions.None);
+            string[] vals = input.Split(new string[] { split }, StringSplitOptions.None);
             int len = vals.Length;
             for (int i = 0; i < len; i++)
             {
@@ -221,54 +221,54 @@ namespace ROLib
             return color;
         }
 
-        public static String concatArray(float[] array)
+        public static string concatArray(float[] array)
         {
-            String val = "";
+            string val = "";
             if (array != null)
             {
-                foreach (float f in array) { val = val + f + ","; }
+                foreach (float f in array) { val = $"{val}{f},"; }
             }
             return val;
         }
 
-        public static String concatArray(String[] array)
+        public static string concatArray(string[] array)
         {
-            String val = "";
+            string val = "";
             if (array != null)
             {
-                foreach (String f in array) { val = val + f + ","; }
+                foreach (string f in array) { val = $"{val}{f},"; }
             }
             return val;
         }
 
-        public static String printList<T>(List<T> list, String separator)
+        public static string printList<T>(List<T> list, string separator)
         {
-            String str = "";
+            string str = "";
             int len = list.Count;
             for (int i = 0; i < len; i++)
             {
-                str = str + list[i].ToString();
-                if (i < len - 1) { str = str + separator; }
+                str += list[i].ToString();
+                if (i < len - 1) { str += separator; }
             }
             return str;
         }
 
-        public static String printArray<T>(T[] array, String separator)
+        public static string printArray<T>(T[] array, string separator)
         {
-            String str = "";
+            string str = "";
             if (array != null)
             {
                 int len = array.Length;
                 for (int i = 0; i < len; i++)
                 {
-                    str = str + array[i].ToString();
-                    if (i < len - 1) { str = str + separator; }
+                    str += array[i].ToString();
+                    if (i < len - 1) { str += separator; }
                 }
             }
             return str;
         }
 
-        public static String printFloatCurve(FloatCurve curve)
+        public static string printFloatCurve(FloatCurve curve)
         {
             string str = "";
             if (curve != null)
@@ -277,9 +277,9 @@ namespace ROLib
                 Keyframe key;
                 for (int i = 0; i < len; i++)
                 {
-                    if (i > 0) { str = str + "\n"; }
+                    if (i > 0) { str += "\n"; }
                     key = curve.Curve.keys[i];
-                    str = str + key.time + "," + key.value + "," + key.inTangent + "," + key.outTangent;
+                    str = $"{str}{key.time},{key.value},{key.inTangent},{key.outTangent}";
                 }
             }
             return str;
@@ -313,38 +313,37 @@ namespace ROLib
             }
         }
 
-        public static void recursePrintChildTransforms(Transform tr, String prefix)
+        public static void recursePrintChildTransforms(Transform tr, string prefix)
         {
             MonoBehaviour.print("Transform found: " + prefix + tr.name);
             for (int i = 0; i < tr.childCount; i++)
             {
-                recursePrintChildTransforms(tr.GetChild(i), prefix + "  ");
+                recursePrintChildTransforms(tr.GetChild(i), $"{prefix}  ");
             }
         }
 
-        public static void recursePrintComponents(GameObject go, String prefix)
+        public static void recursePrintComponents(GameObject go, string prefix)
         {
             int childCount = go.transform.childCount;
             Component[] comps = go.GetComponents<Component>();
-            MonoBehaviour.print("Found gameObject: " + prefix + go.name + " enabled: " + go.activeSelf + " inHierarchy: " + go.activeInHierarchy + " layer: " + go.layer + " children: "+childCount+" components: "+comps.Length + " position: "+go.transform.position+" scale: "+go.transform.localScale);
+            MonoBehaviour.print($"Found gameObject: {prefix}{go.name} enabled: {go.activeSelf} inHierarchy: {go.activeInHierarchy} layer: {go.layer} children: {childCount} components: {comps.Length} position: {go.transform.position} scale: {go.transform.localScale}");
             foreach (Component comp in comps)
             {
-                if (comp is MeshRenderer)
+                if (comp is MeshRenderer r)
                 {
-                    MeshRenderer r = (MeshRenderer)comp;
                     Material m = r.material;
                     Shader s = m == null ? null : m.shader;
-                    MonoBehaviour.print("Found Mesh Rend : " + prefix + "* Mat: " + m +" :: Shader: "+s);
+                    MonoBehaviour.print($"Found Mesh Rend : {prefix}* Mat: {m} :: Shader: {s}");
                 }
                 else
                 {
-                    MonoBehaviour.print("Found Component : " + prefix + "* " + comp);
+                    MonoBehaviour.print($"Found Component : {prefix}* {comp}");
                 }
             }
             Transform t = go.transform;
             foreach (Transform child in t)
             {
-                recursePrintComponents(child.gameObject, prefix + "  ");
+                recursePrintComponents(child.gameObject, $"{prefix}  ");
             }
         }
 
@@ -402,7 +401,7 @@ namespace ROLib
             }
         }
 
-        public static Texture findTexture(String textureName, bool normal)
+        public static Texture findTexture(string textureName, bool normal)
         {
             return GameDatabase.Instance.GetTexture(textureName, normal);
         }
@@ -412,22 +411,22 @@ namespace ROLib
             return Vector3.Cross(ray.direction, point - ray.origin).magnitude;
         }
 
-        public static Material loadMaterial(String diffuse, String normal)
+        public static Material loadMaterial(string diffuse, string normal)
         {
             return loadMaterial(diffuse, normal, string.Empty, "KSP/Bumped Specular");
         }
 
-        public static Material loadMaterial(String diffuse, String normal, String shader)
+        public static Material loadMaterial(string diffuse, string normal, string shader)
         {
-            return loadMaterial(diffuse, normal, String.Empty, shader);
+            return loadMaterial(diffuse, normal, string.Empty, shader);
         }
 
-        public static Material loadMaterial(String diffuse, String normal, String emissive, String shader)
+        public static Material loadMaterial(string diffuse, string normal, string emissive, string shader)
         {
             Material material;
-            Texture diffuseTexture = ROLUtils.findTexture(diffuse, false);
-            Texture normalTexture = String.IsNullOrEmpty(normal) ? null : ROLUtils.findTexture(normal, true);
-            Texture emissiveTexture = String.IsNullOrEmpty(emissive) ? null : ROLUtils.findTexture(emissive, false);
+            Texture diffuseTexture = findTexture(diffuse, false);
+            Texture normalTexture = string.IsNullOrEmpty(normal) ? null : findTexture(normal, true);
+            Texture emissiveTexture = string.IsNullOrEmpty(emissive) ? null : findTexture(emissive, false);
             material = new Material(Shader.Find(shader));
             material.SetTexture("_MainTex", diffuseTexture);
             if (normalTexture != null)
@@ -446,7 +445,7 @@ namespace ROLib
             setTextureRecursive(tr, tex, "_MainTex");
         }
 
-        public static void setTextureRecursive(Transform tr, Texture tex, String texID)
+        public static void setTextureRecursive(Transform tr, Texture tex, string texID)
         {
             int id = Shader.PropertyToID(texID);
             setTextureRecursive(tr, tex, id);
@@ -501,7 +500,7 @@ namespace ROLib
             Renderer[] childRenders = gameObject.GetComponentsInChildren<Renderer>(false);
             Renderer parentRender = gameObject.GetComponent<Renderer>();
 
-            Bounds combinedBounds = default(Bounds);
+            Bounds combinedBounds = default;
 
             bool initializedBounds = false;
 
@@ -585,7 +584,7 @@ namespace ROLib
                 }
 
                 //quick check vs cylinder radius
-                float distFromLine = ROLUtils.distanceFromLine(lookupRay, otherPartCenterLocal);
+                float distFromLine = distanceFromLine(lookupRay, otherPartCenterLocal);
                 if (distFromLine > largestRadius)
                 {
                     continue;
@@ -603,10 +602,10 @@ namespace ROLib
             }
         }
 
-        public static void removeTransforms(Part part, String[] transformNames)
+        public static void removeTransforms(Part part, string[] transformNames)
         {
             Transform[] trs;
-            foreach (String name in transformNames)
+            foreach (string name in transformNames)
             {
                 trs = part.transform.ROLFindChildren(name.Trim());
                 foreach (Transform tr in trs)
@@ -616,7 +615,7 @@ namespace ROLib
             }
         }
 
-        public static GameObject cloneModel(String modelURL)
+        public static GameObject cloneModel(string modelURL)
         {
             GameObject clonedModel = null;
             GameObject prefabModel = GameDatabase.Instance.GetModelPrefab(modelURL);
@@ -629,7 +628,7 @@ namespace ROLib
             }
             else
             {
-                MonoBehaviour.print("ERROR: Could not clone model by name: " + modelURL+" no model exists for this URL.");
+                MonoBehaviour.print($"ERROR: Could not clone model by name: {modelURL} no model exists for this URL.");
             }
             return clonedModel;
         }
@@ -695,26 +694,26 @@ namespace ROLib
             else if (s2.Equals(string.Empty)) return -1;
 
             //WE style, special case
-            bool sp1 = Char.IsLetterOrDigit(s1, 0);
-            bool sp2 = Char.IsLetterOrDigit(s2, 0);
+            bool sp1 = char.IsLetterOrDigit(s1, 0);
+            bool sp2 = char.IsLetterOrDigit(s2, 0);
             if (sp1 && !sp2) return 1;
             if (!sp1 && sp2) return -1;
 
             int i1 = 0, i2 = 0; //current index
-            int r = 0; // temp result
+            int r; // temp result
             while (true)
             {
-                bool c1 = Char.IsDigit(s1, i1);
-                bool c2 = Char.IsDigit(s2, i2);
+                bool c1 = char.IsDigit(s1, i1);
+                bool c2 = char.IsDigit(s2, i2);
                 if (!c1 && !c2)
                 {
-                    bool letter1 = Char.IsLetter(s1, i1);
-                    bool letter2 = Char.IsLetter(s2, i2);
+                    bool letter1 = char.IsLetter(s1, i1);
+                    bool letter2 = char.IsLetter(s2, i2);
                     if ((letter1 && letter2) || (!letter1 && !letter2))
                     {
                         if (letter1 && letter2)
                         {
-                            r = Char.ToLower(s1[i1]).CompareTo(Char.ToLower(s2[i2]));
+                            r = char.ToLower(s1[i1]).CompareTo(char.ToLower(s2[i2]));
                         }
                         else
                         {
@@ -790,7 +789,7 @@ namespace ROLib
             nzStart = start;
             end = start;
             bool countZeros = true;
-            while (Char.IsDigit(s, end))
+            while (char.IsDigit(s, end))
             {
                 if (countZeros && s[end].Equals('0'))
                 {
@@ -811,9 +810,9 @@ namespace ROLib
 
         public int Compare(object x, object y)
         {
-            if ((x is string) && (y is string))
+            if ((x is string sX) && (y is string sY))
             {
-                return StringLogicalComparer.Compare((string)x, (string)y);
+                return StringLogicalComparer.Compare(sX, sY);
             }
             return -1;
         }

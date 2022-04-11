@@ -77,7 +77,7 @@ namespace ROLib
         public static void destroyAttachNode(Part part, AttachNode node)
         {
             if (node == null) { return; }
-            if (node.attachedPart != null) { MonoBehaviour.print("ERROR: Deleting attach node: " + node.id + " with attached part: " + node.attachedPart); }
+            if (node.attachedPart != null) { MonoBehaviour.print($"ERROR: Deleting attach node: {node.id} with attached part: {node.attachedPart}"); }
             part.attachNodes.Remove(node);
             node.owner = null;
             if (node.icon != null)
@@ -162,9 +162,9 @@ namespace ROLib
         public readonly Vector3 orientation;
         public readonly int size;
 
-        public AttachNodeBaseData(String nodeData)
+        public AttachNodeBaseData(string nodeData)
         {
-            String[] dataVals = nodeData.Split(new String[] { "," }, StringSplitOptions.None);
+            string[] dataVals = nodeData.Split(new string[] { "," }, StringSplitOptions.None);
             position = new Vector3(ROLUtils.safeParseFloat(dataVals[0].Trim()), ROLUtils.safeParseFloat(dataVals[1].Trim()), ROLUtils.safeParseFloat(dataVals[2].Trim()));
             orientation = new Vector3(ROLUtils.safeParseFloat(dataVals[3].Trim()), ROLUtils.safeParseFloat(dataVals[4].Trim()), ROLUtils.safeParseFloat(dataVals[5].Trim()));
             size = dataVals.Length > 6 ? ROLUtils.safeParseInt(dataVals[6]) : 4;

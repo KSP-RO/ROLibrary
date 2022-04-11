@@ -164,14 +164,6 @@ namespace ROLib
             }
         }
 
-        /// <summary>
-        /// Update the backing persistent data field with the string representation of the current animation state.
-        /// </summary>
-        private void updatePersistentData()
-        {
-            persistentData = animationState.ToString();
-        }
-
         #region REGION - UI INTERACTION
 
         /// <summary>
@@ -180,7 +172,7 @@ namespace ROLib
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
-        private void onDeployLimitUpdated(BaseField a, System.Object b)
+        private void onDeployLimitUpdated(BaseField a, object b)
         {
             this.actionWithSymmetry(m =>
             {
@@ -321,7 +313,7 @@ namespace ROLib
         public void updateModuleInfo()
         {
             moduleInfo = "Animation\n";
-            moduleInfo += modelAnimationData.deployLabel + "\n";
+            moduleInfo += $"{modelAnimationData.deployLabel}\n";
             if (modelAnimationData.oneShot)
             {
                 moduleInfo += "Single Use Only";
@@ -629,7 +621,7 @@ namespace ROLib
     public class ModelAnimationDataControl
     {
         private Animation[] animations;
-        public readonly String animationName;
+        public readonly string animationName;
         private float animationSpeed = 1;
         private int animationLayer = 1;
         public float maxDeployTime = 1f;
@@ -644,7 +636,7 @@ namespace ROLib
             setupController(animationName, animationSpeed, animationLayer, transform);
         }
 
-        public ModelAnimationDataControl(String name, float speed, int layer, Transform transform, bool loop)
+        public ModelAnimationDataControl(string name, float speed, int layer, Transform transform, bool loop)
         {
             animationName = name;
             animationSpeed = speed;
@@ -653,7 +645,7 @@ namespace ROLib
             setupController(name, speed, layer, transform);
         }
 
-        private void setupController(String name, float speed, int layer, Transform transform)
+        private void setupController(string name, float speed, int layer, Transform transform)
         {
             int len;
             Animation anim;
@@ -836,10 +828,7 @@ namespace ROLib
 
         public override string ToString()
         {
-            return "AnimData: " + animationName + " : " + animationLayer + " : " + animationSpeed + " : " + maxDeployTime;
+            return $"AnimData: {animationName} : {animationLayer} : {animationSpeed} : {maxDeployTime}";
         }
-
     }
-
-
 }

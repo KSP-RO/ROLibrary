@@ -76,8 +76,8 @@ namespace ROLib
 
         private void loadLookConstraint(ConfigNode node)
         {
-            String transformName = node.ROLGetStringValue("transformName");
-            String targetName = node.ROLGetStringValue("targetName");
+            string transformName = node.ROLGetStringValue("transformName");
+            string targetName = node.ROLGetStringValue("targetName");
             bool singleTarget = node.ROLGetBoolValue("singleTarget", false);
             Transform[] movers = part.FindModelTransforms(transformName);
             Transform[] targets = part.FindModelTransforms(targetName);
@@ -92,8 +92,8 @@ namespace ROLib
 
         private void loadLockedConstraint(ConfigNode node)
         {
-            String transformName = node.ROLGetStringValue("transformName");
-            String targetName = node.ROLGetStringValue("targetName");
+            string transformName = node.ROLGetStringValue("transformName");
+            string targetName = node.ROLGetStringValue("targetName");
             bool singleTarget = node.ROLGetBoolValue("singleTarget", false);
             Transform[] movers = part.FindModelTransforms(transformName);
             Transform[] targets = part.FindModelTransforms(targetName);
@@ -159,13 +159,13 @@ namespace ROLib
         protected override void updateConstraintInternal()
         {
             mover.localRotation = defaultLocalRotation;
-            Vector3 targetPos = target.position - mover.position;//global target pos
             Vector3 localTargetPos = mover.InverseTransformPoint(target.position);//and in local space, to easier use tracked stuff
+            //Vector3 targetPos = target.position - mover.position;//global target pos
             //MonoBehaviour.print("gtp: " + targetPos + " ltp: " + localTargetPos);
                         
             float xRot = 90f + Mathf.Atan2(localTargetPos.z, localTargetPos.x) * Mathf.Rad2Deg;
             float yRot = 90f + Mathf.Atan2(localTargetPos.z, localTargetPos.y) * Mathf.Rad2Deg;
-            float zRot = Mathf.Atan2(localTargetPos.y, localTargetPos.x) * Mathf.Rad2Deg;
+            //float zRot = Mathf.Atan2(localTargetPos.y, localTargetPos.x) * Mathf.Rad2Deg;
             //MonoBehaviour.print("xr: " + xRot + " : yr: " + yRot + " : zr: " + zRot);
 
             if (lookAxis.z == -1)
