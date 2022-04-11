@@ -34,3 +34,6 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.4.0.0")]
+
+[assembly: KSPAssembly("ROLib", 1, 0)]
+//[assembly: KSPAssemblyDependency("TexturesUnlimited", 1, 0)]    // We need this to ensure correct load order but unfortunately TU doesn't define the KSPAssembly attribute. https://github.com/shadowmage45/TexturesUnlimited/issues/104
