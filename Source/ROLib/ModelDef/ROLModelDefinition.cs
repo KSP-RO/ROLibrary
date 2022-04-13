@@ -624,18 +624,9 @@ namespace ROLib
             bottom = node.GetFloatValue("bottom", 0f);
         }
 
-        public float GetTop(float scale, bool invert)
-        {
-            if (invert) { return scale * bottom; }
-            return scale * top;
-        }
+        public float GetTop(float scale, bool invert) => scale * (invert ? bottom : top);
 
-        public float GetBottom(float scale, bool invert)
-        {
-            if (invert) { return scale * top; }
-            return scale * bottom;
-        }
-
+        public float GetBottom(float scale, bool invert) => scale * (invert ? top : bottom);
     }
 
     /// <summary>
@@ -688,7 +679,6 @@ namespace ROLib
     /// </summary>
     public class ModelAttachablePositionData
     {
-
         /// <summary>
         /// The horizontal offset to apply to each RCS port.  Defaults to the model 'diameter' if unspecified.
         /// </summary>
@@ -790,7 +780,6 @@ namespace ROLib
     /// </summary>
     public class SubModelData
     {
-
         public readonly string modelURL;
         public readonly string[] modelMeshes;
         public readonly string[] renameMeshes;
@@ -859,14 +848,7 @@ namespace ROLib
 
         private bool IsActiveMesh(string transformName) => modelMeshes.Contains(transformName);
 
-        private bool IsParent(Transform toCheck, List<Transform> children)
-        {
-            foreach (Transform child in children)
-            {
-                if (child.ROLisParent(toCheck)) { return true; }
-            }
-            return false;
-        }
+        private bool IsParent(Transform toCheck, List<Transform> children) => children.Any(x => x.ROLisParent(toCheck));
     }
 
     /// <summary>
