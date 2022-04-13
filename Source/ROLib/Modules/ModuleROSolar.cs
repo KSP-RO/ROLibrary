@@ -164,6 +164,7 @@ namespace ROLib
                 Initialize();
             }
             base.OnLoad(node);
+            stl ??= SolarTechLimit.GetTechLevel(techLevel);
             ReloadTimeCurve();  //OnStart() appears too late for setting the TimeEfficCurve for Kerbalism's SolarPanelFixer.
         }
 
