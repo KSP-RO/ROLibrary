@@ -331,20 +331,8 @@ namespace ROLib
             style = node.HasValue("style") ? node.ROLGetStringValue("style") : "NONE";
             disableTransforms = node.ROLGetStringValues("disableTransform");
             if (disableTransforms.Length > 0)
-            {
-                var sb = StringBuilderCache.Acquire();
-                sb.Append($"Disabled Transforms ({disableTransforms.Length}): ");
-                foreach (var s in disableTransforms)
-                    sb.Append($"{s}  ");
-                ROLLog.log(sb.ToStringAndRelease());
-            }
+                ROLLog.log($"Disabled {disableTransforms.Length} Transforms: {string.Join(",",disableTransforms)}");
 
-            List<String> disableMeshes = new List<String>();
-            foreach (string trans in node.ROLGetStringValues("disableTransform"))
-            {
-                disableMeshes.Add(trans);
-            }
-            disableTransforms = disableMeshes.ToArray();
 
             //load sub-model definitions
             ConfigNode[] subModelNodes = node.GetNodes("SUBMODEL");
