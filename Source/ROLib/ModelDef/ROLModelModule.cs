@@ -447,24 +447,6 @@ namespace ROLib
             }
         }
 
-        /// <summary>
-        /// Update the input moduleRCS enabled, thrust and axis enable/disable status.  Calls rcs.OnStart() to update
-        /// </summary>
-        /// <param name="rcs"></param>
-        public void UpdateRCSModule(ModuleRCS rcs)
-        {
-            if (definition.rcsModuleData is ModelRCSModuleData data)
-            {
-                rcs.enableX = data.enableX;
-                rcs.enableY = data.enableY;
-                rcs.enableZ = data.enableZ;
-                rcs.enablePitch = data.enablePitch;
-                rcs.enableYaw = data.enableYaw;
-                rcs.enableRoll = data.enableRoll;
-            }
-            rcs.OnStart(PartModule.StartState.Flying);
-        }
-
         #endregion ENDREGION - Update Methods
 
         #region REGION - GUI Interaction Methods - With symmetry updating
