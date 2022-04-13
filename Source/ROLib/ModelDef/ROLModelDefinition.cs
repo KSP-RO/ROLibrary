@@ -512,7 +512,9 @@ namespace ROLib
             return (orientation == ModelOrientation.BOTTOM && this.orientation == ModelOrientation.TOP) || (orientation == ModelOrientation.TOP && this.orientation == ModelOrientation.BOTTOM);
         }
 
-        public override string ToString() => $"ModelDef[ {name} ]";
+        private bool canAttach(string[] compatible, string coreName) => compatible.Contains(coreName);
+
+        public override string ToString() => $"ModelDef[{name}]";
 
     }
 
@@ -826,15 +828,9 @@ namespace ROLib
         {
             if (modelMeshes.Length > 0)
             {
-                List<Transform> toKeep = new List<Transform>();
-                List<Transform> toCheck = new List<Transform>();
-                foreach (Transform tr in modelRoot.transform.ROLGetAllChildren())
-                {
-                    if (tr is Transform)
-                    {
-                        if (IsActiveMesh(tr.name)) toKeep.Add(tr); else toCheck.Add(tr);
-                    }
-                }
+                Transform[] children = modelRoot.transform.ROLGetAllChildren();
+                List<Transform> toKeep = children.Where(x => IsActiveMesh(x.name)).ToList();
+                List<Transform> toCheck = children.Where(x => !IsActiveMesh(x.name)).ToList();
                 foreach (Transform tr in toCheck.Where(x => !IsParent(x, toKeep)))
                 {
                     GameObject.DestroyImmediate(tr.gameObject);
@@ -855,26 +851,9 @@ namespace ROLib
                     tr.name = newName;
                 }
             }
-            foreach (Transform tr in modelRoot.transform.ROLGetAllChildren())
+            foreach (Transform tr in modelRoot.transform.ROLGetAllChildren().Where(x => deleteMeshes.Contains(x.name)))
             {
-                List<Transform> toKeep = new List<Transform>();
-                List<Transform> toCheck = new List<Transform>();
-                if (tr is Transform)
-                {
-                    toCheck.Add(tr);
-                }
-                foreach (string delTrans in deleteMeshes)
-                {
-                    foreach (Transform trans in toCheck)
-                    {
-                        //ROLLog.log($"trans: {trans.name} -> {delTrans}");
-                        if (trans.name == delTrans)
-                        {
-                            tr.gameObject.SetActive(false);
-                            //ROLLog.log($"Transform {tr} removed.");
-                        }                        
-                    }
-                }
+                tr.gameObject.SetActive(false);
             }
         }
 
