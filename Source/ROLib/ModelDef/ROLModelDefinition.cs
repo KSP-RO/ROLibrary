@@ -642,7 +642,6 @@ namespace ROLib
             thrustTransformName = node.GetStringValue(nameof(thrustTransformName));
             thrustTransformPositionOffset = node.GetVector3(nameof(thrustTransformPositionOffset), Vector3.zero);
             thrustTransformScaleOffset = node.GetFloatValue(nameof(thrustTransformScaleOffset), 1f);
-            thrustTransformScaleOffset = node.GetFloatValue(nameof(thrustTransformScaleOffset), 1f);
             modelScale = node.GetFloatValue(nameof(modelScale), 1f);
             nozzles = node.GetFloatValue(nameof(nozzles), 1);
             enableX = node.GetBoolValue(nameof(enableX), true);
