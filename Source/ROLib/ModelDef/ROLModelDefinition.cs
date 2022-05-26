@@ -629,7 +629,6 @@ namespace ROLib
 
         public readonly Vector3 thrustTransformPositionOffset;
         public readonly float thrustTransformScaleOffset;
-        public readonly float modelScale = 1.0f;
 
         /// <summary>
         /// The thrust of the RCS model at its base scale.
@@ -642,7 +641,6 @@ namespace ROLib
             thrustTransformName = node.GetStringValue(nameof(thrustTransformName));
             thrustTransformPositionOffset = node.GetVector3(nameof(thrustTransformPositionOffset), Vector3.zero);
             thrustTransformScaleOffset = node.GetFloatValue(nameof(thrustTransformScaleOffset), 1f);
-            modelScale = node.GetFloatValue(nameof(modelScale), 1f);
             nozzles = node.GetFloatValue(nameof(nozzles), 1);
             enableX = node.GetBoolValue(nameof(enableX), true);
             enableY = node.GetBoolValue(nameof(enableY), true);
