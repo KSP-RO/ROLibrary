@@ -128,6 +128,45 @@ namespace ROLib
             }
         }
 
+        public static void UpdateSurfaceAttachedChildren(Part part, float oldDiam, float newDiam, float oldTopLen, float oldUpperLen, float oldCoreLen, float oldLowerLen, float oldBottomLen, float newTopLen, float newUpperLen, float newCoreLen, float newLowerLen, float newBottomLen)
+        {
+            float diamDelta = (newDiam - oldDiam) * 0.5f;
+            Vector3 parentPos = part.transform.localPosition;
+
+            foreach (Part child in part.children)
+            {
+                if (child.FindAttachNodeByPart(part) is AttachNode node)
+                {
+                    if (node.nodeType == AttachNode.NodeType.Surface)
+                    {
+                        Vector3 childPos = child.transform.position;
+                        Vector3 childInParentSpace = part.transform.InverseTransformPoint(childPos);
+                        Vector3 dir = childInParentSpace - parentPos;
+                        dir.y = 0;
+                        dir.Normalize();
+
+                        Vector3 dirW = part.transform.TransformDirection(dir);
+
+                        child.transform.Translate(dirW * diamDelta, Space.World);
+
+                        if (oldTopLen != newTopLen || oldUpperLen != newUpperLen || oldCoreLen != newCoreLen || oldLowerLen != newLowerLen || oldBottomLen != newBottomLen)
+                        {
+                            float topDelta = (newTopLen - oldTopLen) * 0.5f;
+                            float upperDelta = (newUpperLen - oldUpperLen) * 0.5f;
+                            float coreDelta = (newCoreLen - oldCoreLen) * 0.5f;
+                            float lowerDelta = (newLowerLen - oldLowerLen) * 0.5f;
+                            float bottomDelta = (newBottomLen - oldBottomLen) * 0.5f;
+                            float coreMoveY = (topDelta + upperDelta + coreDelta + lowerDelta + bottomDelta) * Math.Sign(childInParentSpace.y);
+                            Vector3 dirY = part.transform.TransformDirection(0f, coreMoveY, 0f);
+                            child.transform.Translate(dirY, Space.World);
+                        }
+
+                        child.attPos0 = child.transform.localPosition;
+                    }
+                }
+            }
+        }
+
         public static void updateSurfaceAttachedChildren(Part part, float oldDiameter, float newDiameter)
         {
             float delta = (newDiameter - oldDiameter) / 2;

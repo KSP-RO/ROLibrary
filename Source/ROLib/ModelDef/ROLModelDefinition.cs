@@ -90,12 +90,12 @@ namespace ROLib
         /// <summary>
         /// Minimum scalar offset that can be applied to vertical scale as compared to horizontal scale.
         /// </summary>
-        public readonly float minVerticalScale = 1f;
+        public readonly float minVerticalScale = 0.25f;
 
         /// <summary>
         /// Maximum scalar offset that can be applied to vertical scale as compared to horizontal scale.
         /// </summary>
-        public readonly float maxVerticalScale = 1f;
+        public readonly float maxVerticalScale = 4f;
 
         /// <summary>
         /// The vertical offset applied to the meshes in the model to make the model conform with its specified orientation setup.<para/>
@@ -242,6 +242,15 @@ namespace ROLib
         public readonly string style;
 
         public readonly bool canRotate = false;
+        public readonly bool canVScale = false;
+
+        // Field Definitions for ROStations
+        public readonly bool canAdjustHab = false;
+        public readonly float habitat = 0f;
+        public readonly float surfaceArea = 0f;
+        public readonly bool canExercise = false;
+        public readonly bool hasPanorama = false;
+        public readonly bool hasPlants = false;
 
         /// <summary>
         /// Construct the model definition from the data in the input ConfigNode.<para/>
@@ -283,6 +292,13 @@ namespace ROLib
             effectiveLength = node.ROLGetFloatValue("effectiveLength", effectiveLength);
             additionalVolume = node.ROLGetFloatValue("additionalVolume", additionalVolume);
             canRotate = node.ROLGetBoolValue("canRotate", canRotate);
+            canVScale = node.ROLGetBoolValue("canVScale", canVScale);
+            canAdjustHab = node.ROLGetBoolValue("canAdjustHab", canAdjustHab);
+            habitat = node.ROLGetFloatValue("habitat", habitat);
+            surfaceArea = node.ROLGetFloatValue("surfaceArea", surfaceArea);
+            canExercise = node.ROLGetBoolValue("canExercise", canExercise);
+            hasPanorama = node.ROLGetBoolValue("hasPanorama", hasPanorama);
+            hasPlants = node.ROLGetBoolValue("hasPlants", hasPlants);
             if (node.HasValue("verticalOffset"))
             {
                 positionOffset = new Vector3(0, node.ROLGetFloatValue("verticalOffset"), 0);

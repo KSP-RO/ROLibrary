@@ -187,6 +187,15 @@ namespace ROLib
         public float moduleVolume { get; private set; }
 
         public bool moduleCanRotate => definition.canRotate;
+        public bool moduleCanVScale => definition.canVScale;
+
+        // ROStations Fields
+        public bool moduleCanAdjustHab => definition.canAdjustHab;
+        public float moduleHabitat { get; private set; }
+        public float moduleSurfaceArea { get; private set; }
+        public bool moduleCanExercise => definition.canExercise;
+        public bool moduleHasPanorama => definition.hasPanorama;
+        public bool moduleHasPlants => definition.hasPlants;
 
         /// <summary>
         /// Return the current diameter of the model in this module slot.  This is the base diamter as specified in the model definition, modified by the currently specified scale.
@@ -707,6 +716,17 @@ namespace ROLib
             }
         }
 
+        public void UpdateSurfaceAttachNode(AttachNode node, float prevDiam, float prevTop, float prevUpper, float prevCore, float prevLower, float prevBottom, float newTop, float newUpper, float newCore, float newLower, float newBottom, bool userInput)
+        {
+            if (node is AttachNode && definition.surfaceNode is AttachNodeBaseData surfNodeData)
+            {
+                Vector3 pos = surfNodeData.position * moduleHorizontalScale;
+                ROLAttachNodeUtils.UpdateAttachNodePosition(part, node, pos, surfNodeData.orientation, true, node.size);
+                if (userInput)
+                    ROLAttachNodeUtils.UpdateSurfaceAttachedChildren(part, prevDiam, moduleDiameter, prevTop, prevUpper, prevCore, prevLower, prevBottom, newTop, newUpper, newCore, newLower, newBottom);
+            }
+        }
+
         /// <summary>
         /// Internal helper method for updating of an attach node from attach-node data
         /// </summary>
@@ -758,6 +778,8 @@ namespace ROLib
             moduleMass = definition.mass * mScalar * positions;
             moduleCost = definition.cost * cScalar * positions;
             moduleVolume = definition.volume * vScalar * positions;
+            moduleHabitat = definition.habitat * vScalar;
+            moduleSurfaceArea = definition.surfaceArea * vScalar;
         }
 
         /// <summary>
@@ -1036,7 +1058,7 @@ namespace ROLib
                     return module.optionsCache[i].definition;
                 }
             }
-            error("Could not locate any valid upper modules matching def: " + definition);
+            //error("Could not locate any valid upper modules matching def: " + definition);
             return null;
         }
 
@@ -1051,7 +1073,7 @@ namespace ROLib
             {
                 return true;
             }
-            error("Could not locate any valid upper modules matching def: " + def);
+            //error("Could not locate any valid upper modules matching def: " + def);
             return false;
         }
 
