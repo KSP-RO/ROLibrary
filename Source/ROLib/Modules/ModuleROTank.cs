@@ -614,8 +614,22 @@ namespace ROLib
             else
                 coreModule.RescaleToDiameter(currentDiameter, coreModule.definition.diameter, currentVScale);
 
-            noseModule.RescaleToDiameter(coreModule.moduleUpperDiameter, noseModule.moduleLowerDiameter / noseModule.moduleHorizontalScale, currentVScale);
-            mountModule.RescaleToDiameter(coreModule.moduleLowerDiameter, mountModule.moduleUpperDiameter / mountModule.moduleHorizontalScale, currentVScale);
+            if (noseModule.moduleCanVScale)
+            {
+                noseModule.RescaleToDiameter(coreModule.moduleUpperDiameter, noseModule.moduleLowerDiameter / noseModule.moduleHorizontalScale, currentVScale);
+            }
+            else
+            {
+                noseModule.RescaleToDiameter(coreModule.moduleUpperDiameter, noseModule.moduleLowerDiameter / noseModule.moduleHorizontalScale, 0f);
+            }
+            if (mountModule.moduleCanVScale)
+            {
+                mountModule.RescaleToDiameter(coreModule.moduleLowerDiameter, mountModule.moduleUpperDiameter / mountModule.moduleHorizontalScale, currentVScale);
+            }
+            else
+            {
+                mountModule.RescaleToDiameter(coreModule.moduleLowerDiameter, mountModule.moduleUpperDiameter / mountModule.moduleHorizontalScale, 0f);
+            }
 
             float totalHeight = noseModule.moduleHeight + coreModule.moduleHeight + mountModule.moduleHeight;
 
