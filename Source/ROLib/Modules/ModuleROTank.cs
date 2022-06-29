@@ -32,6 +32,8 @@ namespace ROLib
         [KSPField] public float volumeScalingPower = 3f;
         [KSPField] public float massScalingPower = 3f;
         [KSPField] public bool enableVScale = true;
+        [KSPField] public bool enableNoseVScale = true;
+        [KSPField] public bool enableMountVScale = true;
         [KSPField] public bool lengthWidth = false;
         [KSPField] public bool scaleMass = false;
         [KSPField] public bool scaleCost = false;
@@ -74,6 +76,14 @@ namespace ROLib
         [KSPField(isPersistant = true, guiName = "V.ScaleAdj", groupName = GroupName),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -1, maxValue = 1, incrementLarge = 0.25f, incrementSmall = 0.05f, incrementSlide = 0.001f)]
         public float currentVScale = 0f;
+
+        [KSPField(isPersistant = true, guiName = "Nose V.Scale", groupName = GroupName),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -1, maxValue = 1, incrementLarge = 0.25f, incrementSmall = 0.05f, incrementSlide = 0.001f)]
+        public float currentNoseVScale = 0f;
+
+        [KSPField(isPersistant = true, guiName = "Mount V.Scale", groupName = GroupName),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -1, maxValue = 1, incrementLarge = 0.25f, incrementSmall = 0.05f, incrementSlide = 0.001f)]
+        public float currentMountVScale = 0f;
 
         /// <summary>
         /// This is the total length of the entire tank with the nose, core and mounts all considered.
@@ -143,11 +153,15 @@ namespace ROLib
 
             currentDiameter = coreModule.definition.diameter;
             currentVScale = 0f;
+            currentNoseVScale = 0f;
+            currentMountVScale = 0f;
             currentNoseRotation = 0f;
             currentMountRotation = 0f;
 
             this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep);
             this.ROLupdateUIFloatEditControl(nameof(currentVScale), -1, 1, 0.25f, 0.05f, 0.001f);
+            this.ROLupdateUIFloatEditControl(nameof(currentNoseVScale), -1, 1, 0.25f, 0.05f, 0.001f);
+            this.ROLupdateUIFloatEditControl(nameof(currentMountVScale), -1, 1, 0.25f, 0.05f, 0.001f);
             ModelChangedHandlerWithSymmetry(true, true);
             MonoUtilities.RefreshPartContextWindow(part);
         }
@@ -250,6 +264,7 @@ namespace ROLib
                 ValidateModules();
             ValidateLength();
             ValidateRotation();
+            ValidateVScale();
             UpdateModulePositions();
             UpdateTankVolume(lengthWidth);
             UpdateDimensions();
@@ -501,6 +516,18 @@ namespace ROLib
                 ModelChangedHandler(true);
             };
 
+            Fields[nameof(currentNoseVScale)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentNoseVScale)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
+            {
+                ModelChangedHandler(true);
+            };
+
+            Fields[nameof(currentMountVScale)].uiControlEditor.onFieldChanged =
+            Fields[nameof(currentMountVScale)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
+            {
+                ModelChangedHandler(true);
+            };
+
             Fields[nameof(currentNoseRotation)].uiControlEditor.onFieldChanged =
             Fields[nameof(currentNoseRotation)].uiControlEditor.onSymmetryFieldChanged = (a, b) =>
             {
@@ -527,6 +554,8 @@ namespace ROLib
             Fields[nameof(currentDiameter)].guiActiveEditor = maxDiameter != minDiameter;
             Fields[nameof(currentLength)].guiActiveEditor = lengthWidth && maxLength != minLength;
             Fields[nameof(currentVScale)].guiActiveEditor = enableVScale && !lengthWidth;
+            Fields[nameof(currentNoseVScale)].guiActiveEditor = enableNoseVScale;
+            Fields[nameof(currentMountVScale)].guiActiveEditor = enableMountVScale;
             Fields[nameof(currentNoseRotation)].guiActiveEditor = noseModule.moduleCanRotate;
             Fields[nameof(currentMountRotation)].guiActiveEditor = mountModule.moduleCanRotate;
             Events[nameof(ResetModel)].guiActiveEditor = !lengthWidth;
@@ -614,8 +643,8 @@ namespace ROLib
             else
                 coreModule.RescaleToDiameter(currentDiameter, coreModule.definition.diameter, currentVScale);
 
-            noseModule.RescaleToDiameter(coreModule.moduleUpperDiameter, noseModule.moduleLowerDiameter / noseModule.moduleHorizontalScale, currentVScale);
-            mountModule.RescaleToDiameter(coreModule.moduleLowerDiameter, mountModule.moduleUpperDiameter / mountModule.moduleHorizontalScale, currentVScale);
+            noseModule.RescaleToDiameter(coreModule.moduleUpperDiameter, noseModule.moduleLowerDiameter / noseModule.moduleHorizontalScale, currentNoseVScale);
+            mountModule.RescaleToDiameter(coreModule.moduleLowerDiameter, mountModule.moduleUpperDiameter / mountModule.moduleHorizontalScale, currentMountVScale);
 
             float totalHeight = noseModule.moduleHeight + coreModule.moduleHeight + mountModule.moduleHeight;
 
@@ -757,7 +786,6 @@ namespace ROLib
             currentVScale = (dimRatio / modelRatio) - 1;
             if (coreModule.modelName != s)
                 coreModule.modelSelected(s);
-            //MonoUtilities.RefreshPartContextWindow(part);
         }
 
         private float GetPartTopY()
@@ -796,7 +824,9 @@ namespace ROLib
 
         private void ValidateLength()
         {
-            float minL = Mathf.Max(minLength, CalcMinLength());
+            float minL = Mathf.Max(minLength, currentDiameter / 10);
+            // float minL = Mathf.Max(minLength, CalcMinLength());
+
             this.ROLupdateUIFloatEditControl(nameof(currentLength), minL, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep);
             currentLength = Mathf.Max(currentLength, minL);
         }
@@ -809,23 +839,55 @@ namespace ROLib
             if (!mountModule.moduleCanRotate) currentMountRotation = 0f;
         }
 
+        private void ValidateVScale()
+        {
+            enableNoseVScale = noseModule.moduleCanVScale;
+            enableMountVScale = mountModule.moduleCanVScale;
+            Fields[nameof(currentNoseVScale)].guiActiveEditor = enableNoseVScale;
+            Fields[nameof(currentMountVScale)].guiActiveEditor = enableMountVScale;
+            if (!enableNoseVScale) currentNoseVScale = 0f;
+            if (!enableMountVScale) currentMountVScale = 0f;
+        }
+
         private void UpdateTankVolume(bool lw)
         {
+            float totalVol = 0f;
             if (!lw)
             {
-                float totalVol = noseModule.moduleVolume + coreModule.moduleVolume + mountModule.moduleVolume;
-                SendVolumeChangedEvent(totalVol);
-                return;
+                totalVol = noseModule.moduleVolume + coreModule.moduleVolume + mountModule.moduleVolume;
+            }
+            else
+            {
+                ROLLog.debug($"currentLength: {currentLength}");
+                ROLLog.debug($"Radius: {currentDiameter / 2}");
+                float coreVolume = ROLUtils.CylinderVolume(currentDiameter / 2, currentLength);
+                totalVol = coreVolume + noseModule.moduleVolume + mountModule.moduleVolume;
             }
 
+            SendVolumeChangedEvent(totalVol);
+
+
+
+            /*
             // Get the additional volume from the nose and mounts *beyond what is provided by the tank length extension*
             // Nose & Mount Diameters are the diameter of the model at the point of attachment.
             // Inversion handles a particular model that mounts in either orientation, and its values are for the orientation specified.
             float noseDiameter = noseModule.definition.shouldInvert(ModelOrientation.TOP) ? noseModule.definition.upperDiameter : noseModule.definition.lowerDiameter;
-            float noseScale = Mathf.Pow(currentDiameter / noseDiameter, 3);
+
+            float noseHScale = currentDiameter / noseDiameter;
+            float noseVScale = noseHScale * currentNoseVScale;
+            float noseScale = Mathf.Pow(noseHScale * noseHScale * noseVScale, 3);
+
+            //float noseScale = Mathf.Pow(currentDiameter / noseDiameter, 3);
 
             float mountDiameter = mountModule.definition.shouldInvert(ModelOrientation.BOTTOM) ? mountModule.definition.lowerDiameter : mountModule.definition.upperDiameter;
-            float mountScale = Mathf.Pow(currentDiameter / mountDiameter, 3);
+
+            float mountHScale = currentDiameter / mountDiameter;
+            float mountVScale = mountHScale * currentMountVScale;
+            float mountScale = Mathf.Pow(mountHScale * mountHScale * mountVScale, 3);
+
+
+            //float mountScale = Mathf.Pow(currentDiameter / mountDiameter, 3);
 
             float noseAdditionalVol = noseScale * noseModule.definition.additionalVolume * 1000f;
             float mountAdditionalVol = mountScale * mountModule.definition.additionalVolume * 1000f;
@@ -836,6 +898,7 @@ namespace ROLib
             effectiveVolume += noseAdditionalVol + mountAdditionalVol;
 
             ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
+            */
         }
 
         public void SendVolumeChangedEvent(float newVol)
