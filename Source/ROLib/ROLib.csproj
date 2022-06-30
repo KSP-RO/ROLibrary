@@ -79,7 +79,9 @@
   <ItemGroup>
     <None Include="Modules\ModuleROTAirstreamShield.bak" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Modules\ModuleROModularPart.cs" />
     <Compile Include="Modules\ModuleROSolar.cs" />
+    <Compile Include="Modules\ModuleROStage.cs" />
     <Compile Include="Modules\ROLAnimateEngineHeat.cs" />
     <Compile Include="Modules\ROLDeployableEngine.cs" />
     <Compile Include="ROSolar\SolarTechLimit.cs" />
