@@ -251,6 +251,9 @@ namespace ROLib
         public readonly bool canExercise = false;
         public readonly bool hasPanorama = false;
         public readonly bool hasPlants = false;
+        public readonly float trussVolume = 0f;
+        public readonly float totalVolume = 0f;
+        public readonly StationType stationType = StationType.None;
 
         /// <summary>
         /// Construct the model definition from the data in the input ConfigNode.<para/>
@@ -296,6 +299,9 @@ namespace ROLib
             canAdjustHab = node.ROLGetBoolValue("canAdjustHab", canAdjustHab);
             habitat = node.ROLGetFloatValue("habitat", habitat);
             surfaceArea = node.ROLGetFloatValue("surfaceArea", surfaceArea);
+            trussVolume = node.ROLGetFloatValue("trussVolume", trussVolume);
+            totalVolume = node.ROLGetFloatValue("totalVolume", totalVolume);
+            Enum.TryParse(node.ROLGetStringValue("stationType", StationType.None.ToString()), out stationType);
             canExercise = node.ROLGetBoolValue("canExercise", canExercise);
             hasPanorama = node.ROLGetBoolValue("hasPanorama", hasPanorama);
             hasPlants = node.ROLGetBoolValue("hasPlants", hasPlants);
@@ -727,6 +733,14 @@ namespace ROLib
         YNeg,
         ZPlus,
         ZNeg
+    }
+
+    public enum StationType
+    {
+        None,
+        Hab,
+        Truss,
+        CrewTube
     }
 
     /// <summary>

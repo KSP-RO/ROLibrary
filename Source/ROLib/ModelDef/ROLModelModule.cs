@@ -193,6 +193,9 @@ namespace ROLib
         public bool moduleCanAdjustHab => definition.canAdjustHab;
         public float moduleHabitat { get; private set; }
         public float moduleSurfaceArea { get; private set; }
+        public float moduleTrussVolume { get; private set; }
+        public float moduleTotalVolume { get; private set; }
+        public StationType moduleStationType => definition.stationType;
         public bool moduleCanExercise => definition.canExercise;
         public bool moduleHasPanorama => definition.hasPanorama;
         public bool moduleHasPlants => definition.hasPlants;
@@ -780,6 +783,8 @@ namespace ROLib
             moduleVolume = definition.volume * vScalar * positions;
             moduleHabitat = definition.habitat * vScalar;
             moduleSurfaceArea = definition.surfaceArea * vScalar;
+            moduleTrussVolume = definition.trussVolume * vScalar;
+            moduleTotalVolume = definition.totalVolume * vScalar;
         }
 
         /// <summary>
