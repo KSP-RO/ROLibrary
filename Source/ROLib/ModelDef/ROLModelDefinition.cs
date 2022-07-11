@@ -856,11 +856,11 @@ namespace ROLib
                 {
                     foreach (Transform trans in toCheck)
                     {
-                        ROLLog.log($"trans: {trans.name} -> {delTrans}");
+                        //ROLLog.log($"trans: {trans.name} -> {delTrans}");
                         if (trans.name == delTrans)
                         {
                             tr.gameObject.SetActive(false);
-                            ROLLog.log($"Transform {tr} removed.");
+                            //ROLLog.log($"Transform {tr} removed.");
                         }                        
                     }
                 }

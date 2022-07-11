@@ -73,6 +73,8 @@ namespace ROLib
         /// </summary>
         private ModelLayoutData currentLayout;
 
+        private ModelDefinitionLayoutOptions currentLayoutOptions;
+
         /// <summary>
         /// Array containing all possible model definitions for this module.
         /// </summary>
@@ -138,6 +140,11 @@ namespace ROLib
             private set { layoutField?.SetValue(value, partModule); }
         }
 
+        /// <summary>
+        /// Local cached values to use for scale and sizing.
+        /// </summary>
+        private float currentDiameter;
+
         #endregion ENDREGION - BaseField wrappers
 
         #region REGION - Model definition data
@@ -161,12 +168,12 @@ namespace ROLib
         /// <summary>
         /// Return the currently active model layout.
         /// </summary>
-        public ModelLayoutData layout => Array.Find(layoutOptions.layouts, m => m.name == layoutName);
+        public ModelLayoutData layout => Array.Find(currentLayoutOptions.layouts, m => m.name == layoutName);
 
         /// <summary>
         /// Return the currently active layout options for the current model definition.
         /// </summary>
-        public ModelDefinitionLayoutOptions layoutOptions { get; private set; }
+        public ModelDefinitionLayoutOptions layoutOptions { get { return currentLayoutOptions; } }
 
         public float volumeScalar = 3f;
         public float MassScalar = 3f;
@@ -374,17 +381,22 @@ namespace ROLib
         public void setupModel(bool doNotRescaleX = false)
         {
             ROLUtils.destroyChildrenImmediate(root);
-            layoutOptions = Array.Find(optionsCache, m => m.definition.name == modelName);
-            if (layoutOptions == null)
+            currentLayoutOptions = Array.Find(optionsCache, m => m.definition.name == modelName);
+            foreach (var item in currentLayoutOptions.getLayoutTitles())
+            {
+                ROLLog.debug($"currentLayoutOptions: {item}");
+            }
+
+            if (currentLayoutOptions == null)
             {
                 error($"Could not locate model definition for: {modelName} for {GetErrorReportModuleName()}");
             }
-            definition = layoutOptions.definition;
-            currentLayout = layoutOptions.getLayout(layoutName);
-            if (!layoutOptions.isValidLayout(layoutName))
+            definition = currentLayoutOptions.definition;
+            currentLayout = currentLayoutOptions.getLayout(layoutName);
+            if (!currentLayoutOptions.isValidLayout(layoutName))
             {
-                log($"Existing layout: {layoutName} for {GetErrorReportModuleName()} was null.  Assigning default layout: {layoutOptions.getDefaultLayout().name}");
-                layoutName = layoutOptions.getDefaultLayout().name;
+                log($"Existing layout: {layoutName} for {GetErrorReportModuleName()} was null.  Assigning default layout: {currentLayoutOptions.getDefaultLayout().name}");
+                layoutName = currentLayoutOptions.getDefaultLayout().name;
             }
             ConstructModels();
             UpdateModelScalesAndLayoutPositions(doNotRescaleX);    // This calls updateModelScalesAndLayoutPositions();
@@ -515,24 +527,22 @@ namespace ROLib
             });
         }
 
-        /*
         /// <summary>
         /// NON-Symmetry enabled method.  Sets the current layout and updates models for current layout.  Uses current vertical position/all other current position data.
         /// </summary>
         /// <param name="newLayout"></param>
-        public void layoutSelected(string newLayout)
+        public void LayoutSelected(string newLayout)
         {
-            if (!layoutOptions.isValidLayout(newLayout))
+            if (!currentLayoutOptions.isValidLayout(newLayout))
             {
-                newLayout = layoutOptions.getDefaultLayout().name;
-                error("Could not find layout definition by name: " + newLayout + " using default layout for model: " + getErrorReportModuleName());
+                newLayout = currentLayoutOptions.getDefaultLayout().name;
+                error("Could not find layout definition by name: " + newLayout + " using default layout for model");
             }
             layoutName = newLayout;
-            currentLayout = layoutOptions.getLayout(newLayout);
+            currentLayout = currentLayoutOptions.getLayout(newLayout);
             setupModel();
             updateSelections();
         }
-        */
 
         /// <summary>
         /// NON-Symmetry enabled method.<para/>
@@ -561,7 +571,7 @@ namespace ROLib
             {
                 ModelDefinitionLayoutOptions mdlo = optionsCache.ROLFind(m => m.definition == definition);
                 partModule.ROLupdateUIChooseOptionControl(layoutField.name, mdlo.getLayoutNames(), mdlo.getLayoutTitles());
-                layoutField.guiActiveEditor = layoutField.guiActiveEditor && currentLayout.positions.Length > 1;
+                //layoutField.guiActiveEditor = layoutField.guiActiveEditor && currentLayout.positions.Length > 1;
             }
         }
 
@@ -603,7 +613,7 @@ namespace ROLib
             moduleVerticalScale = newVerticalScale;
             moduleHeight = newVerticalScale * definition.height;
             moduleActualHeight = newVerticalScale * definition.actualHeight;
-            moduleDiameter = newHorizontalScale * definition.diameter;
+            currentDiameter = moduleDiameter = newHorizontalScale * definition.diameter;
             modulePanelLength = newVerticalScale * definition.panelLength;
             modulePanelWidth = newHorizontalScale * definition.panelWidth;
             UpdateModuleStats();
@@ -1080,6 +1090,12 @@ namespace ROLib
             }
             //error("Could not locate any valid upper modules matching def: " + def);
             return false;
+        }
+
+        public void GetRadialMountingValues(float vOffset, float hOffset, out float radius, out float yPos)
+        {
+            radius = currentDiameter * 0.5f + hOffset;
+            yPos = modulePosition + vOffset;
         }
 
     }
