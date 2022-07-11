@@ -86,6 +86,7 @@ namespace ROLib
             decouplers = part.GetComponents<ModuleDecouple>();
             topDecoupler = decouplers[0];
             bottomDecoupler = decouplers[1];
+            topDecoupler.explosiveDir = Vector3.up;
             ROLLog.log($"decouplers: {decouplers}");
             ROLLog.log($"topDecoupler: {topDecoupler.explosiveNodeID}, {topDecoupler.explosiveDir}");
             ROLLog.log($"bottomDecoupler: {bottomDecoupler.explosiveNodeID}, {bottomDecoupler.explosiveDir}");
