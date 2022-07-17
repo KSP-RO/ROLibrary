@@ -192,6 +192,7 @@ namespace ROLib
         /// Return the current usable resource volume for this module slot.  Includes adjustments from the definition volume based on the current scale.
         /// </summary>
         public float moduleVolume { get; private set; }
+        public float moduleEffectiveLength { get; private set; }
 
         public bool moduleCanRotate => definition.canRotate;
         public bool moduleCanVScale => definition.canVScale;
@@ -588,6 +589,7 @@ namespace ROLib
             moduleHorizontalScale = newHorizontalScale;
             moduleVerticalScale = newVerticalScale;
             moduleHeight = newVerticalScale * definition.height;
+            moduleEffectiveLength = newVerticalScale * definition.effectiveLength;
             moduleActualHeight = newVerticalScale * definition.actualHeight;
             currentDiameter = moduleDiameter = newHorizontalScale * definition.diameter;
             modulePanelLength = newVerticalScale * definition.panelLength;
@@ -761,12 +763,14 @@ namespace ROLib
         {
             int positions = layout.positions.Count();
             float scale = moduleHorizontalScale * moduleHorizontalScale * moduleVerticalScale;
+            float vertScale = moduleVerticalScale;
             float mScalar = Mathf.Pow(scale, MassScalar / 3);
             float vScalar = Mathf.Pow(scale, volumeScalar / 3);
             float cScalar = Mathf.Pow(scale, MassScalar / 3);
             moduleMass = definition.mass * mScalar * positions;
             moduleCost = definition.cost * cScalar * positions;
             moduleVolume = definition.volume * vScalar * positions;
+            moduleEffectiveLength = definition.effectiveLength * vScalar;
             moduleHabitat = definition.habitat * vScalar;
             moduleSurfaceArea = definition.surfaceArea * vScalar;
             moduleTrussVolume = definition.trussVolume * vScalar;
