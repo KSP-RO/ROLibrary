@@ -171,6 +171,10 @@ namespace ROLib
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = 0, maxValue = 10, incrementLarge = 0.5f, incrementSmall = 0.25f, incrementSlide = 0.01f)]
         public float currentBodyRadialHOffset = 0f;
 
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Body Radial Scale"),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -0.25f, maxValue = 10, incrementLarge = 0.5f, incrementSmall = 0.25f, incrementSlide = 0.01f)]
+        public float currentBodyRadialScale = 0f;
+
         [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Upper Radial", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentUpperRadial = "None";
@@ -187,6 +191,10 @@ namespace ROLib
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = 0, maxValue = 10, incrementLarge = 0.5f, incrementSmall = 0.25f, incrementSlide = 0.01f)]
         public float currentUpperRadialHOffset = 0f;
 
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Top Radial Scale"),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -0.25f, maxValue = 10, incrementLarge = 0.5f, incrementSmall = 0.25f, incrementSlide = 0.01f)]
+        public float currentUpperRadialScale = 0f;
+
         [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Lower Radial", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
         public string currentLowerRadial = "None";
@@ -202,6 +210,10 @@ namespace ROLib
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Bottom H.Offset"),
          UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = 0, maxValue = 10, incrementLarge = 0.5f, incrementSmall = 0.25f, incrementSlide = 0.01f)]
         public float currentLowerRadialHOffset = 0f;
+
+        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = false, guiName = "Bottom Radial Scale"),
+         UI_FloatEdit(sigFigs = 4, suppressEditorShipModified = true, minValue = -0.25f, maxValue = 10, incrementLarge = 0.5f, incrementSmall = 0.25f, incrementSlide = 0.01f)]
+        public float currentLowerRadialScale = 0f;
 
         [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "Raceway", groupName = GroupName),
          UI_ChooseOption(suppressEditorShipModified = true)]
@@ -826,10 +838,15 @@ namespace ROLib
 
             Fields[nameof(currentBodyRadialVOffset)].guiActiveEditor = hasBodyRadial;
             Fields[nameof(currentBodyRadialHOffset)].guiActiveEditor = hasBodyRadial;
+            Fields[nameof(currentBodyRadialScale)].guiActiveEditor = hasBodyRadial;
             Fields[nameof(currentUpperRadialVOffset)].guiActiveEditor = hasUpperRadial;
             Fields[nameof(currentUpperRadialHOffset)].guiActiveEditor = hasUpperRadial;
+            Fields[nameof(currentUpperRadialScale)].guiActiveEditor = hasUpperRadial;
+            Fields[nameof(currentUpperRadialParent)].guiActiveEditor = hasUpperRadial;
             Fields[nameof(currentLowerRadialVOffset)].guiActiveEditor = hasLowerRadial;
             Fields[nameof(currentLowerRadialHOffset)].guiActiveEditor = hasLowerRadial;
+            Fields[nameof(currentLowerRadialScale)].guiActiveEditor = hasLowerRadial;
+            Fields[nameof(currentLowerRadialParent)].guiActiveEditor = hasUpperRadial;
 
             Fields[nameof(currentRacewayVOffset)].guiActiveEditor = hasRaceway;
             Fields[nameof(currentRacewayHOffset)].guiActiveEditor = hasRaceway;
