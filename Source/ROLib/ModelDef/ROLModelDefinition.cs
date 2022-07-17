@@ -331,13 +331,8 @@ namespace ROLib
             style = node.HasValue("style") ? node.ROLGetStringValue("style") : "NONE";
             disableTransforms = node.ROLGetStringValues("disableTransform");
             if (disableTransforms.Length > 0)
-            {
-                var sb = StringBuilderCache.Acquire();
-                sb.Append($"Disabled Transforms ({disableTransforms.Length}): ");
-                foreach (var s in disableTransforms)
-                    sb.Append($"{s}  ");
-                ROLLog.log(sb.ToStringAndRelease());
-            }
+                ROLLog.log($"Disabled {disableTransforms.Length} Transforms: {string.Join(",",disableTransforms)}");
+
 
             //load sub-model definitions
             ConfigNode[] subModelNodes = node.GetNodes("SUBMODEL");
@@ -442,6 +437,9 @@ namespace ROLib
             if (node.HasNode("CONSTRAINT"))
                 constraintData = new ModelConstraintData(node.GetNode("CONSTRAINT"));
 
+            if (node.HasNode("RCSDATA"))
+                rcsModuleData = new ModelRCSModuleData(node.GetNode("RCSDATA"));
+
             if (node.HasNode("ENGINE_THRUST"))
                 engineThrustData = new ModelEngineThrustData(node.GetNode("ENGINE_THRUST"));
 
@@ -502,7 +500,9 @@ namespace ROLib
             return (orientation == ModelOrientation.BOTTOM && this.orientation == ModelOrientation.TOP) || (orientation == ModelOrientation.TOP && this.orientation == ModelOrientation.BOTTOM);
         }
 
-        public override string ToString() => $"ModelDef[ {name} ]";
+        private bool canAttach(string[] compatible, string coreName) => compatible.Contains(coreName);
+
+        public override string ToString() => $"ModelDef[{name}]";
 
     }
 
@@ -612,18 +612,9 @@ namespace ROLib
             bottom = node.GetFloatValue("bottom", 0f);
         }
 
-        public float GetTop(float scale, bool invert)
-        {
-            if (invert) { return scale * bottom; }
-            return scale * top;
-        }
+        public float GetTop(float scale, bool invert) => scale * (invert ? bottom : top);
 
-        public float GetBottom(float scale, bool invert)
-        {
-            if (invert) { return scale * top; }
-            return scale * bottom;
-        }
-
+        public float GetBottom(float scale, bool invert) => scale * (invert ? top : bottom);
     }
 
     /// <summary>
@@ -631,33 +622,34 @@ namespace ROLib
     /// </summary>
     public class ModelRCSModuleData
     {
-
         /// <summary>
         /// The name of the thrust transforms as they are in the model hierarchy.  These will be renamed at runtime to match whatever the RCS module is expecting.
         /// </summary>
         public readonly string thrustTransformName;
 
+        public readonly Vector3 thrustTransformPositionOffset;
+        public readonly float thrustTransformScaleOffset;
+
         /// <summary>
         /// The thrust of the RCS model at its base scale.
         /// </summary>
-        public readonly float rcsThrust;
-
+        public readonly float nozzles;
         public readonly bool enableX, enableY, enableZ, enablePitch, enableYaw, enableRoll;
 
         public ModelRCSModuleData(ConfigNode node)
         {
-            thrustTransformName = node.GetStringValue("thrustTransformName");
-            rcsThrust = node.GetFloatValue("thrust");
-            enableX = node.GetBoolValue("enableX", true);
-            enableY = node.GetBoolValue("enableY", true);
-            enableZ = node.GetBoolValue("enableZ", true);
-            enablePitch = node.GetBoolValue("enablePitch", true);
-            enableYaw = node.GetBoolValue("enableYaw", true);
-            enableRoll = node.GetBoolValue("enableRoll", true);
+            thrustTransformName = node.GetStringValue(nameof(thrustTransformName));
+            thrustTransformPositionOffset = node.GetVector3(nameof(thrustTransformPositionOffset), Vector3.zero);
+            thrustTransformScaleOffset = node.GetFloatValue(nameof(thrustTransformScaleOffset), 1f);
+            nozzles = node.GetFloatValue(nameof(nozzles), 1);
+            enableX = node.GetBoolValue(nameof(enableX), true);
+            enableY = node.GetBoolValue(nameof(enableY), true);
+            enableZ = node.GetBoolValue(nameof(enableZ), true);
+            enablePitch = node.GetBoolValue(nameof(enablePitch), true);
+            enableYaw = node.GetBoolValue(nameof(enableYaw), true);
+            enableRoll = node.GetBoolValue(nameof(enableRoll), true);
         }
-
-        public float GetThrust(float scale) => rcsThrust * scale * scale;
-
+        
         public void RenameTransforms(Transform root, string destinationName)
         {
             foreach (Transform tr in root.FindChildren(thrustTransformName))
@@ -675,7 +667,6 @@ namespace ROLib
     /// </summary>
     public class ModelAttachablePositionData
     {
-
         /// <summary>
         /// The horizontal offset to apply to each RCS port.  Defaults to the model 'diameter' if unspecified.
         /// </summary>
@@ -777,7 +768,6 @@ namespace ROLib
     /// </summary>
     public class SubModelData
     {
-
         public readonly string modelURL;
         public readonly string[] modelMeshes;
         public readonly string[] renameMeshes;
@@ -815,15 +805,9 @@ namespace ROLib
         {
             if (modelMeshes.Length > 0)
             {
-                List<Transform> toKeep = new List<Transform>();
-                List<Transform> toCheck = new List<Transform>();
-                foreach (Transform tr in modelRoot.transform.ROLGetAllChildren())
-                {
-                    if (tr is Transform)
-                    {
-                        if (IsActiveMesh(tr.name)) toKeep.Add(tr); else toCheck.Add(tr);
-                    }
-                }
+                Transform[] children = modelRoot.transform.ROLGetAllChildren();
+                List<Transform> toKeep = children.Where(x => IsActiveMesh(x.name)).ToList();
+                List<Transform> toCheck = children.Where(x => !IsActiveMesh(x.name)).ToList();
                 foreach (Transform tr in toCheck.Where(x => !IsParent(x, toKeep)))
                 {
                     GameObject.DestroyImmediate(tr.gameObject);
@@ -844,39 +828,15 @@ namespace ROLib
                     tr.name = newName;
                 }
             }
-            foreach (Transform tr in modelRoot.transform.ROLGetAllChildren())
+            foreach (Transform tr in modelRoot.transform.ROLGetAllChildren().Where(x => deleteMeshes.Contains(x.name)))
             {
-                List<Transform> toKeep = new List<Transform>();
-                List<Transform> toCheck = new List<Transform>();
-                if (tr is Transform)
-                {
-                    toCheck.Add(tr);
-                }
-                foreach (string delTrans in deleteMeshes)
-                {
-                    foreach (Transform trans in toCheck)
-                    {
-                        //ROLLog.log($"trans: {trans.name} -> {delTrans}");
-                        if (trans.name == delTrans)
-                        {
-                            tr.gameObject.SetActive(false);
-                            //ROLLog.log($"Transform {tr} removed.");
-                        }                        
-                    }
-                }
+                tr.gameObject.SetActive(false);
             }
         }
 
         private bool IsActiveMesh(string transformName) => modelMeshes.Contains(transformName);
 
-        private bool IsParent(Transform toCheck, List<Transform> children)
-        {
-            foreach (Transform child in children)
-            {
-                if (child.ROLisParent(toCheck)) { return true; }
-            }
-            return false;
-        }
+        private bool IsParent(Transform toCheck, List<Transform> children) => children.Any(x => x.ROLisParent(toCheck));
     }
 
     /// <summary>

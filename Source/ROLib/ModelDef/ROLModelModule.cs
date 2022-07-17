@@ -447,32 +447,6 @@ namespace ROLib
             }
         }
 
-        /// <summary>
-        /// Update the input moduleRCS enabled, thrust and axis enable/disable status.  Calls rcs.OnStart() to update
-        /// </summary>
-        /// <param name="rcs"></param>
-        /// <param name="thrustScaleFactor"></param>
-        public void UpdateRCSModule(ModuleRCS rcs, float thrustScaleFactor)
-        {
-            float power = 0;
-            if (definition.rcsModuleData is ModelRCSModuleData data)
-            {
-                power = data.rcsThrust;
-                float scale = Mathf.Sqrt(moduleHorizontalScale * moduleVerticalScale);
-                scale *= layout.modelScalarAverage();
-                power *= Mathf.Pow(scale, thrustScaleFactor);
-                rcs.enableX = data.enableX;
-                rcs.enableY = data.enableY;
-                rcs.enableZ = data.enableZ;
-                rcs.enablePitch = data.enablePitch;
-                rcs.enableYaw = data.enableYaw;
-                rcs.enableRoll = data.enableRoll;
-            }
-            rcs.thrusterPower = power;
-            rcs.moduleIsEnabled = power > 0;
-            rcs.OnStart(PartModule.StartState.Flying);
-        }
-
         #endregion ENDREGION - Update Methods
 
         #region REGION - GUI Interaction Methods - With symmetry updating
@@ -598,6 +572,8 @@ namespace ROLib
             float vScale = newHeight / (solar ? definition.panelLength : definition.height);
             SetScale(hScale, vScale);
         }
+
+        public void SetScale(float newScale) => SetScale(newScale, newScale);
 
         /// <summary>
         /// Updates the current internal scale values for the input scales.  Updates x,z with the 'horizontal scale' and updates 'y' with the 'vertical scale'.
@@ -923,12 +899,12 @@ namespace ROLib
                 else
                 {
                     //normal models, apply all scales to the model root transform
-                    model.transform.localScale = Mult(mpd.localScale, new Vector3(xScale, moduleVerticalScale, moduleHorizontalScale)) * scaleScalar;
+                    model.transform.localScale = TermwiseProduct(mpd.localScale, new Vector3(xScale, moduleVerticalScale, moduleHorizontalScale)) * scaleScalar;
                 }
             }
         }
 
-        private Vector3 Mult(Vector3 a, Vector3 b)
+        private static Vector3 TermwiseProduct(Vector3 a, Vector3 b)
         {
             return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
         }
@@ -970,6 +946,14 @@ namespace ROLib
                     if (!string.IsNullOrEmpty(smd.parent) && parent.transform.ROLFindRecursive(smd.parent) is Transform localParent)
                     {
                         clonedModel.transform.parent = localParent;
+                    }
+                    if (definition.rcsModuleData is ModelRCSModuleData rcsData)
+                    {
+                        foreach (var thrustTransform in clonedModel.transform.FindChildren(rcsData.thrustTransformName))
+                        {
+                            thrustTransform.localPosition += rcsData.thrustTransformPositionOffset;
+                            thrustTransform.localScale *= rcsData.thrustTransformScaleOffset;
+                        }
                     }
                     //de-activate any non-active sub-model transforms
                     //iterate through all transforms for the model and deactivate(destroy?) any not on the active mesh list

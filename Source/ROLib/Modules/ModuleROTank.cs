@@ -263,8 +263,8 @@ namespace ROLib
             if (scaleCost)
                 UpdateCost();
             ROLStockInterop.UpdatePartHighlighting(part);
-            if (HighLogic.LoadedSceneIsEditor)
-                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            //if (HighLogic.LoadedSceneIsEditor)
+                //GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
         internal void ModelChangedHandlerWithSymmetry(bool pushNodes, bool symmetry)
@@ -301,12 +301,12 @@ namespace ROLib
         {
             if (HighLogic.LoadedSceneIsEditor)
             {
-                GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
+                //GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
                 GameEvents.onPartActionUIDismiss.Remove(OnPawClose);
             }
         }
 
-        private void OnEditorVesselModified(ShipConstruct ship) => UpdateAvailableVariants();
+        //private void OnEditorVesselModified(ShipConstruct ship) => UpdateAvailableVariants();
 
         // IPartMass/CostModifier overrides
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
@@ -538,7 +538,7 @@ namespace ROLib
 
             if (HighLogic.LoadedSceneIsEditor)
             {
-                GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
+                //GameEvents.onEditorShipModified.Add(OnEditorVesselModified);
                 GameEvents.onPartActionUIDismiss.Add(OnPawClose);
             }
         }
@@ -568,7 +568,6 @@ namespace ROLib
             prevNose = noseModule.moduleHeight;
             prevCore = coreModule.moduleHeight;
             prevMount = mountModule.moduleHeight;
-            // ROLLog.log($"SetPreviousModuleLength() prevDiameter: {prevDiameter}, prevLength: {currentLength}, prevNose: {prevNose}, prevCore: {prevCore}, prevMount: {prevMount}");
         }
 
         public void OnModelSelectionChanged(BaseField f, object o)
