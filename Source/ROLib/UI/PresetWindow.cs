@@ -89,8 +89,9 @@ namespace ROLib
         public class PresetSelection
         {
             public PresetSelection() { }
-            public PresetSelection(ConfigNode node)
+            public PresetSelection(ConfigNode node, string file)
             {
+                FileName = file;
                 Name = node.GetValue("name");
                 Variant = node.GetValue("variant");
                 Core = node.GetValue("core");
@@ -107,7 +108,7 @@ namespace ROLib
                 MountVScale = double.Parse(node.GetValue("mountVScale"));
             }
             
-            public string File { get; set; }
+            public string FileName { get; set; }
             public string Name { get; set; }
             public string Variant { get; set; }
             public string Core { get; set; }
@@ -166,7 +167,7 @@ namespace ROLib
             foreach (string file in Directory.GetFiles($"{KSPUtil.ApplicationRootPath}GameData/ROLib/PluginData/Models", "*.cfg"))
             {
                 var node = ConfigNode.Load(file);
-                presets.Add(new PresetSelection(node));
+                presets.Add(new PresetSelection(node, file));
             }
             presets.Sort((a, b) => a.Name.CompareTo(b.Name));
         }
@@ -317,8 +318,8 @@ namespace ROLib
             RenderGrid(2, drawRescaleValues);
 
             // Only allow the button to be clicked if the input value is different from the applied value.
-            GUI.enabled = Math.Abs((length - pm.currentLength) / length) > 0.0005;
-            if (GUILayout.Button("Apply length"))
+            GUI.enabled = Math.Abs((length - pm.currentLength) / length) > 0.0005 || Math.Abs((diameter - pm.currentDiameter) / diameter) > 0.0005;
+            if (GUILayout.Button("Apply Length & Diameter"))
             {
                 if (length >= pm.minLength)
                 {
@@ -327,12 +328,7 @@ namespace ROLib
                 }
                 else
                     ScreenMessages.PostScreenMessage("The entered length is too small, please enter a new value.", 5, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
-            }
 
-            // Only allow the button to be clicked if the input value is different from the applied value.
-            GUI.enabled = Math.Abs((diameter - pm.currentDiameter) / diameter) > 0.0005;
-            if (GUILayout.Button("Apply diameter"))
-            {
                 if (diameter >= 0.1)
                 {
                     ApplyDiameter();
@@ -410,7 +406,7 @@ namespace ROLib
                     {
                         if (GUILayout.Button($"Delete {ps.Name}"))
                         {
-                            File.Delete(ps.File);
+                            File.Delete(ps.FileName);
                             LoadPresetsFromConfigs();
                         }
                     }
