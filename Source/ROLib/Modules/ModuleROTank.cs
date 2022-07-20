@@ -702,6 +702,11 @@ namespace ROLib
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
+            if (presetWindow != null && presetWindow.Enabled)
+            {
+                presetWindow.UpdateDiameter();
+                presetWindow.UpdateLength();
+            }
         }
 
         /// <summary>
@@ -935,6 +940,11 @@ namespace ROLib
             {
                 modWindow.Hide();
                 modWindow = null;
+            }
+            if (presetWindow != null)
+            {
+                presetWindow.Hide();
+                presetWindow = null;
             }
         }
 

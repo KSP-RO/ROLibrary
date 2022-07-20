@@ -178,62 +178,62 @@ namespace ROLib
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Name: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psName, GUILayout.Width(150));
+                    GUILayout.Label(psName, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Variant: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psVariant, GUILayout.Width(150));
+                    GUILayout.Label(pm.currentVariant, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Core: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psCore, GUILayout.Width(150));
+                    GUILayout.Label(pm.currentCore, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Nose: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psNose, GUILayout.Width(150));
+                    GUILayout.Label(pm.currentNose, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Mount: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psMount, GUILayout.Width(150));
+                    GUILayout.Label(pm.currentMount, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Core Tex: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psCoreTex, GUILayout.Width(150));
+                    GUILayout.Label(pm.currentCoreTexture, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Nose Tex: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psNoseTex, GUILayout.Width(150));
+                    GUILayout.Label(pm.currentNoseTexture, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Mount Tex: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psMountTex, GUILayout.Width(150));
+                    GUILayout.Label(pm.currentMountTexture, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Nose Rot.: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psNoseRot, GUILayout.Width(150));
+                    GUILayout.Label(TrimmedNumber(pm.currentNoseRotation), GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Mount Rot.: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psMountRot, GUILayout.Width(150));
+                    GUILayout.Label(TrimmedNumber(pm.currentMountRotation), GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Nose VScale: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psNoseVS, GUILayout.Width(150));
+                    GUILayout.Label(TrimmedDecimal(pm.currentNoseVScale, ApplicationPrecision), GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Mount VScale: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(psMountVS, GUILayout.Width(150));
+                    GUILayout.Label(TrimmedDecimal(pm.currentMountVScale, ApplicationPrecision), GUILayout.Width(170));
                 }
 
                 using (new GUILayout.HorizontalScope())
@@ -312,7 +312,7 @@ namespace ROLib
                     double mult = kvp.Value;
                     ROLLog.debug($"Key: {desc}, Value: {mult}");
                     GUILayout.Label($"{desc} current: ", boldLblStyle, GUILayout.Width(100));
-                    GUILayout.Label($"{TrimmedDecimal(diameter *= mult, ApplicationPrecision)}", GUILayout.Width(40));
+                    GUILayout.Label($"{TrimmedDecimal(diameter * mult, ApplicationPrecision)}", GUILayout.Width(40));
                 }));
             RenderGrid(2, drawRescaleValues);
 
@@ -441,6 +441,17 @@ namespace ROLib
             }
         }
 
+        public void UpdateLength()
+        {
+            length = pm.currentLength;
+            ResetLengthBuf();
+        }
+        public void UpdateDiameter()
+        {
+            diameter = pm.currentDiameter;
+            ResetDiameterBuf();
+        }
+
         private void ApplyDiameter()
         {
             double oldDiameter = pm.currentDiameter;
@@ -549,7 +560,7 @@ namespace ROLib
         {
             using (new GUILayout.HorizontalScope())
             {
-                using (new GUILayout.VerticalScope(GUILayout.Width(280)))
+                using (new GUILayout.VerticalScope(GUILayout.Width(310)))
                 {
                     DrawControls();
                 }
