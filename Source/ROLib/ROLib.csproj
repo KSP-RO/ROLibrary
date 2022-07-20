@@ -83,6 +83,7 @@
     <Compile Include="Modules\ROLAnimateEngineHeat.cs" />
     <Compile Include="Modules\ROLDeployableEngine.cs" />
     <Compile Include="ROSolar\SolarTechLimit.cs" />
+    <Compile Include="UI\PresetWindow.cs" />
     <Compile Include="UI\DimensionWindow.cs" />
     <Compile Include="UI\AbstractWindow.cs" />
     <Compile Include="ModelDef\ROLAnimationModule.cs" />

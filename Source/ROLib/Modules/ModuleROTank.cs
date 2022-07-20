@@ -64,6 +64,9 @@ namespace ROLib
         [KSPEvent(guiName = "Open Diameter Selection", guiActiveEditor = true, groupName = GroupName)]
         public void OpenTankDimensionGUIEvent() => EditDimensions();
 
+        [KSPEvent(guiName = "Open Preset Selection", guiActiveEditor = true, groupName = GroupName)]
+        public void OpenPresetWindowGUIEvent() => ChangePresets();
+
         [KSPEvent(guiName = "Select Nose", guiActiveEditor = true, groupName = GroupName)]
         public void SelectNoseModelGUIEvent() => SelectModelWindow(noseModule, noseDefs, "Nose");
 
@@ -255,6 +258,7 @@ namespace ROLib
 
         private DimensionWindow dimWindow;
         private ModelWindow modWindow;
+        private PresetWindow presetWindow;
 
         #endregion Private Variables
 
@@ -948,6 +952,20 @@ namespace ROLib
             {
                 dimWindow = new DimensionWindow(this);
                 dimWindow.Show();
+            }
+        }
+
+        public void ChangePresets()
+        {
+            if (presetWindow != null && presetWindow.Enabled)
+            {
+                presetWindow.Hide();
+                presetWindow = null;
+            }
+            else
+            {
+                presetWindow = new PresetWindow(this);
+                presetWindow.Show();
             }
         }
 
