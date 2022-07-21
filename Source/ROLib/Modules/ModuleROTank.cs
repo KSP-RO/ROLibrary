@@ -312,8 +312,42 @@ namespace ROLib
         public override void OnStart(StartState state)
         {
             Initialize();
+            if (noseModule != null)
+            {
+                ROLLog.debug("Initialize");
+                if (noseModule.definition.title != null) ROLLog.debug("Nose Definition Exists");
+            }
+            if (mountModule != null)
+            {
+                ROLLog.debug("Initialize");
+                if (mountModule.definition.title != null) ROLLog.debug("Mount Definition Exists");
+            }
+
+
             ModelChangedHandler(false);
+            if (noseModule != null)
+            {
+                ROLLog.debug("ModelChangedHandler");
+                if (noseModule.definition.title != null) ROLLog.debug("Nose Definition Exists");
+            }
+            if (mountModule != null)
+            {
+                ROLLog.debug("ModelChangedHandler");
+                if (mountModule.definition.title != null) ROLLog.debug("Mount Definition Exists");
+            }
+
+
             InitializeUI();
+            if (noseModule != null)
+            {
+                ROLLog.debug("InitializeUI");
+                if (noseModule.definition.title != null) ROLLog.debug("Nose Definition Exists");
+            }
+            if (mountModule != null)
+            {
+                ROLLog.debug("InitializeUI");
+                if (mountModule.definition.title != null) ROLLog.debug("Mount Definition Exists");
+            }
         }
 
         public void OnDestroy()
@@ -622,6 +656,10 @@ namespace ROLib
                 ValidateLength();
                 SetModelFromDimensions();
             }
+            if (presetWindow != null && presetWindow.Enabled)
+            {
+                presetWindow.UpdateDiameter();
+            }
             ModelChangedHandler(true);
         }
 
@@ -630,6 +668,10 @@ namespace ROLib
             if ((float)f.GetValue(this) == prevLength) return;
             ValidateLength();
             SetModelFromDimensions();
+            if (presetWindow != null && presetWindow.Enabled)
+            {
+                presetWindow.UpdateLength();
+            }
             ModelChangedHandler(true);
         }
 
@@ -702,11 +744,6 @@ namespace ROLib
             float noseMaxDiam = Math.Max(noseModule.moduleLowerDiameter, noseModule.moduleUpperDiameter);
             totalTankLength = GetTotalHeight();
             largestDiameter = Math.Max(currentDiameter, Math.Max(noseMaxDiam, mountMaxDiam));
-            if (presetWindow != null && presetWindow.Enabled)
-            {
-                presetWindow.UpdateDiameter();
-                presetWindow.UpdateLength();
-            }
         }
 
         /// <summary>
@@ -823,8 +860,6 @@ namespace ROLib
         //private float MountEffectiveLength => ModuleEffectiveLength(mountModule, false);
         private float EffectiveCylinderLength() //=> currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
         {
-            ROLLog.debug($"NoseEffectiveLength: {NoseEffectiveLength}");
-            ROLLog.debug($"MountEffectiveLength: {MountEffectiveLength}");
             float effectiveLength = currentLength + NoseEffectiveLength + MountEffectiveLength - DomeLength;
             return effectiveLength;
         }

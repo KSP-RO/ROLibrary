@@ -383,10 +383,6 @@ namespace ROLib
         {
             ROLUtils.destroyChildrenImmediate(root);
             currentLayoutOptions = Array.Find(optionsCache, m => m.definition.name == modelName);
-            foreach (var item in currentLayoutOptions.getLayoutTitles())
-            {
-                ROLLog.debug($"currentLayoutOptions: {item}");
-            }
 
             if (currentLayoutOptions == null)
             {

@@ -142,9 +142,9 @@ namespace ROLib
         {
             pm = m;
             psVariant = m.currentVariant;
-            psCore = m.currentCore;
-            psNose = m.currentNose;
-            psMount = m.currentMount;
+            psCore = m.coreModule.definition.title;
+            psNose = m.noseModule.definition.title;
+            psMount = m.mountModule.definition.title;
             psCoreTex = m.currentCoreTexture;
             psNoseTex = m.currentNoseTexture;
             psMountTex = m.currentMountTexture;
@@ -189,17 +189,17 @@ namespace ROLib
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Core: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(pm.currentCore, GUILayout.Width(170));
+                    GUILayout.Label(pm.coreModule.definition.title, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Nose: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(pm.currentNose, GUILayout.Width(170));
+                    GUILayout.Label(pm.noseModule.definition.title, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Mount: ", boldLblStyle, GUILayout.Width(130));
-                    GUILayout.Label(pm.currentMount, GUILayout.Width(170));
+                    GUILayout.Label(pm.mountModule.definition.title, GUILayout.Width(170));
                 }
                 using (new GUILayout.HorizontalScope())
                 {
@@ -302,7 +302,11 @@ namespace ROLib
                     GUILayout.Label("Unit:", boldLblStyle, GUILayout.Width(80));
                     var prevUnit = inputUnit;
                     inputUnit = RenderRadioSelectors(inputUnit, UnitAbbreviations, GUILayout.Width(50));
-                    if (prevUnit != inputUnit) ResetDiameterBuf();
+                    if (prevUnit != inputUnit)
+                    {
+                        ResetDiameterBuf();
+                        ResetLengthBuf();
+                    }
                 }
             }
 
@@ -311,7 +315,6 @@ namespace ROLib
                 {
                     string desc = kvp.Key;
                     double mult = kvp.Value;
-                    ROLLog.debug($"Key: {desc}, Value: {mult}");
                     GUILayout.Label($"{desc} current: ", boldLblStyle, GUILayout.Width(100));
                     GUILayout.Label($"{TrimmedDecimal(diameter * mult, ApplicationPrecision)}", GUILayout.Width(40));
                 }));
@@ -321,21 +324,17 @@ namespace ROLib
             GUI.enabled = Math.Abs((length - pm.currentLength) / length) > 0.0005 || Math.Abs((diameter - pm.currentDiameter) / diameter) > 0.0005;
             if (GUILayout.Button("Apply Length & Diameter"))
             {
-                if (length >= pm.minLength)
+                if (length >= pm.minLength && diameter >= pm.minDiameter)
                 {
-                    ApplyLength();
+                    ApplyDiameterAndLength();
                     ResetLengthBuf();
-                }
-                else
-                    ScreenMessages.PostScreenMessage("The entered length is too small, please enter a new value.", 5, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
-
-                if (diameter >= 0.1)
-                {
-                    ApplyDiameter();
                     ResetDiameterBuf();
                 }
                 else
-                    ScreenMessages.PostScreenMessage("The entered diameter is too small, please enter a new value.", 5, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
+                {
+                    if (length >= pm.minLength) ScreenMessages.PostScreenMessage("The entered length is too small, please enter a new value.", 5, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
+                    else ScreenMessages.PostScreenMessage("The entered diameter is too small, please enter a new value.", 5, ScreenMessageStyle.UPPER_CENTER, Color.yellow);
+                }
             }
             GUI.enabled = true;
 
@@ -437,32 +436,30 @@ namespace ROLib
             }
         }
 
-        public void UpdateLength()
-        {
-            length = pm.currentLength;
-            ResetLengthBuf();
-        }
         public void UpdateDiameter()
         {
             diameter = pm.currentDiameter;
             ResetDiameterBuf();
         }
 
-        private void ApplyDiameter()
+        public void UpdateLength()
         {
-            double oldDiameter = pm.currentDiameter;
-            pm.currentDiameter = (float)Math.Round(diameter, ApplicationPrecision);
-            BaseField fld = pm.Fields[nameof(pm.currentDiameter)];
-            fld.uiControlEditor.onFieldChanged.Invoke(fld, oldDiameter);
-            MonoUtilities.RefreshContextWindows(pm.part);
+            length = pm.currentLength;
+            ResetLengthBuf();
         }
 
-        private void ApplyLength()
+        private void ApplyDiameterAndLength()
         {
-            double oldLength = pm.currentLength;
+            double oldValue = pm.currentDiameter;
+            pm.currentDiameter = (float)Math.Round(diameter, ApplicationPrecision);
+            BaseField fld = pm.Fields[nameof(pm.currentDiameter)];
+            fld.uiControlEditor.onFieldChanged.Invoke(fld, oldValue);
+
+            oldValue = pm.currentLength;
             pm.currentLength = (float)Math.Round(length, ApplicationPrecision);
-            BaseField fld = pm.Fields[nameof(pm.currentLength)];
-            fld.uiControlEditor.onFieldChanged.Invoke(fld, oldLength);
+            fld = pm.Fields[nameof(pm.currentLength)];
+            fld.uiControlEditor.onFieldChanged.Invoke(fld, oldValue);
+
             MonoUtilities.RefreshContextWindows(pm.part);
         }
 
@@ -472,8 +469,7 @@ namespace ROLib
             ApplyCoreModel();
             ApplyNoseModel();
             ApplyMountModel();
-            ApplyDiameter();
-            ApplyLength();
+            ApplyDiameterAndLength();
             ResetDiameterBuf();
             ResetLengthBuf();
         }

@@ -331,7 +331,7 @@ namespace ROLib
             style = node.HasValue("style") ? node.ROLGetStringValue("style") : "NONE";
             disableTransforms = node.ROLGetStringValues("disableTransform");
             if (disableTransforms.Length > 0)
-                ROLLog.log($"Disabled {disableTransforms.Length} Transforms: {string.Join(",",disableTransforms)}");
+                ROLLog.debug($"Disabled {disableTransforms.Length} Transforms: {string.Join(",",disableTransforms)}");
 
 
             //load sub-model definitions
