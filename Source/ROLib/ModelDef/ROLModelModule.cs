@@ -555,10 +555,11 @@ namespace ROLib
         /// </summary>
         /// <param name="newDiameter"></param>
         /// <param name="baseDiameter"></param>
-        public void RescaleToDiameter(float newDiameter, float baseDiameter, float vScalar = 0)
+        public void RescaleToDiameter(float newDiameter, float baseDiameter, float vScalar = 1)
         {
+            ROLLog.debug($"vScalar: {vScalar}");
             float scale = newDiameter / baseDiameter;
-            SetScale(scale, scale * VScaleOffset(vScalar));
+            SetScale(scale, scale * vScalar);
         }
 
         /// <summary>
@@ -583,13 +584,15 @@ namespace ROLib
         /// <param name="newVerticalScale"></param>
         public void SetScale(float newHorizontalScale, float newVerticalScale)
         {
-            float min = newHorizontalScale * definition.minVerticalScale;
-            float max = newHorizontalScale * definition.maxVerticalScale;
-            newVerticalScale = Mathf.Clamp(newVerticalScale, min, max);
+            //float min = newHorizontalScale * definition.minVerticalScale;
+            //float max = newHorizontalScale * definition.maxVerticalScale;
+            //newVerticalScale = Mathf.Clamp(newVerticalScale, min, max);
             moduleHorizontalScale = newHorizontalScale;
             moduleVerticalScale = newVerticalScale;
             moduleHeight = newVerticalScale * definition.height;
             moduleEffectiveLength = newVerticalScale * definition.effectiveLength;
+            ROLLog.debug($"newVerticalScale: {newVerticalScale}");
+            ROLLog.debug($"moduleEffectiveLength: {moduleEffectiveLength}");
             moduleActualHeight = newVerticalScale * definition.actualHeight;
             currentDiameter = moduleDiameter = newHorizontalScale * definition.diameter;
             modulePanelLength = newVerticalScale * definition.panelLength;
