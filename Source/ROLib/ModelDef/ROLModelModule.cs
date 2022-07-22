@@ -773,7 +773,7 @@ namespace ROLib
             moduleMass = definition.mass * mScalar * positions;
             moduleCost = definition.cost * cScalar * positions;
             moduleVolume = definition.volume * vScalar * positions;
-            moduleEffectiveLength = definition.effectiveLength * vScalar;
+            //moduleEffectiveLength = definition.effectiveLength * vScalar;
             moduleHabitat = definition.habitat * vScalar;
             moduleSurfaceArea = definition.surfaceArea * vScalar;
             moduleTrussVolume = definition.trussVolume * vScalar;
