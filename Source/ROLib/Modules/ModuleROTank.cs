@@ -302,6 +302,9 @@ namespace ROLib
         public override void OnLoad(ConfigNode node)
         {
             if (string.IsNullOrEmpty(configNodeData)) { configNodeData = node.ToString(); }
+            if (currentVScale == 0) currentVScale = 1;
+            if (currentNoseVScale == 0) currentNoseVScale = 1;
+            if (currentMountVScale == 0) currentMountVScale = 1;
             Initialize();
             UpdateModulePositions();
             UpdateDimensions();
@@ -553,6 +556,12 @@ namespace ROLib
             //------------------MODEL DIAMETER / LENGTH SWITCH UI INIT---------------------//
             this.ROLupdateUIFloatEditControl(nameof(currentDiameter), minDiameter, maxDiameter, diameterLargeStep, diameterSmallStep, diameterSlideStep);
             this.ROLupdateUIFloatEditControl(nameof(currentLength), minLength, maxLength, diameterLargeStep, diameterSmallStep, diameterSlideStep);
+            this.ROLupdateUIFloatEditControl(nameof(currentVScale),
+                Mathf.Min(coreModule.definition.minVerticalScale, 1), Mathf.Max(coreModule.definition.maxVerticalScale, 1), 0.25f, 0.05f, 0.001f);
+            this.ROLupdateUIFloatEditControl(nameof(currentNoseVScale),
+                Mathf.Min(noseModule.definition.minVerticalScale, 1), Mathf.Max(noseModule.definition.maxVerticalScale, 1), 0.25f, 0.05f, 0.001f);
+            this.ROLupdateUIFloatEditControl(nameof(currentMountVScale),
+                Mathf.Min(mountModule.definition.minVerticalScale, 1), Mathf.Max(mountModule.definition.maxVerticalScale, 1), 0.25f, 0.05f, 0.001f);
 
             Fields[nameof(currentDiameter)].guiActiveEditor = maxDiameter != minDiameter;
             Fields[nameof(currentLength)].guiActiveEditor = lengthWidth && maxLength != minLength;
