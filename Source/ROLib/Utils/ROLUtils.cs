@@ -268,7 +268,7 @@ namespace ROLib
             return str;
         }
 
-        public static string printFloatCurve(FloatCurve curve)
+        public static string PrintFloatCurve(FloatCurve curve)
         {
             string str = "";
             if (curve != null)
