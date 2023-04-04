@@ -320,11 +320,8 @@ namespace ROLib
 
         public void OnDestroy()
         {
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                //GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
-                GameEvents.onPartActionUIDismiss.Remove(OnPawClose);
-            }
+            //GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
+            GameEvents.onPartActionUIDismiss.Remove(OnPawClose);
         }
 
         //private void OnEditorVesselModified(ShipConstruct ship) => UpdateAvailableVariants();
