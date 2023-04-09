@@ -77,7 +77,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Modules\ModuleROTAirstreamShield.bak" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Modules\ModuleROSolar.cs" />
     <Compile Include="Modules\ROLAnimateEngineHeat.cs" />
@@ -91,10 +90,7 @@
     <Compile Include="Modules\ModuleROTank.cs" />
     <Compile Include="Modules\ROLModelConstraint.cs" />
     <Compile Include="Modules\ROLFlagDecal.cs" />
-    <None Include="Modules\ModuleROTNodeFairing.bak" />
     <Compile Include="Modules\ROLSelectableNodes.cs" />
-    <None Include="ModelDef\ROLMeshBuilder.cs.bak" />
-    <None Include="ModelDef\ROLMeshGenerators.cs.bak" />
     <Compile Include="ModelDef\ROLModelData.cs" />
     <Compile Include="ModelDef\ROLModelDefinition.cs" />
     <Compile Include="ModelDef\ROLModelLayout.cs" />
