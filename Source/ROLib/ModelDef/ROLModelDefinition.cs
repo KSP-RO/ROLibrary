@@ -202,6 +202,8 @@ namespace ROLib
 
         public readonly string[] disableTransforms;
 
+        public readonly string[] depthMasks;
+
         /// <summary>
         /// The 'default' texture set for this model definition.  If unspecified, is set to the first available texture set if any are present in the model definition.
         /// </summary>
@@ -331,7 +333,9 @@ namespace ROLib
             style = node.HasValue("style") ? node.ROLGetStringValue("style") : "NONE";
             disableTransforms = node.ROLGetStringValues("disableTransform");
             if (disableTransforms.Length > 0)
-                ROLLog.log($"Disabled {disableTransforms.Length} Transforms: {string.Join(",",disableTransforms)}");
+                ROLLog.log($"Disabled {disableTransforms.Length} Transforms: {string.Join(",", disableTransforms)}");
+
+            depthMasks = node.ROLGetStringValues("depthMask");
 
 
             //load sub-model definitions
@@ -341,7 +345,7 @@ namespace ROLib
             {
                 if (!string.IsNullOrEmpty(modelName))
                 {
-                    SubModelData smd = new SubModelData(modelName, new string[0], disableTransforms, string.Empty, positionOffset, rotationOffset, scaleOffset);
+                    SubModelData smd = new SubModelData(modelName, new string[0], disableTransforms, depthMasks, string.Empty, positionOffset, rotationOffset, scaleOffset);
                     subModelData = new SubModelData[] { smd };
                 }
                 else//is an empty proxy model with no meshes
@@ -649,7 +653,7 @@ namespace ROLib
             enableYaw = node.GetBoolValue(nameof(enableYaw), true);
             enableRoll = node.GetBoolValue(nameof(enableRoll), true);
         }
-        
+
         public void RenameTransforms(Transform root, string destinationName)
         {
             foreach (Transform tr in root.FindChildren(thrustTransformName))
@@ -772,6 +776,7 @@ namespace ROLib
         public readonly string[] modelMeshes;
         public readonly string[] renameMeshes;
         public readonly string[] deleteMeshes;
+        public readonly string[] maskMeshes;
         public readonly string parent;
         public readonly Vector3 rotation;
         public readonly Vector3 position;
@@ -789,12 +794,13 @@ namespace ROLib
             scale = node.ROLGetVector3("scale", Vector3.one);
         }
 
-        public SubModelData(string modelURL, string[] meshNames, string[] deleteNames, string parent, Vector3 pos, Vector3 rot, Vector3 scale)
+        public SubModelData(string modelURL, string[] meshNames, string[] deleteNames, string[] maskNames, string parent, Vector3 pos, Vector3 rot, Vector3 scale)
         {
             this.modelURL = modelURL;
             this.modelMeshes = meshNames;
             this.renameMeshes = new string[0];
             this.deleteMeshes = deleteNames;
+            this.maskMeshes = maskNames;
             this.parent = parent;
             this.position = pos;
             this.rotation = rot;
@@ -831,6 +837,33 @@ namespace ROLib
             foreach (Transform tr in modelRoot.transform.ROLGetAllChildren().Where(x => deleteMeshes.Contains(x.name)))
             {
                 tr.gameObject.SetActive(false);
+            }
+
+            // From https://github.com/PorktoberRevolution/ReStocked/blob/ccc6fe705da92e2b982492215826393eb506b4e7/Source/Restock/ModuleRestockDepthMask.cs.
+            if (maskMeshes.Length > 0 && Shader.Find("DepthMask") is Shader depthShader)
+            {
+                const int meshRenderQueue = 1000;
+                const int maskRenderQueue = 1999;
+
+                var renderers = modelRoot.transform.GetComponentsInChildren<Renderer>(true);
+                foreach (var renderer in renderers)
+                {
+                    var queue = renderer.material.renderQueue;
+                    if (queue <= maskRenderQueue) continue;
+                    queue = meshRenderQueue + ((queue - 2000) / 2);
+                    renderer.material.renderQueue = queue;
+                }
+
+                foreach (string maskMesh in maskMeshes)
+                {
+                    var maskTransformObjects = modelRoot.transform.ROLFindChildren(maskMesh);
+                    foreach (var maskObject in maskTransformObjects)
+                    {
+                        var renderer = maskObject.GetComponent<Renderer>();
+                        renderer.material.shader = depthShader;
+                        renderer.material.renderQueue = maskRenderQueue;
+                    }
+                }
             }
         }
 
