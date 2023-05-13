@@ -958,7 +958,7 @@ namespace ROLib
                     {
                         foreach (var thrustTransform in clonedModel.transform.FindChildren(rcsData.thrustTransformName))
                         {
-                            thrustTransform.localPosition += rcsData.thrustTransformPositionOffset;
+                            thrustTransform.position += thrustTransform.rotation * rcsData.thrustTransformPositionOffset;
                             thrustTransform.localScale *= rcsData.thrustTransformScaleOffset;
                         }
                     }
