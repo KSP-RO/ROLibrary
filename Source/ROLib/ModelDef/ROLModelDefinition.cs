@@ -788,6 +788,7 @@ namespace ROLib
             modelMeshes = node.ROLGetStringValues("transform");
             renameMeshes = node.ROLGetStringValues("rename");
             deleteMeshes = node.ROLGetStringValues("disableTransform");
+            maskMeshes = node.ROLGetStringValues("depthMask");
             parent = node.ROLGetStringValue("parent", string.Empty);
             position = node.ROLGetVector3("position", Vector3.zero);
             rotation = node.ROLGetVector3("rotation", Vector3.zero);
