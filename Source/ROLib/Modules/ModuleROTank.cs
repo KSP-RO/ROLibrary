@@ -261,6 +261,8 @@ namespace ROLib
 
         #endregion Private Variables
 
+        public float Volume { get; private set; }
+
         internal void ModelChangedHandler(bool pushNodes)
         {
             if (validateNose || validateMount)
@@ -874,8 +876,8 @@ namespace ROLib
         {
             if (!lw)
             {
-                float totalVol = noseModule.moduleVolume + coreModule.moduleVolume + mountModule.moduleVolume;
-                SendVolumeChangedEvent(totalVol);
+                Volume = noseModule.moduleVolume + coreModule.moduleVolume + mountModule.moduleVolume;
+                SendVolumeChangedEvent(Volume);
                 return;
             }
 
@@ -893,10 +895,10 @@ namespace ROLib
 
             // Calculate the volume of the main tank
             float r = currentDiameter / 2;
-            float effectiveVolume = (ROLUtils.EllipsoidVolume(r, r, r / 2) + ROLUtils.CylinderVolume(r, EffectiveCylinderLength())) * 1000f;
-            effectiveVolume += noseAdditionalVol + mountAdditionalVol;
+            Volume = (ROLUtils.EllipsoidVolume(r, r, r / 2) + ROLUtils.CylinderVolume(r, EffectiveCylinderLength())) * 1000f;
+            Volume += noseAdditionalVol + mountAdditionalVol;
 
-            ROLModInterop.RealFuelsVolumeUpdate(part, effectiveVolume);
+            ROLModInterop.RealFuelsVolumeUpdate(part, Volume);
         }
 
         public void SendVolumeChangedEvent(float newVol)
