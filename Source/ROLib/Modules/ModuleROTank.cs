@@ -11,7 +11,7 @@ namespace ROLib
     /// PartModule that manages multiple models/meshes and accompanying features for model switching - resources, modules, textures, recoloring.<para/>
     /// Includes 3 stack-mounted modules.  All modules support model-switching, texture-switching, recoloring.
     /// </summary>
-    public class ModuleROTank : PartModule, IPartCostModifier, IPartMassModifier, IRecolorable, IContainerVolumeContributor
+    public partial class ModuleROTank : PartModule, IPartCostModifier, IPartMassModifier, IRecolorable, IContainerVolumeContributor
     {
         private const string GroupDisplayName = "RO-Tanks";
         private const string GroupName = "ModuleROTank";
@@ -282,6 +282,7 @@ namespace ROLib
                 UpdateMass();
             if (scaleCost)
                 UpdateCost();
+            SetupKorolevCross();
             ROLStockInterop.UpdatePartHighlighting(part);
             //if (HighLogic.LoadedSceneIsEditor)
                 //GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -318,12 +319,17 @@ namespace ROLib
             Initialize();
             ModelChangedHandler(false);
             InitializeUI();
+            SetupKorolevCross();
+            GameEvents.onVesselGoOffRails.Add(OnVesselOffRails);
+            GameEvents.onVesselGoOnRails.Add(OnVesselOnRails);
         }
 
         public void OnDestroy()
         {
             //GameEvents.onEditorShipModified.Remove(OnEditorVesselModified);
             GameEvents.onPartActionUIDismiss.Remove(OnPawClose);
+            GameEvents.onVesselGoOffRails.Remove(OnVesselOffRails);
+            GameEvents.onVesselGoOnRails.Remove(OnVesselOnRails);
         }
 
         //private void OnEditorVesselModified(ShipConstruct ship) => UpdateAvailableVariants();
@@ -575,6 +581,8 @@ namespace ROLib
             Fields[nameof(currentNoseTexture)].uiControlEditor.onFieldChanged = noseModule.textureSetSelected;
             Fields[nameof(currentCoreTexture)].uiControlEditor.onFieldChanged = coreModule.textureSetSelected;
             Fields[nameof(currentMountTexture)].uiControlEditor.onFieldChanged = mountModule.textureSetSelected;
+
+            BindKorolevCrossUI();
 
             if (HighLogic.LoadedSceneIsEditor)
             {
