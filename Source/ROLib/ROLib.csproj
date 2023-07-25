@@ -72,13 +72,19 @@
     <Reference Include="UnityEngine.UI">
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.VehiclesModule">
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DebugTools\DebugDrawer.cs" />
+    <Compile Include="DebugTools\DrawTools.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Modules\ModuleROSolar.cs" />
+    <Compile Include="Modules\ModuleROTank_KorolevCross.cs" />
     <Compile Include="Modules\ROLAnimateEngineHeat.cs" />
     <Compile Include="Modules\ROLDeployableEngine.cs" />
     <Compile Include="ROSolar\SolarTechLimit.cs" />
