@@ -136,7 +136,7 @@ namespace ROLib
 
         public override void OnFixedUpdate()
         {
-            if (!isFinished && decoupler.isDecoupled)
+            if (!isFinished && decoupler != null && decoupler.isDecoupled)
             {
                 float mass = GetPartDryMassRecursive(part);
 
