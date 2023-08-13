@@ -351,8 +351,6 @@ namespace ROLib
 
         private void SetMaxTechLevel()
         {
-            if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
-                maxTechLevel = 7;
 
             (Fields[nameof(TechLevel)].uiControlEditor as UI_FloatRange).maxValue = maxTechLevel;
             if (HighLogic.LoadedSceneIsEditor && TechLevel < 0)
