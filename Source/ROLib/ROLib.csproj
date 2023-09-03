@@ -89,6 +89,7 @@
     <Compile Include="DebugTools\DebugDrawer.cs" />
     <Compile Include="DebugTools\DrawTools.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Modules\ModuelROPayload.cs" />
     <Compile Include="Modules\ModuleROSolar.cs" />
     <Compile Include="Modules\ModuleROTank_KorolevCross.cs" />
     <Compile Include="Modules\ROLAnimateEngineHeat.cs" />
