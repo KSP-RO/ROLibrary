@@ -45,6 +45,11 @@ namespace ROLib
             Unit.Inch => diameterInches,
             _ => throw new Exception(),
         };
+
+        public override Rect InitialPosition => new Rect(300, 300, 400, 600);
+
+        public override string Title => "ROTanks Diameter Selection";
+
         const int ApplicationPrecision = 3;
         string diameterBuf;
         private void ResetDiameterBuf() => diameterBuf = TrimmedDecimal(diameterInputUnit, ApplicationPrecision);
@@ -68,15 +73,13 @@ namespace ROLib
             { "3x",     3d },
         };
 
-        public DimensionWindow(ModuleROTank mod) :
-            base(Guid.NewGuid(), "ROTanks Diameter Selection", new Rect(300, 300, 400, 600))
+        public void InitForModule(ModuleROTank mod)
         {
             module = mod;
             diameter = mod.currentDiameter;
             ResetDiameterBuf();
             LoadPresetsFromConfigs();
         }
-
 
         private void LoadPresetsFromConfigs()
         {
@@ -91,6 +94,7 @@ namespace ROLib
             }
             presets.Sort((a, b) => a.Diameter.CompareTo(b.Diameter));
         }
+
         private string PresetDescription(string name, double diam) => showPresetNameOnly
             ? name
             : $"{name} [{diam:N1}m / {ConvertUnit(Unit.Meter, Unit.Foot, diam):N1}ft]";
