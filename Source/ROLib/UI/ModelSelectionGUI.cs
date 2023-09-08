@@ -11,6 +11,10 @@ namespace ROLib
         private ModuleROTank ROTank;
         private static ModuleTab currentTab;
 
+        public override Rect InitialPosition => new Rect(300, 300, 800, 600);
+
+        public override string Title => "ROTanks Model Selection";
+
         private enum ModuleTab
         {
             Core,
@@ -18,8 +22,7 @@ namespace ROLib
             Mount
         };
 
-        public ModelSelectionGUI (ModuleROTank m) :
-            base(new Guid(), $"ROTanks Model Selection", new Rect(300, 300, 800, 600))
+        public void InitForModule(ModuleROTank m)
         {
             ROTank = m;
             diameterStr = m.currentDiameter.ToString("N3");
@@ -94,7 +97,6 @@ namespace ROLib
         
         public override void Window(int id)
         {
-            //ROLLog.debug("ModelWindow: DrawWindow()");
             GUI.skin = HighLogic.Skin;
             try
             {
@@ -115,7 +117,6 @@ namespace ROLib
                 GUILayout.EndHorizontal();
                 GUI.DragWindow();
                 base.Window(id);
-                //ROLLog.debug("ModelWindow: End DrawWindow()");
             }
         }
     }
