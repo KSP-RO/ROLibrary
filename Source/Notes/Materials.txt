@@ -1,0 +1,839 @@
+
+For pressure dependent matarials/properties
+
+     Shuttle Peak dyn Pressure ~ 10k Pascal
+     Apollo 4 Peak dyn Presurre ~ 25k Pascal
+     both happen in low ambient pressure heights 
+
+     ref: Entry aerodynamics at lunar return conditions obtained from the flight of Apollo 4 /AS-501/
+          https://ntrs.nasa.gov/citations/19690029435
+     ref: Space Shuttle Technical Conference, part 1
+          https://ntrs.nasa.gov/citations/19850008580
+
+
+
+
+
+
+
+
+
+
+/////////////////// Tiles       /////////////////// /////////////////// ///////////////////
+
+
+LI-900
+Emissivity: (300 K) 0.880
+Emissivity: (950 K) 0.470
+Emissivity: (1350.0 K) 0.297
+Emissivity: (1600.0 K) 0.248
+Emissivity: (1650.0 K) 0.241
+Emissivity: (1750.0 K) 0.286
+cp (255.372 K): 628 J/kg-K
+cp (949.817 K): 1240 J/kg-K
+cp (1366.48 K): 1270 J/kg-K
+cp (1533.15 K): 1270 J/kg-K
+cp (1922.04 K): 1270 J/kg-K
+Thermal Conductivity (255.556 K / 101330.0 Pa): 0.0467 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (950.0 K   / 101330.0 Pa): 0.125 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.44 K / 101330.0 Pa): 0.336 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1811.11 K / 101330.0 Pa): 0.419 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.556 K /  10133.0 Pa): 0.0433 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (950.0 K   /  10133.0 Pa): 0.123 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1366.67 K /  10133.0 Pa): 0.220 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1533.33 K /  10133.0 Pa): 0.268 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.44 K /  10133.0 Pa): 0.310 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1811.11 K /  10133.0 Pa): 0.384 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1366.67 K /  10133.0 Pa): 0.367 W/m-K (In-Plane)
+Thermal Conductivity (1533.33 K /  10133.0 Pa): 0.473 W/m-K (In-Plane)
+Multiple Use Temperature Limit: 1590 K
+Single Use Temperature Limit: 1760 K
+density: 144
+Purchase Cost: 1250 $/m^2
+Installation Time: 3.53e+06 s/m^2
+Inspection/Repair Time per Flight: 8.14e+04 s/m^2
+Replacement Fraction per Flight: 2.50e-03
+Reuse Flight Limit:	100 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=1
+https://tpsx.arc.nasa.gov/Material?id=233
+
+
+
+LI-2200
+Emissivity: (300 K) 0.899
+Emissivity: (1650.0 K) 0.303
+Emissivity: (1750.0 K) 0.286
+cp (255.372 K): 628 J/kg-K
+cp (1533.15 K): 1270 J/kg-K
+cp (1922.04 K): 1270 J/kg-K
+Thermal Conductivity (255.372 K / 101330.0 Pa): 0.0744 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.26 K / 101330.0 Pa): 0.367 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1810.93 K / 101330.0 Pa): 0.433 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.372 K /  10133.0 Pa): 0.0658 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.26 K /  10133.0 Pa): 0.322 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1810.93 K /  10133.0 Pa): 0.379 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.372 K): 0.104 W/m-K (In-Plane)
+Thermal Conductivity (1644.26 K): 0.383 W/m-K (In-Plane)
+Thermal Conductivity (1810.93 K): 0.467 W/m-K (In-Plane)
+Multiple Use Temperature Limit: 1640 K
+Single Use Temperature Limit: 1760 K
+density: 352 kg/m^3
+Purchase Cost: 12500 $/m^2
+Installation Time: 3.53e+06 s/m^2
+Inspection/Repair Time per Flight: 8.14e+04 s/m^2
+Replacement Fraction per Flight: 2.50e-03
+Reuse Flight Limit:	100 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=2
+https://tpsx.arc.nasa.gov/Material?id=236
+https://tpsx.arc.nasa.gov/Material?id=237
+
+
+
+FRCI-12
+Emissivity: (300 K) 9.17
+Emissivity: (1350.0 K) 0.387
+Emissivity: (1650.0 K) 0.341
+Emissivity: (1700.0 K) 0.305
+cp (297.039 K):  712 J/kg-K
+cp (977.594 K): 1260 J/kg-K
+cp (1199.82 K): 1260 J/kg-K
+Thermal Conductivity (297.039 K / 101330.0 Pa): 0.053 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1199.82 K / 101330.0 Pa): 0.228 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1533.15 K / 101330.0 Pa): 0.329 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (297.039 K /  10133.0 Pa): 0.053 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1199.82 K /  10133.0 Pa): 0.196 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1533.15 K /  10133.0 Pa): 0.282 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (297.039 K /  10133.0 Pa): 0.064 W/m-K (In-Plane)
+Thermal Conductivity (1227.59 K /  10133.0 Pa): 0.183 W/m-K (In-Plane)
+Multiple Use Temperature Limit: 1640 K
+Single Use Temperature Limit: 1810 K
+density: 192
+Purchase Cost: 12500 $/m^2
+Installation Time: 3.53e+06 s/m^2
+Inspection/Repair Time per Flight: 8.14e+04 s/m^2
+Replacement Fraction per Flight: 2.50e-03
+Reuse Flight Limit:	100 # of flights
+tickness FRCI-12 & FRCI 10 HSRI 25.4mm - 127mm
+ref:
+https://tpsx.arc.nasa.gov/Material?id=3
+https://tpsx.arc.nasa.gov/Material?id=235
+https://tpsx.arc.nasa.gov/Material?id=234
+
+
+FRCI-20
+Emissivity: 0.917
+cp: 712 J/kg-K
+Thermal Conductivity: 0.0530 (Thru-the-Thickness) W/m-K
+Thermal Conductivity: 0.0796 (In-Plane) W/m-K
+Multiple Use Temperature Limit: 1640 K
+Single Use Temperature Limit: 1810 K
+density: 320
+Purchase Cost: 12500 $/m^2
+Installation Time: 3.53e+06 s/m^2
+Inspection/Repair Time per Flight: 8.14e+04 s/m^2
+Replacement Fraction per Flight: 2.50e-03
+Reuse Flight Limit:	100 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=4
+
+
+AETB-8 Rigid Tile
+Emissivity: (300.0) 0.899
+Emissivity: (1650.0 K) 0.301
+Emissivity: (1800.0 K) 0.276
+cp: (255.556 K) 628 J/kg-K
+cp: (1227.78 K) 1270 J/kg-K
+cp: (1811.11K) 1270 J/kg-K
+Thermal Conductivity (255.372 K / 101362.0 Pa): 0.0639 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.44 K / 101362.0 Pa): 0.535 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1866.48 K / 101362.0 Pa): 0.729 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.372 K /  10136.2 Pa): 0.0490 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.44 K /  10136.2 Pa): 0.406 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1866.48 K /  10136.2 Pa): 0.558 W/m-K (Thru-the-Thickness)
+Multiple Use Temperature Limit: 1640 K
+Single Use Temperature Limit: 1810 K
+density: 128
+Purchase Cost: 125000 $/m^2
+Installation Time: 8.53e+05 s/m^2
+Inspection/Repair Time per Flight: 2.48e+e+03 s/m^2
+Replacement Fraction per Flight: 1.40e-03
+Reuse Flight Limit:	100 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=5
+
+
+
+AETB-12 Rigid Tile
+Emissivity: (255.556) 0.88
+Emissivity: (1366.67 K) 0.27
+cp: (255.556 K) 628 J/kg-K
+cp: (1644.44 K) 1270 J/kg-K
+cp: (1783.33 K)  1270 J/kg-K
+Thermal Conductivity (255.556 K / 101362.0 Pa): 0.064 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.44 K / 101362.0 Pa): 0.185 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1783.33 K / 101362.0 Pa): 0.185 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.372 K /  10136.2 Pa): 0.064 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1644.44 K /  10136.2 Pa): 0.171 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1866.48 K /  10136.2 Pa): 0.171 W/m-K (Thru-the-Thickness)
+Multiple Use Temperature Limit: 1700 K
+Single Use Temperature Limit: 1870 K
+density: 192
+Purchase Cost: 125000 $/m^2
+Installation Time: 8.53e+05 s/m^2
+Inspection/Repair Time per Flight: 2.48e+e+03 s/m^2
+Replacement Fraction per Flight: 1.40e-03
+Reuse Flight Limit:	100 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=6
+
+
+
+
+TUFROC (Toughened Unipiece Fibrous Reinforced Oxidation-resistant Composite)
+     Layers:
+          - RCG Coating
+          - ROCCI cap ( Refractory Oxidation-resistant Ceramic Carbon Insulation)
+                      (carbon fiber preform with a silicon oxycarbide (SiOC) matrix)
+          - AETB lumina Enhanced Thermal Barrier
+Emissivity: ? 
+Emissivity: ? 
+cp (? K): 660 J/kg-K
+cp (1811.11 K):  J/kg-K
+cp (2200.0 K):  J/kg-K
+Thermal Conductivity (? K): 1.3 W/m-K
+Thermal Conductivity ( K):  W/m-K (Thru-the-Thickness)
+Thermal Conductivity ( K):  W/m-K (In-Plane)
+Multiple Use Temperature Limit: 1866.483 K
+Single Use Temperature Limit: 2255.372 K
+density: 1600
+
+ref:
+https://ntrs.nasa.gov/citations/20210022886
+https://patents.google.com/patent/US6225248B1/en
+Materials and Coatings Toughened Uni-piece Fibrous Reinforced Oxidation-Resistant Composite (TUFROC)
+https://www.nasa.gov/sites/default/files/atoms/files/arc-15201-1-2_tufroc.pdf
+TUFROC Thermal Protection System    Jay Feldman*, David Stewart, Daniel Leiser, Matthew Switzer, Tahir Gokcen, Kristina Skokova
+https://ntrs.nasa.gov/api/citations/20190030273/downloads/20190030273.pdf
+https://ia801208.us.archive.org/23/items/NASA_NTRS_Archive_20100011117/NASA_NTRS_Archive_20100011117.pdf
+
+
+
+
+/////////////////// Composite       /////////////////// /////////////////// ///////////////////
+
+
+RCC (Reinforced Carbon-Carbon Composite)
+Emissivity: (255.556 K) 0.78
+Emissivity: (1811.11 K) 0.75
+Emissivity: (2200.0) 0.54
+cp (255.372 K): 712 J/kg-K
+cp (1811.11 K): 1720 J/kg-K
+cp (2200.0 K): 1840 J/kg-K
+Thermal Conductivity (255.556 K): 3.89 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1811.11 K): 7.58 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (2200.0 K): 7.49 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.556 K): 6.07 W/m-K (In-Plane)
+Thermal Conductivity (1811.11 K): 11.8 W/m-K (In-Plane)
+Thermal Conductivity (2200.0 K): 11.7 W/m-K (In-Plane)
+Multiple Use Temperature Limit: 1920 K
+Single Use Temperature Limit: 2030 K
+density: 1580
+Purchase Cost: 129000 $/m^2
+Installation Time: 3.72e+05 s/m^2
+Inspection/Repair Time per Flight: 5.43e+03 s/m^2
+Replacement Fraction per Flight: 1.30e-03
+Reuse Flight Limit:	33.0 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=24
+https://tpsx.arc.nasa.gov/Material?id=226
+
+
+
+ACC (Advanced Carbon-Carbon Composite)
+Emissivity: ? (RCC (255.556 K) 0.78)
+Emissivity: ? (RCC (1811.11 K) 0.75)
+cp (255.372 K): 712 J/kg-K
+cp (1811.11 K): 1720 J/kg-K
+cp (2200.0 K): 1840 J/kg-K
+Thermal Conductivity (255.556 K): 3.69 W/m-K (Isotropic)
+Thermal Conductivity (1811.11 K): 7.62 W/m-K (Isotropic)
+Thermal Conductivity (1922.22 K): 7.62 W/m-K (Isotropic)
+Multiple Use Temperature Limit: 1870 K
+Single Use Temperature Limit: 1920 K
+density: 1600
+Purchase Cost: 129000 $/m^2
+Installation Time: 3.72e+05 s/m^2
+Inspection/Repair Time per Flight: 4.26e+03 s/m^2
+Replacement Fraction per Flight: 1.30e-03
+Reuse Flight Limit:	33.0 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=25
+
+
+
+/////////////////// Blanket       /////////////////// /////////////////// ///////////////////
+
+
+FRSI Blanket (Nomex Felt)
+Emissivity: (?K) 0.8
+cp: (255.556 K)  1310 J/kg-K
+cp: (477.778 K)  1400 J/kg-K
+cp: (588.889 K)  1440 J/kg-K
+Thermal Conductivity (255.556 K / 1013620 Pa): 0.0355 W/m-K (Isotropic)
+Thermal Conductivity (477.778 K / 1013620 Pa): 0.0661 W/m-K (Isotropic)
+Thermal Conductivity (588.889 K / 1013620 Pa): 0.0853 W/m-K (Isotropic)
+Thermal Conductivity (700.09  K / 1013620 Pa): 0.107 W/m-K (Isotropic)
+Thermal Conductivity (255.556 K /  10136.2 Pa): 0.0343 W/m-K (Isotropic)
+Thermal Conductivity (477.778 K /  10136.2 Pa): 0.0642 W/m-K (Isotropic)
+Thermal Conductivity (588.889 K /  10136.2 Pa): 0.0831 W/m-K (Isotropic)
+Thermal Conductivity (700.09  K /  10136.2 Pa): 0.105  W/m-K (Isotropic)
+Multiple Use Temperature Limit: 506 K
+Single Use Temperature Limit: 644 K
+density: 86.5
+tickness used: 4.064 mm - 10.16 mm
+Purchase Cost: 1.72e+03 $/m^2
+Installation Time: 2.13e+04 s/m^2
+Inspection/Repair Time per Flight: 3.49e+03 s/m^2
+Replacement Fraction per Flight: 2.80e-02
+Reuse Flight Limit:	0.0 # of flights
+ref:
+
+
+AFRSI Blanket
+Emissivity: (255.556) 0.87
+Emissivity: (950.00 K) 0.59
+Emissivity: (1088.89 K) 0.54
+cp: (255.556 K)   741 J/kg-K
+cp: (950.00 K)   1130 J/kg-K
+cp: (1088.89 K)  1180 J/kg-K
+Thermal Conductivity (255.556 K / 101362.0 Pa): 0.0329 W/m-K (Thru-the-Thickness)
+Thermal Conductivity ( 950.00 K / 101362.0 Pa): 0.138 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1088.89 K / 101362.0 Pa): 0.164 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.372 K /  10136.2 Pa): 0.0294 W/m-K (Thru-the-Thickness)
+Thermal Conductivity ( 950.00 K /  10136.2 Pa): 0.121 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1088.89 K /  10136.2 Pa): 0.145 W/m-K (Thru-the-Thickness)
+Multiple Use Temperature Limit: 922 K
+Single Use Temperature Limit: 1090 K
+density: 96.1
+Additive Areal Weight: 1.46	kg/m^2 // Total areal weight = density * thickness + additive areal weight. 
+Purchase Cost: 3550 $/m^2
+Installation Time: 2.36e+05 s/m^2
+Inspection/Repair Time per Flight: 3.72e+04 s/m^2
+Replacement Fraction per Flight: 1.80e-02
+Reuse Flight Limit:	0.0 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=12
+
+
+
+AFRSI-2200 Blanket
+Emissivity: (338.889) 0.87
+Emissivity: (1255.56 K) 0.34
+Emissivity: (1366.67 K) 0.31
+cp: (255.556 K)   741 J/kg-K
+cp: (950.00 K)   1130 J/kg-K
+cp: (1227.78 K)  1180 J/kg-K
+cp: (1088.89 K)  1240 J/kg-K
+cp: (1366.67 K)  1290 J/kg-K
+Thermal Conductivity (255.556 K / 101362.0 Pa): 0.0329 W/m-K (Thru-the-Thickness)
+Thermal Conductivity ( 950.00 K / 101362.0 Pa): 0.138 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1088.89 K / 101362.0 Pa): 0.145 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1227.78 K / 101362.0 Pa): 0.208 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (255.372 K /  10136.2 Pa): 0.0294 W/m-K (Thru-the-Thickness)
+Thermal Conductivity ( 950.00 K /  10136.2 Pa): 0.121 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1088.89 K /  10136.2 Pa): 0.145 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1227.78 K /  10136.2 Pa): 0.182 W/m-K (Thru-the-Thickness)
+Multiple Use Temperature Limit: 1310 K
+Single Use Temperature Limit: 1480 K
+density: 96.1
+Additive Areal Weight: 1.46	kg/m^2 // Total areal weight = density * thickness + additive areal weight. 
+Purchase Cost: 3550 $/m^2
+Installation Time: 2.36e+05 s/m^2
+Inspection/Repair Time per Flight: 3.72e+04 s/m^2
+Replacement Fraction per Flight: 1.80e-02
+Reuse Flight Limit:	0.0 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=13
+
+
+AFRSI-2500 Blanket
+Emissivity: (338.889) 0.56
+Emissivity: (1255.56 K) 0.34
+Emissivity: (1366.67 K) 0.31
+cp: (255.556 K)   741 J/kg-K
+cp: (950.00 K)   1130 J/kg-K
+cp: (1227.78 K)  1180 J/kg-K
+cp: (1088.89 K)  1240 J/kg-K
+cp: (1366.67 K)  1290 J/kg-K
+Thermal Conductivity (297.222 K / 101353.0 Pa): 0.045 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (811.111 K / 101353.0 Pa): 0.132 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1088.89 K / 101353.0 Pa): 0.208 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1366.67 K / 101353.0 Pa): 0.338 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (297.222 K / 10135.3 Pa): 0.034 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (811.111 K / 10135.3 Pa): 0.126 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1088.89 K / 10135.3 Pa): 0.200 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (1366.67 K / 10135.3 Pa): 0.326 W/m-K (Thru-the-Thickness)
+Multiple Use Temperature Limit: 1370 K
+Single Use Temperature Limit: 1640 K
+density: 96.1
+Additive Areal Weight: 1.46	kg/m^2 // Total areal weight = density * thickness + additive areal weight. 
+Purchase Cost: 3550 $/m^2
+Installation Time: 2.36e+05 s/m^2
+Inspection/Repair Time per Flight: 3.72e+04 s/m^2
+Replacement Fraction per Flight: 1.80e-02
+Reuse Flight Limit:	0.0 # of flights
+ref:
+https://tpsx.arc.nasa.gov/Material?id=14
+
+
+
+TUFI Composite Surface oughened Uni-piece Fibrous Insulation
+Emissivity: (1600 K) 0.937
+Emissivity: (1850 K) 0.943
+cp: (255.556 K) 795 J/kg-K
+cp: (1644.44 K) 1540 J/kg-K
+cp: (1783.33 K) 1600 J/kg-K
+Thermal Conductivity (255.556 K): 0.843 W/m-K (Isotropic)
+Thermal Conductivity (1644.44 K): 1.69 W/m-K (Isotropic)
+Thermal Conductivity (1783.33 K): 1.84 W/m-K (Isotropic)
+Multiple Use Temperature Limit: 1590 K
+Single Use Temperature Limit: 1870 K
+density: 1310
+ref:
+https://tpsx.arc.nasa.gov/Material?id=8
+
+
+
+
+/////////////////// Ablator       /////////////////// /////////////////// ///////////////////
+
+
+
+Avcoat 5026-39H/CG [virgin]
+Emissivity: (? K) 0.667
+cp (? K): 1610 J/kg-K
+Thermal Conductivity (? K): 0.242 W/m-K (Isotropic)
+Pyrolysis Gas Specific Heat: 2300 J/kg-K
+Combustion Enthalpy: 27.6e+06 J/kg
+Heat of Vaporization: 26.5e+06 J/kg
+Heat of Decomposition: 1.16e+06 J/kg
+Blowing Correction (laminar heating): 0.7
+Blowing Correction (turbulent heating): 0.37
+Single Use Temperature Limit: K
+density: 529
+ref:
+https://tpsx.arc.nasa.gov/Material?id=100
+
+
+Avcoat 5026-39H/CG [char]
+Emissivity: (? K) 0.49
+cp (? K): 2730 J/kg-K
+Thermal Conductivity (? K): 0.242 W/m-K (Isotropic)
+Pyrolysis Gas Specific Heat: 2300 J/kg-K
+Combustion Enthalpy: 27.6e+06 J/kg
+Heat of Vaporization: 26.5e+06 J/kg
+Heat of Decomposition: 1.16e+06 J/kg
+Blowing Correction (laminar heating): 0.7
+Blowing Correction (turbulent heating): 0.37
+Single Use Temperature Limit: K
+density: 264
+ref:
+https://tpsx.arc.nasa.gov/Material?id=100
+
+
+
+
+
+
+/////////////////// Metals       /////////////////// /////////////////// ///////////////////
+
+Inconel X-750
+Emissivity (588.7 K): 0.895 (oxidized surface)
+Emissivity (1366.48 K): 0.925 (oxidized surface)
+cp (294.26 K): 431.24 J/kg-K
+cp (1144.26 K): 715.9428 J/kg-K
+Thermal Conductivity (311.111 K): 11.970914776 W/m-K (Isotropic)
+Thermal Conductivity (1144.26 K): 23.653373774 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  K
+Melt Temperature: (1393 K)
+density: 8280
+ref:
+https://tpsx.arc.nasa.gov/Material?id=900
+https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-x-750.pdf
+
+
+
+Aluminium Alloy 2024-T6
+Emissivity: (255.556 K) 
+Emissivity: (1811.11 K) 
+cp (200.0 K): 787 J/kg-K
+cp (600.0 K): 1040 J/kg-K
+Thermal Conductivity (200.0 K): 163 W/m-K (Isotropic)
+Thermal Conductivity (600.01 K): 183 W/m-K (Thru-the-Thickness)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  K
+density: 2776
+ref:
+
+
+Aluminium Alloy 2014
+Emissivity: (? K) 
+cp (? K): 870 J/kg-K
+Thermal Conductivity (? K): 150 W/m-K (Isotropic)
+Maximum Temperature: Mechanical: 483.15 K
+Melting Onset (Solidus): 783.15 K
+density: 2.80
+ref:
+
+
+Aluminium Alloy 2195 
+Maximum Temperature: Mechanical 210 C
+Melting Onset 550 °C
+Melting Completion (Liquidus) 660 °C
+Thermal Conductivity 130 W/m-K
+Specific Heat Capacity 900 J/kg-K
+density 2.698
+
+usecases:
+Space Shuttle Super Lightweight External Tank
+Ares I crew launch vehicle – upper stage
+Falcon 9 propellant tanks
+
+ref: 
+https://www.makeitfrom.com/material-properties/2195-2195-T8-Aluminum
+https://en.wikipedia.org/wiki/2195_aluminium_alloy
+
+
+
+Aluminium Alloy 2219
+Emissivity: (255.556 K) 
+Emissivity: (1811.11 K) 
+cp (297.222 K): 862 J/kg-K
+cp (477.778 K): 955 J/kg-K
+Thermal Conductivity (255.556 K): 119 W/m-K (Isotropic)
+Thermal Conductivity (422.222 K): 142 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  450K
+density: 2810
+
+usecases:
+propellant tanks of the S-IC
+ref:
+
+aluminum alloy 7075 Saturn V Shell S-II S-IV
+2014 Wall Sections & bulk Heads S-II S-IV
+https://history.nasa.gov/afj/ap08fj/pdf/sa503-flightmanual.pdf
+
+
+
+
+Aluminium Alloy 7075-t6 (annealed) 
+Emissivity: ?
+cp (? K): 837 J/kg-K
+Thermal Conductivity (?): 163 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  K
+density: 2800
+usecases:
+The propellant tanks of the S-IC were manufactured from 2219-series aluminum panels, while the interstage, forward skirt, and thrust structure were built from 7075-series aluminum
+ref:
+https://tpsx.arc.nasa.gov/Material?id=280
+https://tpsx.arc.nasa.gov/Material?id=279
+
+
+
+
+Stainless Steel-AISI 304
+Emissivity (255.556 K):
+Emissivity (1811.11 K):
+cp (200.0 K): 402 J/kg-K
+cp (1000.0 K): 611 J/kg-K
+Thermal Conductivity (200.0 K): 12.6 W/m-K (Isotropic)
+Thermal Conductivity (1000.01 K): 25.4 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  K
+Melt Temperature: 1670 K
+density: 7900
+ref:
+https://tpsx.arc.nasa.gov/Material?id=57
+
+
+
+
+Stainless Steel-AISI 302
+Emissivity (255.556 K):
+Emissivity (1811.11 K):
+cp ( 300.0 K): 480 J/kg-K
+cp ( 600.0 K): 559 J/kg-K
+cp (1000.0 K): 606 J/kg-K
+Thermal Conductivity ( 300.0 K): 15.1 W/m-K (Isotropic)
+Thermal Conductivity ( 600.0 K): 20 W/m-K (Isotropic)
+Thermal Conductivity (1000.0 K): 25.4 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  K
+Melt Temperature: 1670 K
+density: 8006
+ref:
+https://tpsx.arc.nasa.gov/Material?id=56
+
+
+
+steel stainless series 400
+Emissivity (255.556 K):
+Emissivity (1811.11 K):
+cp (N/A K): 431 J/kg-K
+cp (1000.0 K):  J/kg-K
+Thermal Conductivity (N/A): 23.4 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  K
+Melt Temperature: 1670 K
+density: 7750
+ref:
+https://tpsx.arc.nasa.gov/Material?id=1105
+
+
+
+Steel stainless AISI 632
+Ohter names : 
+    AISI 632
+    AMS 5629
+    AMS 5864
+    ASTM A564 (XM-13)
+    ASTM A693 (XM-13)
+    ASTM A705 (XM-13)
+    DIN 1.4534
+Emissivity (293.15 K):
+Emissivity (1811.11 K):
+cp (293.15 K): 500 J/kg-K
+cp (902.15 K): 114 J/kg-K
+Thermal Conductivity (293.15 K): 16.0 W/m-K (Isotropic)
+Thermal Conductivity (373.15 K): 14.0 W/m-K (Isotropic)
+Thermal Conductivity (1225.15 K): 42.2 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  K
+Melt Temperature: (1670 K)
+density: 7790
+ref:
+https://virgamet.com/1-4532-x8crnimoal1572-15-7ph-ph15-7mo-s15700-aisi-632-stainless-steel
+https://www.steel-grades.com/Steel-Grades/High-Alloy/PH-14-8-Mo.html
+
+
+
+
+/////////////////// Isolators       /////////////////// /////////////////// ///////////////////
+
+
+Strain Isolator Pad (SIP)
+cp (366.667 K): 1340 J/kg-K
+cp (477.778 K): 1400 J/kg-K
+cp (588.889 K): 1440 J/kg-K
+Thermal Conductivity (311.111 K): 0.0407 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (477.778 K): 0.0642 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (588.889 K): 0.0831 W/m-K (Thru-the-Thickness)
+Thermal Conductivity (700.0   K): 0.105  W/m-K (Thru-the-Thickness)
+Multiple Use Temperature Limit: 506 K
+Single Use Temperature Limit: 644 K
+density: 86.5
+ref:
+https://tpsx.arc.nasa.gov/Material?id=11
+2.28 or 4.06 mm thick
+
+4.06 mm thick @ 506 K
+skinMassPerArea = 0.346 
+thermalInsulance = 58.8400961975 m²⋅K/kW     // 4.06/0.0690005670006
+skinSpecificHeatCapacity = 1410.16
+
+Cerachrome-8
+cp (340.556 K): 837 J/kg-K
+cp (780.556 K): 1090 J/kg-K
+Thermal Conductivity (311.111 K): 0.0384 W/m-K (Isotropic) (10132.5 Pa)
+Thermal Conductivity (1644.44 K): 0.577 W/m-K (Isotropic) (10132.5 Pa)
+Single Use Temperature Limit: 1760 K
+density: 128
+ref
+https://tpsx.arc.nasa.gov/Material?id=240
+
+
+Cerachrome-12
+cp (340.556 K): 837 J/kg-K
+cp (780.556 K): 1090 J/kg-K
+Thermal Conductivity (311.111 K): 0.0402 W/m-K (Isotropic) (10132.5 Pa)
+Thermal Conductivity (1644.44 K): 0.419 W/m-K (Isotropic) (10132.5 Pa)
+Single Use Temperature Limit: 1760 K
+density: 192
+ref
+https://tpsx.arc.nasa.gov/Material?id=241
+https://tpsx.arc.nasa.gov/Material?id=1477
+
+
+Cerachrome-24
+cp (340.556 K): 837 J/kg-K
+cp (780.556 K): 1090 J/kg-K
+Thermal Conductivity (311.111 K): 0.0498 W/m-K (Isotropic) (10132.5 Pa)
+Thermal Conductivity (1644.44 K): 0.264 W/m-K (Isotropic) (10132.5 Pa)
+Single Use Temperature Limit: 1760 K
+density: 384
+ref
+https://tpsx.arc.nasa.gov/Material?id=242
+
+
+TG-15000 (4 PCF)
+// guessed based on (3 PCF) & (2 PCF)
+TG-15000 (3 PCF)
+cp (229.445 K): 754 J/kg-K
+cp (450.556 K): 1130 J/kg-K
+Thermal Conductivity (227.778): 0.0242 W/m-K (Isotropic) (@ 101325.0  Pa) (-5)
+Thermal Conductivity (394.444): 0.0403 W/m-K (Isotropic) (@ 101325.0  Pa) (-19)
+Thermal Conductivity (588.889): 0.04755 W/m-K (Isotropic) (@ 101325.0  Pa) (-36.5)
+Thermal Conductivity (227.778): 0.0203 W/m-K (Isotropic) (@   1331.08 Pa) (-10)
+Thermal Conductivity (394.444): 0.0313 W/m-K (Isotropic) (@   1331.08 Pa) (-40)
+Thermal Conductivity (588.889): 0.0350 W/m-K (Isotropic) (@   1331.08 Pa) (-72)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  622 K
+Melt Temperature:  K
+density: 56.065
+
+
+
+TG-15000 (3 PCF)
+cp (229.445 K): 754 J/kg-K
+cp (450.556 K): 1130 J/kg-K
+Thermal Conductivity (227.778): 0.0247 W/m-K (Isotropic) (@ 101325.0  Pa)
+Thermal Conductivity (394.444): 0.0422 W/m-K (Isotropic) (@ 101325.0  Pa)
+Thermal Conductivity (588.889): 0.0512 W/m-K (Isotropic) (@ 101325.0  Pa)
+Thermal Conductivity (227.778): 0.0213 W/m-K (Isotropic) (@   1331.08 Pa)
+Thermal Conductivity (394.444): 0.0353 W/m-K (Isotropic) (@   1331.08 Pa)
+Thermal Conductivity (588.889): 0.0422 W/m-K (Isotropic) (@   1331.08 Pa)
+Thermal Conductivity (227.778): 0.0083 W/m-K (Isotropic) (@     66.5604 Pa)
+Thermal Conductivity (394.444): 0.0118 W/m-K (Isotropic) (@     66.5604 Pa)
+Thermal Conductivity (588.889): 0.0161 W/m-K (Isotropic) (@     66.5604 Pa)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  622 K
+Melt Temperature:  K
+density: 48.1
+ref:
+https://tpsx.arc.nasa.gov/Material?id=231
+
+
+TG-15000 (2 PCF)
+cp (229.445 K): 754 J/kg-K
+cp (450.556 K): 1130 J/kg-K
+Thermal Conductivity (227.778): 0.0253 W/m-K (Isotropic) (@ 101325.0  Pa)
+Thermal Conductivity (394.444): 0.0441 W/m-K (Isotropic) (@ 101325.0  Pa)
+Thermal Conductivity (477.778): 0.0554 W/m-K (Isotropic) (@ 101325.0  Pa)
+Thermal Conductivity (227.778): 0.0102 W/m-K (Isotropic) (@     66.5604 Pa)
+Thermal Conductivity (394.444): 0.0163 W/m-K (Isotropic) (@     66.5604 Pa)
+Thermal Conductivity (588.889): 0.0222 W/m-K (Isotropic) (@     66.5604 Pa)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit:  644 K
+Melt Temperature:  K
+density: 42.0
+ref:
+https://tpsx.arc.nasa.gov/Material?id=232
+
+
+
+/////////////////// Coatings       /////////////////// /////////////////// ///////////////////
+
+
+RCG Coating Reaction Cured Glass (Class 2 Black) 
+Emissivity: (300 K) 0.85
+Emissivity: (350 K) 0.875
+Emissivity: (400 K) 0.879
+Emissivity: (1650.0 K) 0.935
+Emissivity: (1850.0 K) 0.938
+cp (255.556 K): 795 J/kg-K
+cp (950.0 K): 1260 J/kg-K
+cp (1644.44 K): 1540 J/kg-K
+cp (1922.22 K): 1630 J/kg-K
+Thermal Conductivity (255.556 K): 0.843 W/m-K (Isotropic)
+Thermal Conductivity (950.0   K): 1.38 W/m-K (Isotropic)
+Thermal Conductivity (1644.44 K): 1.69 W/m-K (Isotropic)
+Thermal Conductivity (1922.22 K): 2.04 W/m-K (Isotropic)
+Multiple Use Temperature Limit: 1640 K
+Single Use Temperature Limit: 1870 K
+density: 1670
+Use:
+tickness 0.4064 - 0.4572 mm
+
+absorptiveConstant:
+ratio of solar absorptance to emittance  0.7-1.1 from 350K to 395K.
+0.6153 - 0.9625
+ref:
+https://tpsx.arc.nasa.gov/Material?id=7
+https://tpsx.arc.nasa.gov/Material?id=251
+https://ntrs.nasa.gov/api/citations/19930020032/downloads/19930020032.pdf
+https://ntrs.nasa.gov/api/citations/19840002091/downloads/19840002091.pdf
+
+
+RCG Coating Reaction Cured Glass (Class 1 White) 
+absorptiveConstant: 
+ratio of solar absorptance emittance 0.2 - 0.4 from 160 to 330K
+
+Emisivity (922 K) 0.7
+ref:
+https://ntrs.nasa.gov/api/citations/19840002091/downloads/19840002091.pdf
+
+
+
+PCC Coating
+dark gray coating for flexible blanket insulations and other nonvitreous ceramic materials. 
+It may be applied to advanced blankets such as AFRSI, AFRSI-2500, CFBI, and other 
+rigid ceramic substrates which require a high emissivity coating for enhanced radiant properties at elevated temperatures
+on AFRSI-2500 blankets and 3000
+Emissivity: (300.0 K) 0.905
+Emissivity: (1350.0 K) 0.752
+Emissivity: (1600.0 K) 0.741
+Emissivity: (1900.0 K) 0.733
+density: 0.658 kg/m^2
+ref:
+https://tpsx.arc.nasa.gov/Material?id=21
+
+
+DC92 Coating
+ref: https://tpsx.arc.nasa.gov/Material?id=22
+ref: https://tpsx.arc.nasa.gov/Material?id=252
+
+
+C-9 Coating
+Used on TABI Blanket
+Emissivity: (422.222 K) 0.83
+Emissivity: (700.0K) 0.7
+Emissivity: (922.222 K) 0.57
+Emissivity: (1088.89 K) 0.49
+density: 0.658 kg/m^2
+ref:
+https://tpsx.arc.nasa.gov/Material?id=20
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+other links
+HIGH TEMPERATURE INSULATION MATERIALS FOR RERADIATIVE THERMAL PROTECTION SYSTEMS
+https://ntrs.nasa.gov/api/citations/19730004230/downloads/19730004230.pdf
+
+Thermal Certification Tests of Orbiter Thermal Protection System Tiles Coated with KSC Coating Slurries
+https://ntrs.nasa.gov/api/citations/19930020032/downloads/19930020032.pdf
+
+Thermal Protection and Control
+https://ntrs.nasa.gov/api/citations/20140002341/downloads/20140002341.pdf
+    CST-100 backshell will have BRI -18 tiles and FRSIIAFRSI blankets.
+    Dreamchaser bottom of the will have black AETB tiles; however, these will be 17 pound density
+    the leading edge of the wings, nose chine, and body flaps are currently set to be Toughened Unipiece Fibrous Reinforced Oxidation-resistant Composite (TUFROC)

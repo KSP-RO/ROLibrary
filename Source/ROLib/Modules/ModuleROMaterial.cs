@@ -1,10 +1,7 @@
-﻿
-using ferram4;
+﻿using ferram4;
 using FerramAerospaceResearch.FARAeroComponents;
-using ModularFI;
 using ProceduralParts;
 using RealFuels.Tanks;
-using ROLib;
 using WingProcedural;
 using System;
 using System.Collections.Generic;
@@ -13,7 +10,7 @@ using UnityEngine;
 
 namespace ROLib
 {
-    public class ModuleROTPS : PartModule, IPartMassModifier, IPartCostModifier
+    public class ModuleROMaterials : PartModule, IPartMassModifier, IPartCostModifier
     {
         private const string GroupDisplayName = "RO-Thermal_Protection";
         private const string GroupName = "ModuleROTPS";
@@ -33,7 +30,6 @@ namespace ROLib
         public string maxTempDisplay = "";
         [KSPField(guiActiveEditor = true, guiName = "Heat Capacity",  groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string thermalMassDisplay = "";
-        //TODO format compact into a string
         [KSPField(guiActiveEditor = true, guiName = "Thermal Insulance" , groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string thermalInsulanceDisplay = "";
         [KSPField(guiActiveEditor = true, guiName = "Emissivity",  groupName = GroupName, groupDisplayName = GroupDisplayName)]
@@ -60,8 +56,8 @@ namespace ROLib
         private PresetROMatarial presetTPS;
         
         private float tpsCost = 0.0f;
-        private float tpsMass = 0.0f; // t
-        private double tpsSurfaceDensity = 0.0f; // kg/m3  
+        private float tpsMass = 0.0f;
+        private double tpsSurfaceDensity = 0.0f; 
         private double skinIntTransferCoefficient = 0.0;
         private float moduleMass = 0.0f;
         private string ablatorResourceName;
@@ -99,11 +95,14 @@ namespace ROLib
                 }
         }
         
-        // Cant figure out heatConductivity
+        // TODO need detailed implementation
+        //
+        // HeatConductivity seems to be a replacement value for thermal contact resistance in inverse
+        // which then get multltiplied together
         // since heat transfer calculations usualy add them together & don't multiply them, like the game does 
-        // Q = U * A * ΔT           U [kW/(m²·K)]: overall heat transfer coefficient 
-        //                          U coefficient takes thermal conductivity, surface properties, interface conditions into account
-        //                          U = 1 /( 1/k1 + 1/k2 + 1/hc)
+        // flux: Q = U * A * ΔT     U [kW/(m²·K)]: overall heat transfer coefficient 
+        //                          U = 1 /( l1/k1 + l2/k2 + 1/hc) bc. temperatures inside parts are uniform l1&2 get infinitely small
+        //                          U = 1 / hc      in ksp U -> part.heatConductivity * part2.heatConductivity * global mult
         // partThermalData.localIntConduction[kW] += thermalLink.contactArea[m^2] * thermalLink.temperatureDelta[K]
         //                                       * thermalLink.remotePart.heatConductivity[Sqrt(kW/(m²·K))] * part.heatConductivity[Sqrt(kW/(m²·K))]
         //                                       * PhysicsGlobals.ConductionFactor * 10.0
@@ -120,6 +119,7 @@ namespace ROLib
             }
         }
 
+        // TODO need detailed implementation
         private double SkinSkinConductivity {
             get {
                 if (presetTPS.skinSkinConductivity > 0) {
@@ -154,6 +154,7 @@ namespace ROLib
                     radArea =  surfaceAreaPart;
                 }
                 else if (wingProceduralModule is WingProcedural.WingProcedural & fARWingModule != null){
+                    // TODO preciser calculation needed
                     Debug.Log("[ROThermal] get_SurfaceArea deriving from b9wingProceduralModule: ");
                     surfaceArea = (float)fARWingModule.S * 2 + (wingProceduralModule.sharedBaseThicknessRoot + wingProceduralModule.sharedBaseThicknessTip)
                             * Mathf.Atan((wingProceduralModule.sharedBaseWidthRoot + wingProceduralModule.sharedBaseWidthTip) / (float)fARWingModule.b_2_actual);
@@ -175,7 +176,7 @@ namespace ROLib
                     radArea =  surfaceArea;
                 }
                 else if (fARAeroPartModule != null) {
-                    // Inconsistant results in Editor & Flight, returned area of cylinder much closer to a cube
+                    // Inconsistant results in Editor & Flight, returned results for a cylinder are much closer to a cube
                     // Procedural Tank
                     // 3x3 cylinder 42.4m^2 -> surfaceArea = 52.5300 (In Editor) 77.36965 (In Flight)
                     // 3x3x3 cube   54.0m^2 -> surfaceArea = 56.3686 (In Editor) 71.05373 (In Flight)
@@ -192,11 +193,6 @@ namespace ROLib
                             Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule got " + surfaceArea);
                     }
                 }
-                /*else if (fARModuleReference != null ) {
-                    surfaceArea =  (float)fARModuleReference.S * 2;
-                    Debug.Log("[ROThermal] get_SurfaceArea derived from fARModuleReference: " + surfaceArea);
-                    radArea =  surfaceArea;
-                }*/
                 if (radArea > 0.0) {
                     //part.DragCubes.SetPartOcclusion();
                     part.DragCubes.ForceUpdate(false, true, false);
@@ -221,7 +217,7 @@ namespace ROLib
                             continue;
                         child.DragCubes.RequestOcclusionUpdate();
                         child.DragCubes.ForceUpdate(false, true, false);
-                        child.DragCubes.SetPartOcclusion(); // calculate contactArea
+                        child.DragCubes.SetPartOcclusion();
                         str +=  child.srfAttachNode.contactArea + ", ";
                         radArea -= child.srfAttachNode.contactArea;
                     }
@@ -336,7 +332,7 @@ namespace ROLib
                     Fields[nameof(tpsHeightDisplay)].uiControlEditor.onFieldChanged =
                     Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = OnHeightChanged;
 
-                    this.updateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000, SkinHeightMaxVal, 10f, 1f, 0.01f);
+                    this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000, SkinHeightMaxVal, 10f, 1f, 0.01f);
                 }
             } else if (HighLogic.LoadedSceneIsFlight) {
                 if (presetCoreName == "")
@@ -370,7 +366,7 @@ namespace ROLib
             if(HighLogic.LoadedSceneIsEditor) {
                 if (modularPart is ModuleROTank)
                 {
-                    //implement Mount Nose or core variant change reaction
+                    //TODO implement Mount Nose or core variant change update
                     modularPart.Fields[nameof(modularPart.currentDiameter)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
                     modularPart.Fields[nameof(modularPart.currentLength)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
                     modularPart.Fields[nameof(modularPart.currentVScale)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
@@ -405,7 +401,7 @@ namespace ROLib
             }
         }
 
-        // Remove after Debugging as less needed
+        // Remove after Debugging is less needed
         public override void OnUpdate() {
             if (HighLogic.LoadedSceneIsFlight) {
                 if (tick % 500 == 0) {
@@ -441,9 +437,7 @@ namespace ROLib
             Debug.Log($"[ROThermal] OnHeightChanged()  (float)bf.GetValue(this) " + (float)bf.GetValue(this) + " prevHeight " + prevHeight);
             if ((float)bf.GetValue(this) == prevHeight) return;
 
-            // GUI Update
             UpdateHeight();
-
             ApplyThermal();
             UpdateGeometricProperties();
         }
@@ -457,7 +451,7 @@ namespace ROLib
             tpsHeightDisplay = Mathf.Max(tpsHeightDisplay, (float)presetTPS.skinHeightMin * 1000f);
             tpsHeightDisplay = Mathf.Min(tpsHeightDisplay, SkinHeightMaxVal );
             prevHeight = tpsHeightDisplay;
-            this.updateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000f, SkinHeightMaxVal, 10f, 1f, 0.1f);
+            this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000f, SkinHeightMaxVal, 10f, 1f, 0.1f);
         }
 
         public void ApplyCorePreset (string preset) {
@@ -751,24 +745,6 @@ namespace ROLib
             );
         }
 
-        public void ResetPartToOriginal()
-        {
-            //Part prefab = part.partInfo.partPrefab;
-
-            //part.maxTemp = prefab.maxTemp;
-            //part.skinMaxTemp = prefab.skinMaxTemp;
-
-            if (modAblator is null)
-                return;
-
-            ConfigNode[] moduleNodes = part.partInfo.partConfig.GetNodes("MODULE");
-            int i = part.Modules.IndexOf(modAblator);
-            string moduleName = string.Empty;
-            if (i < moduleNodes.Length && moduleNodes[i].TryGetValue("name", ref moduleName) && moduleName == "ModuleAblator")
-            {
-                modAblator.Load(moduleNodes[i]);
-            }
-        }
         public void UpdateCoreForRealfuels()
         {
             List<string> availableMaterialsNamesForFuelTank = new List<string>();
@@ -1001,26 +977,5 @@ namespace ROLib
         public static string FormatThermalMass(double thermalmass) => KSPUtil.PrintSI(thermalmass * 1e3, "J/K", 4);
 
         #endregion Custom Methods
-    }
-
-    public static class Extensions {
-        private static UI_Control GetWidget(PartModule module, string fieldName)
-        {
-            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) return null;
-            BaseField bf = module.Fields[fieldName];
-            return HighLogic.LoadedSceneIsEditor ? bf.uiControlEditor : bf.uiControlFlight;
-        }
-        
-        public static void updateUIFloatEditControl(this PartModule module, string fieldName, float min, float max, float incLarge, float incSmall, float incSlide)
-        {
-            if (GetWidget(module, fieldName) is UI_FloatEdit widget)
-            {
-                widget.minValue = min;
-                widget.maxValue = max;
-                widget.incrementLarge = incLarge;
-                widget.incrementSmall = incSmall;
-                widget.incrementSlide = incSlide;
-            }
-        }
     }
 }

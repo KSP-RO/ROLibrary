@@ -1,0 +1,85 @@
+
+http://astronautix.com/d/dynasoar.html
+
+The internal structure of the X-20A was a truss structure of Rene 41 steel.
+The upper wing, body, and inside fin surfaces were also of Rene 41
+Coated molybdenum was used for the leading edge panels and the lower wing surface
+The nose cap was of zirconium
+
+
+
+
+
+Molybdenum Alloy mo99.5 ti0.5 / Mo 99,3 Ti 0,5 Zr 0,08
+Wing Leading Edges (Body)
+
+https://www.fb-tecno.com/en/prodotti/molybdenum-and-molybdenum-alloys/
+https://tpsx.arc.nasa.gov/Material?id=860
+Melt 2893.15 K
+10150 kg/m3
+
+Thermal conductivity
+a 20°C 126 w/m°C
+a 1000°C 98 w/m°C
+a 1500°C 86 w/m°C
+Spec Heat 305.6364 j/kg-K
+
+
+Nose Cap
+    Chance-Vought concept 
+    shell of National Carbon RT-0029 graphite protected by a silicon carbide coating.
+        C/SiC (Carbon/Silicon-Carbide)
+        
+    further protected by an outer cover of zirconia tile 
+        Zirconium Diboride (ZrB2/SiC)
+        https://tpsx.arc.nasa.gov/Material?id=28
+        density 5560
+        conduct  373.15 K 9,87 w/m-K
+                2273.15 K 6.90 w/m-K
+        Specific Heat 1273.15 K 71.17 J/Kg
+                      2273.15 K 80.6 J/kg-K
+        MeltPoint 3103.15 K        (bades on ZrB2 3245°C  & SiC 2830°C Melting Points )
+
+        
+
+    Boeing Concept
+    shell of zirconia reinforced with platinum wire
+
+
+ref: https://ntrs.nasa.gov/citations/19720063747/
+
+Cooling
+coated refacoory metals & Rene 41
+
+    René 41 was also used to create the outer shell of the Mercury space capsule
+
+
+
+
+
+Q-Fiber felt, density = 48.06 kg/m^3
+https://tpsx.arc.nasa.gov/Material?id=1481
+
+
+Q-Fiber felt, density = 96.12 kg/m^
+https://tpsx.arc.nasa.gov/Material?id=1482
+
+
+nickel alloy rene 41
+https://tpsx.arc.nasa.gov/Material?id=928
+
+
+might be also woth lokkin in
+https://en.wikipedia.org/wiki/Ultra-high_temperature_ceramic
+
+https://tpsx.arc.nasa.gov/MaterialsDatabase?categoryfilter%3D8      // Ultra-high_temperature_ceramic
+https://tpsx.arc.nasa.gov/Material?id=30
+
+https://ntrs.nasa.gov/api/citations/19720063135/downloads/19720063135.pdf
+
+https://ntrs.nasa.gov/api/citations/19720063143/downloads/19720063143.pdf
+
+
+
+
+https://tpsx.arc.nasa.gov/Material?id=26
