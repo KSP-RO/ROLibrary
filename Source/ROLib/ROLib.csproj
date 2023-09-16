@@ -107,6 +107,8 @@
     <Compile Include="ModelDef\ROLModelDefinition.cs" />
     <Compile Include="ModelDef\ROLModelLayout.cs" />
     <Compile Include="ModelDef\ROLModelModule.cs" />
+    <Compile Include="Modules\ModuleROMaterial.cs" />
+    <Compile Include="Modules\PresetROMatarial.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\ModelSelectionGUI.cs" />
     <Compile Include="UI\ModelWindow.cs" />
@@ -121,6 +123,7 @@
     <Compile Include="Utils\ROLModInterop.cs" />
     <Compile Include="Utils\ROLStockInterop.cs" />
     <Compile Include="Utils\ROLUtils.cs" />
+    <Compile Include="Utils\DREHandler.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
