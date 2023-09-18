@@ -132,8 +132,8 @@ namespace ROLib
             node.TryGetValue("skinSpecificHeatCapacityMax", ref skinSpecificHeatCapacityMax);
             node.TryGetValue("thermalInsulanceMax", ref thermalInsulanceMax);
 
-            skinIntTransferCoefficient = 1 / thermalInsulance;
-            skinIntTransferCoefficientMax = 1 / thermalInsulanceMax;
+            skinIntTransferCoefficient = 1.0 / thermalInsulance;
+            skinIntTransferCoefficientMax = 1.0 / thermalInsulanceMax;
 
             if (node.TryGetValue("ablativeResource", ref _ablativeResource))
                 AblativeResource = _ablativeResource;
@@ -188,7 +188,7 @@ namespace ROLib
             if (Initialized && PresetsCore.Count > 0 && PresetsSkin.Count > 0)
                 return;
 
-            var nodes = GameDatabase.Instance.GetConfigNodes("ROMatarial_PRESET");
+            var nodes = GameDatabase.Instance.GetConfigNodes("ROThermal_PRESET");
             string s = string.Empty;
             foreach (var node in nodes)
             {

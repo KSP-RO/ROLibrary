@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace ROLib
 {
+    /// borrowed from ROHeatshields
 	public static class DREHandler
     {
         // add support for maxOperationalTemp

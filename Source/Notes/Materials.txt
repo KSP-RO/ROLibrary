@@ -467,14 +467,15 @@ https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-allo
 
 
 Aluminium Alloy 2024-T6
-Emissivity: (255.556 K) 
-Emissivity: (1811.11 K) 
-cp (200.0 K): 787 J/kg-K
+Emissivity: 
+Emissivity: 
+cp (300.0 K): 875 J/kg-K
+cp (400.0 K): 875 J/kg-K
 cp (600.0 K): 1040 J/kg-K
-Thermal Conductivity (200.0 K): 163 W/m-K (Isotropic)
-Thermal Conductivity (600.01 K): 183 W/m-K (Thru-the-Thickness)
-Multiple Use Temperature Limit:  K
-Single Use Temperature Limit:  K
+Thermal Conductivity (300.0 K): 177 W/m-K (Isotropic)
+Thermal Conductivity (400.01 K): 186 W/m-K (Isotropic)
+Thermal Conductivity (600.01 K): 186 W/m-K (Isotropic)
+Melt Temperature 775 K
 density: 2776
 ref:
 
