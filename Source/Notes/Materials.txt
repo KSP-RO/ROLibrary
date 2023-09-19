@@ -243,7 +243,7 @@ density: 1580
 Purchase Cost: 129000 $/m^2
 Installation Time: 3.72e+05 s/m^2
 Inspection/Repair Time per Flight: 5.43e+03 s/m^2
-Replacement Fraction per Flight: 1.30e-03
+Replacement Fraction per Flight: 1.30e-03y
 Reuse Flight Limit:	33.0 # of flights
 ref:
 https://tpsx.arc.nasa.gov/Material?id=24
@@ -291,7 +291,7 @@ Thermal Conductivity (588.889 K /  10136.2 Pa): 0.0831 W/m-K (Isotropic)
 Thermal Conductivity (700.09  K /  10136.2 Pa): 0.105  W/m-K (Isotropic)
 Multiple Use Temperature Limit: 506 K
 Single Use Temperature Limit: 644 K
-density: 86.5
+density: 86.5 kg/m3
 tickness used: 4.064 mm - 10.16 mm
 Purchase Cost: 1.72e+03 $/m^2
 Installation Time: 2.13e+04 s/m^2
@@ -299,7 +299,7 @@ Inspection/Repair Time per Flight: 3.49e+03 s/m^2
 Replacement Fraction per Flight: 2.80e-02
 Reuse Flight Limit:	0.0 # of flights
 ref:
-
+https://tpsx.arc.nasa.gov/Material?id=18
 
 AFRSI Blanket
 Emissivity: (255.556) 0.87
@@ -316,8 +316,10 @@ Thermal Conductivity ( 950.00 K /  10136.2 Pa): 0.121 W/m-K (Thru-the-Thickness)
 Thermal Conductivity (1088.89 K /  10136.2 Pa): 0.145 W/m-K (Thru-the-Thickness)
 Multiple Use Temperature Limit: 922 K
 Single Use Temperature Limit: 1090 K
+Areal density = Density * thickness + Additive areal weight.
+Nominal thickness of 1.0 inch a min and max shuttle demonstrated thickness of 0.24 and 1.94 inches 
 density: 96.1
-Additive Areal Weight: 1.46	kg/m^2 // Total areal weight = density * thickness + additive areal weight. 
+Additive Areal Weight: 1.46 kg/m^2
 Purchase Cost: 3550 $/m^2
 Installation Time: 2.36e+05 s/m^2
 Inspection/Repair Time per Flight: 3.72e+04 s/m^2
@@ -347,8 +349,9 @@ Thermal Conductivity (1088.89 K /  10136.2 Pa): 0.145 W/m-K (Thru-the-Thickness)
 Thermal Conductivity (1227.78 K /  10136.2 Pa): 0.182 W/m-K (Thru-the-Thickness)
 Multiple Use Temperature Limit: 1310 K
 Single Use Temperature Limit: 1480 K
+Areal density = Density * thickness + Additive areal weight.
 density: 96.1
-Additive Areal Weight: 1.46	kg/m^2 // Total areal weight = density * thickness + additive areal weight. 
+Additive Areal Weight: 1.46 kg/m^2
 Purchase Cost: 3550 $/m^2
 Installation Time: 2.36e+05 s/m^2
 Inspection/Repair Time per Flight: 3.72e+04 s/m^2
@@ -377,8 +380,10 @@ Thermal Conductivity (1088.89 K / 10135.3 Pa): 0.200 W/m-K (Thru-the-Thickness)
 Thermal Conductivity (1366.67 K / 10135.3 Pa): 0.326 W/m-K (Thru-the-Thickness)
 Multiple Use Temperature Limit: 1370 K
 Single Use Temperature Limit: 1640 K
-density: 96.1
-Additive Areal Weight: 1.46	kg/m^2 // Total areal weight = density * thickness + additive areal weight. 
+Areal density = Density * thickness + Additive areal weight.
+Nominal thickness of 1.0 inch and a minimum demonstrated thickness of 0.25 inches. 
+Density: 96.1 kg/m^3 
+Additive Areal Weight: 1.46 kg/m^2
 Purchase Cost: 3550 $/m^2
 Installation Time: 2.36e+05 s/m^2
 Inspection/Repair Time per Flight: 3.72e+04 s/m^2
@@ -457,13 +462,29 @@ cp (1144.26 K): 715.9428 J/kg-K
 Thermal Conductivity (311.111 K): 11.970914776 W/m-K (Isotropic)
 Thermal Conductivity (1144.26 K): 23.653373774 W/m-K (Isotropic)
 Multiple Use Temperature Limit:  K
-Single Use Temperature Limit:  K
-Melt Temperature: (1393 K)
+Single Use Temperature Limit: K
+Melting Range: 1666.13 K - 1700.13 K
 density: 8280
 ref:
 https://tpsx.arc.nasa.gov/Material?id=900
 https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-x-750.pdf
 
+Inconel 601
+Emissivity (588.7 K): 0.895? (X-750)(oxidized surface)
+Emissivity (1366.48 K): 0.925? (X-750)(oxidized surface)
+cp (294.444 K): 428 J/kg-K
+cp (1144.44 K): 678 J/kg-K
+cp (1366.67 K): 737 J/kg-K
+Thermal Conductivity (294.4444 K): 12.1 W/m-K (Isotropic)
+Thermal Conductivity (1144.44 K): 25.6 W/m-K (Isotropic)
+Thermal Conductivity (1366.67 K): 29.2 W/m-K (Isotropic)
+Multiple Use Temperature Limit:  K
+Single Use Temperature Limit: 1030 K
+Meltin Range: 1633.13 K - 1684.13
+density: 8060
+ref: 
+https://tpsx.arc.nasa.gov/Material?id=258
+https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-601.pdf
 
 
 Aluminium Alloy 2024-T6
@@ -516,7 +537,6 @@ cp (297.222 K): 862 J/kg-K
 cp (477.778 K): 955 J/kg-K
 Thermal Conductivity (255.556 K): 119 W/m-K (Isotropic)
 Thermal Conductivity (422.222 K): 142 W/m-K (Isotropic)
-Multiple Use Temperature Limit:  K
 Single Use Temperature Limit:  450K
 density: 2810
 
@@ -535,8 +555,6 @@ Aluminium Alloy 7075-t6 (annealed)
 Emissivity: ?
 cp (? K): 837 J/kg-K
 Thermal Conductivity (?): 163 W/m-K (Isotropic)
-Multiple Use Temperature Limit:  K
-Single Use Temperature Limit:  K
 density: 2800
 usecases:
 The propellant tanks of the S-IC were manufactured from 2219-series aluminum panels, while the interstage, forward skirt, and thrust structure were built from 7075-series aluminum
@@ -554,8 +572,6 @@ cp (200.0 K): 402 J/kg-K
 cp (1000.0 K): 611 J/kg-K
 Thermal Conductivity (200.0 K): 12.6 W/m-K (Isotropic)
 Thermal Conductivity (1000.01 K): 25.4 W/m-K (Isotropic)
-Multiple Use Temperature Limit:  K
-Single Use Temperature Limit:  K
 Melt Temperature: 1670 K
 density: 7900
 ref:
@@ -573,8 +589,6 @@ cp (1000.0 K): 606 J/kg-K
 Thermal Conductivity ( 300.0 K): 15.1 W/m-K (Isotropic)
 Thermal Conductivity ( 600.0 K): 20 W/m-K (Isotropic)
 Thermal Conductivity (1000.0 K): 25.4 W/m-K (Isotropic)
-Multiple Use Temperature Limit:  K
-Single Use Temperature Limit:  K
 Melt Temperature: 1670 K
 density: 8006
 ref:
@@ -588,8 +602,6 @@ Emissivity (1811.11 K):
 cp (N/A K): 431 J/kg-K
 cp (1000.0 K):  J/kg-K
 Thermal Conductivity (N/A): 23.4 W/m-K (Isotropic)
-Multiple Use Temperature Limit:  K
-Single Use Temperature Limit:  K
 Melt Temperature: 1670 K
 density: 7750
 ref:
@@ -613,8 +625,6 @@ cp (902.15 K): 114 J/kg-K
 Thermal Conductivity (293.15 K): 16.0 W/m-K (Isotropic)
 Thermal Conductivity (373.15 K): 14.0 W/m-K (Isotropic)
 Thermal Conductivity (1225.15 K): 42.2 W/m-K (Isotropic)
-Multiple Use Temperature Limit:  K
-Single Use Temperature Limit:  K
 Melt Temperature: (1670 K)
 density: 7790
 ref:
@@ -623,6 +633,33 @@ https://www.steel-grades.com/Steel-Grades/High-Alloy/PH-14-8-Mo.html
 
 
 
+
+
+Molybdenum Alloy mo99.5 ti0.5 / Mo 99,3 Ti 0,5 Zr 0,08
+cp (? K): 305.6364 j/kg-K
+Thermal Conductivity (293.15 K): 126 W/m-K (Isotropic)
+Thermal Conductivity (1273.15 K): 98 W/m-K (Isotropic)
+Thermal Conductivity (1873.15 K): 86 W/m-K (Isotropic)
+Melt Temperature: 2893.15 K
+density: 10150
+ref:
+https://tpsx.arc.nasa.gov/Material?id=860
+https://www.fb-tecno.com/en/prodotti/molybdenum-and-molybdenum-alloys/
+
+
+
+René 41 Nickel alloy 
+cp (? K): 423 j/kg-K
+Thermal Conductivity (? K) 10.3 (Isotropic)
+Thermal Conductivity (422.15 K): 11.5 (Isotropic)
+Thermal Conductivity (1144.15 K): 25.2 (Isotropic)
+high strength in 922.15–1255.15 K
+Melting range 1589.15/1644.15 K
+density: 8230
+ref:
+https://tpsx.arc.nasa.gov/Material?id=928
+https://www.hightempmetals.com/techdata/hitempRene41data.php
+https://en.wikipedia.org/wiki/Ren%C3%A9_41
 
 /////////////////// Isolators       /////////////////// /////////////////// ///////////////////
 
@@ -689,9 +726,9 @@ cp (450.556 K): 1130 J/kg-K
 Thermal Conductivity (227.778): 0.0242 W/m-K (Isotropic) (@ 101325.0  Pa) (-5)
 Thermal Conductivity (394.444): 0.0403 W/m-K (Isotropic) (@ 101325.0  Pa) (-19)
 Thermal Conductivity (588.889): 0.04755 W/m-K (Isotropic) (@ 101325.0  Pa) (-36.5)
-Thermal Conductivity (227.778): 0.0203 W/m-K (Isotropic) (@   1331.08 Pa) (-10)
-Thermal Conductivity (394.444): 0.0313 W/m-K (Isotropic) (@   1331.08 Pa) (-40)
-Thermal Conductivity (588.889): 0.0350 W/m-K (Isotropic) (@   1331.08 Pa) (-72)
+Thermal Conductivity (227.778): 0.0203 W/m-K (Isotropic) (@    1331.08 Pa) (-10)
+Thermal Conductivity (394.444): 0.0313 W/m-K (Isotropic) (@    1331.08 Pa) (-40)
+Thermal Conductivity (588.889): 0.0350 W/m-K (Isotropic) (@    1331.08 Pa) (-72)
 Multiple Use Temperature Limit:  K
 Single Use Temperature Limit:  622 K
 Melt Temperature:  K
@@ -736,6 +773,44 @@ ref:
 https://tpsx.arc.nasa.gov/Material?id=232
 
 
+
+Q-Fiber felt 48.06 kg/m^3
+cp (388.888 K):  845.7 J/kg-K
+cp (500.000 K):  975.5 J/kg-K
+cp (722.222 K): 1117.9 J/kg-K
+cp (833.333 K): 1147.2 J/kg-K
+cp (944.444 K): 1172.3 J/kg-K
+cp (1166.66 K): 1189.1 J/kg-K
+Thermal Conductivity (331.495): 0.0355 W/m-K (Isotropic) (@ 13236.7  Pa)
+Thermal Conductivity (723.096): 0.0458 W/m-K (Isotropic) (@ 13383.3  Pa)
+Thermal Conductivity (1114.70): 0.0592 W/m-K (Isotropic) (@ 13316.7  Pa)
+Thermal Conductivity (1513.06): 0.0750 W/m-K (Isotropic) (@ 13343.3  Pa)
+Thermal Conductivity (1909.35): 0.0932 W/m-K (Isotropic) (@ 13330.0  Pa)
+Thermal Conductivity (2181.00): 0.107  W/m-K (Isotropic) (@ 13303.3  Pa)
+Thermal Conductivity (2447.96): 0.123  W/m-K (Isotropic) (@ 13370.0  Pa)
+TEMPERATURE Upper Limit: 2300°F 1513.15 K
+TEMPERATURE Continuous Service: 1255.15 K
+ref:
+https://tpsx.arc.nasa.gov/Material?id=1481
+https://ntrs.nasa.gov/api/citations/20000062016/downloads/20000062016.pdf
+
+Q-Fiber felt 96.12 kg/m^3
+Thermal Conductivity (327.071): 0.0342 W/m-K (Isotropic) (@ 99708.4  Pa)
+Thermal Conductivity (1502.66): 0.0596 W/m-K (Isotropic) (@ 99708.4  Pa)
+Thermal Conductivity (1898.68): 0.0707 W/m-K (Isotropic) (@ 99708.4  Pa)
+Thermal Conductivity (2162.78): 0.0791 W/m-K (Isotropic) (@ 99708.4  Pa)
+Thermal Conductivity (330.454): 0.0325 W/m-K (Isotropic) (@ 13236.7  Pa)
+Thermal Conductivity (716.070): 0.0383 W/m-K (Isotropic) (@ 13383.3  Pa)
+Thermal Conductivity (1109.23): 0.0464 W/m-K (Isotropic) (@ 13316.7  Pa)
+Thermal Conductivity (1503.96): 0.0556 W/m-K (Isotropic) (@ 13343.3  Pa)
+Thermal Conductivity (1899.72): 0.0659 W/m-K (Isotropic) (@ 13330.0  Pa)
+Thermal Conductivity (2163.56): 0.0738 W/m-K (Isotropic) (@ 13303.3  Pa)
+Thermal Conductivity (2429.75): 0.0824 W/m-K (Isotropic) (@ 13370.0  Pa)
+TEMPERATURE Upper Limit: 2300°F (1260°C)
+TEMPERATURE Continuous Service: 1800°F (982°C)
+ref:
+https://tpsx.arc.nasa.gov/Material?id=1482
+https://www.jm.com/content/dam/jm/global/en/oem/aerospace/q-fiber-felt/JM_Q_Fiber_Data_Sheet.pdf
 
 /////////////////// Coatings       /////////////////// /////////////////// ///////////////////
 

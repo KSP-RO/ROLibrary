@@ -72,7 +72,7 @@ namespace ROLib
         [Persistent] public string _unitsName;
         [Persistent] public double _nominalAmountRecip;
 
-        [SerializeField] public string[] restrictors = new string[] { "default" };
+        [SerializeField] public string[] restrictors = new string[] { };
 
         public string AblativeResource;
         public double? LossExp;
@@ -115,7 +115,7 @@ namespace ROLib
             node.TryGetValue("skinMaxTemp", ref skinMaxTempOverride);
             node.TryGetValue("specificHeatCapacity", ref specificHeatCapacity);
 
-            node.TryGetValue("thermalConductivity", ref thermalConductivity);
+            node.TryGetValue("thermalContactConductivity", ref thermalConductivity);
             node.TryGetValue("emissiveConstant", ref emissiveConstantOverride);
             node.TryGetValue("absorptiveConstant", ref absorptiveConstant);
             node.TryGetValue("skinSkinConductivity", ref skinSkinConductivity);

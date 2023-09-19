@@ -44,6 +44,9 @@ namespace ROLib
         [KSPField(guiActiveEditor = true, guiName = "Skin Density", guiFormat = "F3", guiUnits = "kg/m²",  groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public float surfaceDensityDisplay = 0.0f;
 
+        [KSPField(isPersistant = true, guiName = "Max Temp", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
+        public string FlightDisplay = "";
+
         #endregion KSPFields
 
         #region Private Variables
@@ -68,9 +71,9 @@ namespace ROLib
         private bool onLoadFiredInEditor;
         private double tick = 470.0;
         private float prevHeight = -10.001f;
-        private double heatConductivityMult = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
-        private double SkinInternalConductivityMult = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinInternalConductionFactor * 0.5);
-        private double SkinSkinConductivityMult = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
+        private double heatConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
+        private double SkinInternalConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinInternalConductionFactor * 0.5);
+        private double SkinSkinConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double absorptiveConstantOrig;
         
         [SerializeField] private string[] availablePresetNamesCore = new string[] { };
@@ -83,30 +86,19 @@ namespace ROLib
         // since heat transfer calculations usualy add them together & don't multiply them, like the game does 
         // flux: Q = U * A * ΔT     U [kW/(m²·K)]: overall heat transfer coefficient 
         //                          U = 1 /( l1/k1 + l2/k2 + 1/hc) bc. temperatures inside parts are uniform l1&2 get infinitely small
-        //                          U = 1 / hc      in ksp U -> part.heatConductivity * part2.heatConductivity * global mult
+        //                          U = hc      in ksp U -> part.heatConductivity * part2.heatConductivity * global mult
+        //                          Al->Al@1atm ~2200 hc
         // partThermalData.localIntConduction[kW] += thermalLink.contactArea[m^2] * thermalLink.temperatureDelta[K]
         //                                       * thermalLink.remotePart.heatConductivity[Sqrt(kW/(m²·K))] * part.heatConductivity[Sqrt(kW/(m²·K))]
         //                                       * PhysicsGlobals.ConductionFactor * 10.0
-        private double HeatConductivity {
-            get {
-                return part.partInfo.partPrefab.heatConductivity; // not corectly implemented yet
-                if (presetTPS.thermalConductivity > 0) {
-                    return presetTPS.thermalConductivity * heatConductivityMult;
-                } else if (presetCore.thermalConductivity > 0 ) {
-                    return presetCore.thermalConductivity * heatConductivityMult;
-                } else {
-                    return part.partInfo.partPrefab.heatConductivity;
-                };
-            }
-        }
 
         // TODO need detailed implementation
         private double SkinSkinConductivity {
             get {
                 if (presetTPS.skinSkinConductivity > 0) {
-                    return presetTPS.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityMult;
+                    return presetTPS.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDiv;
                 } else if (presetCore.skinSkinConductivity > 0 ) {
-                    return presetCore.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityMult;
+                    return presetCore.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDiv;
                 } else {
                     return part.partInfo.partPrefab.skinSkinConductionMult;
                 }
@@ -120,6 +112,7 @@ namespace ROLib
         [KSPField] public float surfaceArea = 0.0f; // m2
         [Persistent] public string coreCfg = "";
         [Persistent] public string skinCfg = "";
+        [Persistent] public float skinHeightCfg = -1.0f;
         public float TPSAreaCost => presetTPS?.costPerArea ?? 1.0f;
         public float TPSAreaMult => presetTPS?.heatShieldAreaMult ?? 1.0f;
 
@@ -244,8 +237,6 @@ namespace ROLib
             get {
                 if (presetTPS.skinHeightMax > 0.0f) {
                     return (float)presetTPS.skinHeightMax * 1000f;
-                } else if (presetTPS.skinHeightMin > 0.0f) {
-                    return (float)presetTPS.skinHeightMin * 1000f;
                 }
                 return 0;
             }
@@ -273,10 +264,9 @@ namespace ROLib
         public override void OnLoad(ConfigNode node)
         {
             onLoadFiredInEditor = HighLogic.LoadedSceneIsEditor;
-
-            heatConductivityMult = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
-            SkinInternalConductivityMult = heatConductivityMult / ( PhysicsGlobals.SkinInternalConductionFactor * 0.5);
-            SkinSkinConductivityMult = heatConductivityMult / (PhysicsGlobals.SkinSkinConductionFactor);
+            heatConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
+            SkinInternalConductivityDiv = heatConductivityDiv / ( PhysicsGlobals.SkinInternalConductionFactor * 0.5);
+            SkinSkinConductivityDiv = heatConductivityDiv / PhysicsGlobals.SkinSkinConductionFactor;
 
             Debug.Log("[ROThermal] " + part.name + " OnLoad() LoadedScene is " + HighLogic.LoadedScene);
             node.TryGetValue("TPSSurfaceArea", ref surfaceAreaPart);
@@ -291,7 +281,12 @@ namespace ROLib
 
             node.TryGetValue("core", ref coreCfg);
             node.TryGetValue("skin", ref skinCfg);
+            node.TryGetValue("skinHeight", ref skinHeightCfg);
+
+            ensurePresetIsInList(ref availablePresetNamesCore, coreCfg);
+            ensurePresetIsInList(ref availablePresetNamesSkin, skinCfg);
         }
+
         public override void OnStart(StartState state)
         {
             Fields[nameof(presetCoreName)].guiActiveEditor = false;
@@ -318,7 +313,10 @@ namespace ROLib
                         PresetCore = coreCfg;
                     else
                         PresetCore = "default";
-                }                  
+                }
+                else {
+                    PresetCore = presetCoreName;
+                }              
 
                 Fields[nameof(presetCoreName)].uiControlEditor.onFieldChanged = 
                 Fields[nameof(presetCoreName)].uiControlEditor.onSymmetryFieldChanged =
@@ -328,6 +326,7 @@ namespace ROLib
                 {
                     EnsureBestAvailableConfigSelected();
                 }*/
+                
 
                 if (availablePresetNamesSkin.Length > 0)
                 {
@@ -337,7 +336,6 @@ namespace ROLib
                     string[] unlockedPresetsName = RP1Found ? availablePresetNamesSkin : GetUnlockedPresets(availablePresetNamesSkin);
                     UpdatePresetsList(unlockedPresetsName, PresetType.Skin);
                 }
-
                 if (presetSkinName == "")
                 {
                     if (skinCfg != "")
@@ -345,15 +343,17 @@ namespace ROLib
                     else
                         PresetTPS = "None";
                 }
+                else {
+                    PresetTPS = presetSkinName;
+                } 
                 
                 Fields[nameof(presetSkinName)].uiControlEditor.onFieldChanged =
                 Fields[nameof(presetSkinName)].uiControlEditor.onSymmetryFieldChanged =
-                    (bf, ob) => ApplySkinPreset(presetSkinName);
-
+                    (bf, ob) => ApplySkinPreset(presetSkinName, true);
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onFieldChanged =
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = OnHeightChanged;
-
-                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000, SkinHeightMaxVal, 10f, 1f, 0.01f);
+                
+                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000f, SkinHeightMaxVal, 10f, 1f, 0.01f);
             } 
             else if (HighLogic.LoadedSceneIsFlight) {
                 if (presetCoreName == "")
@@ -417,24 +417,16 @@ namespace ROLib
                 } else {
                     ApplyCorePreset(presetCoreName);
                 }
-                ApplySkinPreset(presetSkinName);
+                ApplySkinPreset(presetSkinName, false);
             }
             
 
             if (HighLogic.LoadedSceneIsFlight) {
                 ApplyCorePreset(presetCoreName);
-                ApplySkinPreset(presetSkinName);
+                ApplySkinPreset(presetSkinName, false);
             }
-        }
-
-        // Remove after Debugging is less needed
-        public override void OnUpdate() {
-            if (HighLogic.LoadedSceneIsFlight) {
-                if (tick % 500 == 0) {
-                    DebugLog();
-                }
-                tick ++;
-            }
+            if (HighLogic.LoadedSceneIsFlight)
+                DebugLog();
         }
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
@@ -478,6 +470,9 @@ namespace ROLib
                     Debug.LogWarning($"[ROThermal] Warning Preset "+ presetTPS.name + " skinHeightMax lower then skinHeightMin");
                     tpsHeightDisplay = heightMin;
                 }
+                else if (presetSkinName == skinCfg & skinHeightCfg > 0.0f) {
+                    tpsHeightDisplay = Mathf.Clamp(skinHeightCfg, heightMin, heightMax);
+                }
                 else {
                     tpsHeightDisplay = (float)Math.Round((double)((heightMax - heightMin) * 0.75f + heightMin), 1);
                 }
@@ -511,9 +506,9 @@ namespace ROLib
             Debug.Log($"[ROThermal] loaded preset {PresetCore} for part {part.name}");     
             UpdateGeometricProperties();
         }
-        public void ApplySkinPreset (string preset) {
+        public void ApplySkinPreset (string preset, bool skinNew) {
             PresetTPS = preset;
-            UpdateHeight(true);
+            UpdateHeight(skinNew);
             ApplyThermal();
 
             // update ModuleAblator parameters, if present and used
@@ -598,9 +593,15 @@ namespace ROLib
         //
         {
             Debug.Log($"[ROThermal] ApplyThermal() " );
+
             // heatConductivity
-            part.heatConductivity = HeatConductivity;
-            part.skinSkinConductionMult = SkinSkinConductivity;
+            if (presetTPS.thermalConductivity > 0) {
+                part.heatConductivity =presetTPS.thermalConductivity * heatConductivityDiv;
+            } else if (presetCore.thermalConductivity > 0 ) {
+                part.heatConductivity =presetCore.thermalConductivity * heatConductivityDiv;
+            } else {
+                part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
+            };
 
             if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0) 
             {
@@ -613,7 +614,7 @@ namespace ROLib
                 part.skinThermalMassModifier = ((presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) * heightfactor + presetTPS.skinSpecificHeatCapacity)
                                                 / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
                 skinIntTransferCoefficient = (presetTPS.skinIntTransferCoefficientMax - presetTPS.skinIntTransferCoefficient) * heightfactor + presetTPS.skinIntTransferCoefficient;
-                part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityMult / part.heatConductivity ;
+                part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity ;
             } 
             else 
             {
@@ -639,15 +640,16 @@ namespace ROLib
                 // skinIntTransferCoefficient
                 if (presetTPS.skinIntTransferCoefficient != double.PositiveInfinity | presetTPS.skinIntTransferCoefficient  > 0.0) {
                     skinIntTransferCoefficient = presetTPS.skinIntTransferCoefficient;
-                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityMult / part.heatConductivity;
+                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity;
                 } else if (presetCore.skinIntTransferCoefficient > 0.0 ) {
                     skinIntTransferCoefficient = presetCore.skinIntTransferCoefficient;
-                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityMult / part.heatConductivity;
+                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity;
                 } else {
                     part.skinInternalConductionMult = part.partInfo.partPrefab.skinInternalConductionMult;
-                    skinIntTransferCoefficient = part.partInfo.partPrefab.skinInternalConductionMult / SkinInternalConductivityMult * part.heatConductivity;
+                    skinIntTransferCoefficient = part.partInfo.partPrefab.skinInternalConductionMult / SkinInternalConductivityDiv * part.heatConductivity;
                 }
             }
+            part.skinSkinConductionMult = part.skinInternalConductionMult;
 
 
             // skinMaxTempOverride
@@ -740,7 +742,10 @@ namespace ROLib
             emissiveConstantDisplay = part.emissiveConstant.ToString("F2");
             massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(part.mass + part.GetResourceMass());
             surfaceDensityDisplay = (float)tpsSurfaceDensity;
-            DebugLog();
+
+            FlightDisplay = "" + part.skinMaxTemp + "/" + part.maxTemp + "\nSkin: " + PresetTPS  + " " + tpsHeightDisplay + "mm\nCore: " + PresetCore ;
+            if (HighLogic.LoadedSceneIsEditor)
+                DebugLog();
         }
 
         public void DebugLog()
@@ -771,7 +776,7 @@ namespace ROLib
                     + "             Module Skin: " + skinThermalMassModifier + ", Core: "  + presetCore.specificHeatCapacity + "\n"
                     + "skinMassPerArea Part" + part.skinMassPerArea + ", Module " + tpsSurfaceDensity + "\n"
                     + "ConductionMult Part: Internal " + part.skinInternalConductionMult + ", SkintoSkin " + part.skinSkinConductionMult + ", Conductivity " + part.heatConductivity + "\n"
-                    + "             Module: Internal " + skinIntTransferCoefficient * SkinInternalConductivityMult / part.heatConductivity + ", Skin to Skin " 
+                    + "             Module: Internal " + skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity + ", Skin to Skin " 
                                         + presetTPS.skinSkinConductivity + ", Conductivity " + presetCore.thermalConductivity + "\n"
                     + "emissiveConstant part " + part.emissiveConstant + ",    preset" + presetTPS.emissiveConstantOverride + "\n"
                     + "ThermalMass Part: Skin: " + FormatThermalMass((float)part.skinThermalMass) + " / Core: " + FormatThermalMass((float)part.thermalMass) + "\n"
@@ -786,18 +791,24 @@ namespace ROLib
         public void UpdateCoreForRealfuels()
         {
             List<string> availableMaterialsNamesForFuelTank = new List<string>();
-            string str = "";
+            string logStr = "";
             foreach (string name in availablePresetNamesCore) {
-                if (PresetROMatarial.PresetsCore[name].restrictors.Contains(moduleFuelTanks.type)){
+                if (PresetROMatarial.PresetsCore.TryGetValue(name, out PresetROMatarial preset)) {
+                    if (preset.restrictors.Contains(moduleFuelTanks.type)){
                     availableMaterialsNamesForFuelTank.Add(name);
-                    str += name + ",";
+                    logStr += name + ", ";
+                    }
                 }
+                else {
+                    Debug.LogWarning($"[ROThermal] preset \"{name}\" in corePresets not found");
+                }
+                
             }
             if (availableMaterialsNamesForFuelTank.Any()) {
                 PresetCore = availableMaterialsNamesForFuelTank[0];
                 string[] strList = availableMaterialsNamesForFuelTank.ToArray();
                 UpdatePresetsList(strList, PresetType.Core);
-                Debug.Log("[ROThermal] UpdateFuelTankCore() " + moduleFuelTanks.type + " found in " + str 
+                Debug.Log("[ROThermal] UpdateFuelTankCore() " + moduleFuelTanks.type + " found in " + logStr 
                             + "\n\r presetCoreName set as " + availableMaterialsNamesForFuelTank[0]);
             } else {
                 Debug.Log("[ROThermal] No fitting PresetROMatarial for " + moduleFuelTanks.type + " found in " + part.name);   
@@ -961,6 +972,15 @@ namespace ROLib
             }
 
             return res;
+        }
+
+        void ensurePresetIsInList (ref string [] list, string preset) {
+            if(!list.Contains(preset))
+            {
+                int i = list.Length;
+                Array.Resize(ref list, i + 1);
+                list[i] = preset;
+            }
         }
 
         /// <summary>

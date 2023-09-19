@@ -40,22 +40,23 @@ Nose Cap
                       2273.15 K 80.6 J/kg-K
         MeltPoint 3103.15 K        (bades on ZrB2 3245°C  & SiC 2830°C Melting Points )
 
-        
-
     Boeing Concept
     shell of zirconia reinforced with platinum wire
 
 
 ref: https://ntrs.nasa.gov/citations/19720063747/
+https://doi.org/10.2514/6.1985-834
 
-Cooling
+
 coated refacoory metals & Rene 41
 
     René 41 was also used to create the outer shell of the Mercury space capsule
 
+DYNA-SOAR-GLIDER FLIGHT-ENVELOPE STRUCTURAL PARAMETERS
+https://ntrs.nasa.gov/api/citations/19720063141/downloads/19720063141.pdf
 
-
-
+HOT-GAS TESTS FOR DYNA-SOAR STRUCTURES AND MATERIALS DEVELOPMENent
+https://ntrs.nasa.gov/api/citations/19720063145/downloads/19720063145.pdf
 
 Q-Fiber felt, density = 48.06 kg/m^3
 https://tpsx.arc.nasa.gov/Material?id=1481
