@@ -69,15 +69,16 @@ namespace ROLib
         private string ablatorResourceName;
         private string outputResourceName;
         private bool onLoadFiredInEditor;
-        private double tick = 470.0;
+        private bool ignoreSurfaceAttach = true; // ignore all surface attached parts/childern when subtracting surface area
+        private string[] ignoredNodes = new string[] {}; // ignored Nodes when subtracting surface area
         private float prevHeight = -10.001f;
         private double heatConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
         private double SkinInternalConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinInternalConductionFactor * 0.5);
         private double SkinSkinConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double absorptiveConstantOrig;
         
-        [SerializeField] private string[] availablePresetNamesCore = new string[] { };
-        [SerializeField] private string[] availablePresetNamesSkin = new string[] { };
+        [SerializeField] private string[] availablePresetNamesCore = new string[] {};
+        [SerializeField] private string[] availablePresetNamesSkin = new string[] {};
         
         // TODO need detailed implementation
         //
@@ -154,7 +155,8 @@ namespace ROLib
                     Debug.Log("[ROThermal] get_SurfaceArea derived from SurfaceAreaPart Entry: " + surfaceAreaPart);
                     radArea =  surfaceAreaPart;
                 }
-                else if (wingProceduralModule is WingProcedural.WingProcedural & fARWingModule != null){
+                else if (wingProceduralModule is WingProcedural.WingProcedural & fARWingModule != null)
+                {
                     // TODO preciser calculation needed
                     Debug.Log("[ROThermal] get_SurfaceArea deriving from b9wingProceduralModule: ");
                     surfaceArea = (float)fARWingModule.S * 2 + (wingProceduralModule.sharedBaseThicknessRoot + wingProceduralModule.sharedBaseThicknessTip)
@@ -176,16 +178,20 @@ namespace ROLib
                     Debug.Log("[ROThermal] get_SurfaceArea derived from ProceduralPart: " + surfaceArea);
                     radArea =  surfaceArea;
                 }
-                else if (fARAeroPartModule != null) {
+                else if (fARAeroPartModule != null) 
+                {
                     // Inconsistant results in Editor & Flight, returned results for a cylinder are much closer to a cube
                     // Procedural Tank
                     // 3x3 cylinder 42.4m^2 -> surfaceArea = 52.5300 (In Editor) 77.36965 (In Flight)
                     // 3x3x3 cube   54.0m^2 -> surfaceArea = 56.3686 (In Editor) 71.05373 (In Flight)
                     surfaceArea = (float)(fARAeroPartModule?.ProjectedAreas.totalArea ?? 0.0f);
-                    if (surfaceArea > 0.0) {
+                    if (surfaceArea > 0.0) 
+                    {
                         Debug.Log("[ROThermal] get_SurfaceArea derived from fARAeroPartModule: " + surfaceArea);
                         radArea =  surfaceArea;
-                    } else {
+                    } 
+                    else 
+                    {
                         if (fARAeroPartModule?.ProjectedAreas == null)
                             Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule ProjectedAreas = null ");
                         else if (fARAeroPartModule?.ProjectedAreas.totalArea == null)
@@ -194,13 +200,17 @@ namespace ROLib
                             Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule got " + surfaceArea);
                     }
                 }
-                if (radArea > 0.0) {
+
+                /// decrease surface area based on contact area of attached nodes & surface attached parts
+                if (radArea > 0.0) 
+                {
                     //part.DragCubes.SetPartOcclusion();
                     part.DragCubes.ForceUpdate(false, true, false);
                     Debug.Log($"[ROThermal] part.DragCubes.SetPartOcclusion() ");
                     string str = $"[ROThermal] get_SurfaceArea Surface Area: " + radArea + " coverd skin: attachNodes ";
-                    foreach (AttachNode nodeAttach in part.attachNodes) {
-                        if (nodeAttach.attachedPart == null)
+                    foreach (AttachNode nodeAttach in part.attachNodes) 
+                    {
+                        if (nodeAttach.attachedPart == null | ignoredNodes.Contains(nodeAttach.id))
                             continue;
                         nodeAttach.attachedPart.DragCubes.ForceUpdate(false, true, false);
                         radArea -= nodeAttach.contactArea;
@@ -211,24 +221,26 @@ namespace ROLib
                     Debug.Log($"[ROThermal] part.srfAttachNode?.attachedPart.DragCubes.SetPartOcclusion() ");
                     str +=  "srfAttachNode " + part.srfAttachNode.contactArea + ", ";
                     radArea -= part.srfAttachNode?.contactArea ?? 0.0f;
-                    str +=  "children ";
-                    Debug.Log($"[ROThermal] part.srfAttachNode.contactArea ");
-                    foreach (Part child in part.children) {
-                        if (child == null)
-                            continue;
-                        child.DragCubes.RequestOcclusionUpdate();
-                        child.DragCubes.ForceUpdate(false, true, false);
-                        child.DragCubes.SetPartOcclusion();
-                        str +=  child.srfAttachNode.contactArea + ", ";
-                        radArea -= child.srfAttachNode.contactArea;
+                    if (!ignoreSurfaceAttach)
+                    {   
+                        str +=  "children ";
+                        Debug.Log($"[ROThermal] part.srfAttachNode.contactArea ");
+                        foreach (Part child in part.children) 
+                        {
+                            if (child == null)
+                                continue;
+                            child.DragCubes.RequestOcclusionUpdate();
+                            child.DragCubes.ForceUpdate(false, true, false);
+                            child.DragCubes.SetPartOcclusion();
+                            str +=  child.srfAttachNode.contactArea + ", ";
+                            radArea -= child.srfAttachNode.contactArea;
+                        }
                     }
-                    Debug.Log($"part.children ");
                     Debug.Log(str + "  Result: " +  radArea);
-                    if (radArea > 0.0)
-                        return radArea;
                 }
-
-                Debug.LogWarning("[ROThermal] get_SurfaceArea failed: ");
+                if (radArea > 0.0)
+                    return radArea;
+                Debug.LogWarning("[ROThermal] get_SurfaceArea failed: Area=" + radArea);
                 return 0f;
             }
         }
@@ -278,6 +290,8 @@ namespace ROLib
                 Debug.Log("[ROThermal] available presetsCore loaded");
             if (node.TryGetValue("skinPresets", ref availablePresetNamesSkin))
                 Debug.Log("[ROThermal] available presetsSkin loaded");  
+            node.TryGetValue("ignoreNodes", ref ignoredNodes);
+            node.TryGetValue("ignoreSurfaceAttach", ref ignoreSurfaceAttach);
 
             node.TryGetValue("core", ref coreCfg);
             node.TryGetValue("skin", ref skinCfg);
