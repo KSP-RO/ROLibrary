@@ -273,6 +273,16 @@ https://tpsx.arc.nasa.gov/Material?id=25
 
 
 
+Zirconia / zirconium oxide (zro2 96 cao 6 91 d)
+cp (? K): 456
+Thermal Conductivity (? K): 1.59
+Density 5080
+ref:
+
+
+// ON Dyna-Soar
+// Paper honeycomb, reinforced with Elmer’s Glu filled with a mix of zirconia powder with binders, internal lubricants, and wetting agents.
+
 /////////////////// Blanket       /////////////////// /////////////////// ///////////////////
 
 
@@ -788,7 +798,7 @@ Thermal Conductivity (1513.06): 0.0750 W/m-K (Isotropic) (@ 13343.3  Pa)
 Thermal Conductivity (1909.35): 0.0932 W/m-K (Isotropic) (@ 13330.0  Pa)
 Thermal Conductivity (2181.00): 0.107  W/m-K (Isotropic) (@ 13303.3  Pa)
 Thermal Conductivity (2447.96): 0.123  W/m-K (Isotropic) (@ 13370.0  Pa)
-TEMPERATURE Upper Limit: 2300°F 1513.15 K
+TEMPERATURE Upper Limit:  1513.15 K
 TEMPERATURE Continuous Service: 1255.15 K
 ref:
 https://tpsx.arc.nasa.gov/Material?id=1481
@@ -806,8 +816,8 @@ Thermal Conductivity (1503.96): 0.0556 W/m-K (Isotropic) (@ 13343.3  Pa)
 Thermal Conductivity (1899.72): 0.0659 W/m-K (Isotropic) (@ 13330.0  Pa)
 Thermal Conductivity (2163.56): 0.0738 W/m-K (Isotropic) (@ 13303.3  Pa)
 Thermal Conductivity (2429.75): 0.0824 W/m-K (Isotropic) (@ 13370.0  Pa)
-TEMPERATURE Upper Limit: 2300°F (1260°C)
-TEMPERATURE Continuous Service: 1800°F (982°C)
+TEMPERATURE Upper Limit: 1533 K
+TEMPERATURE Continuous Service: 1255 K
 ref:
 https://tpsx.arc.nasa.gov/Material?id=1482
 https://www.jm.com/content/dam/jm/global/en/oem/aerospace/q-fiber-felt/JM_Q_Fiber_Data_Sheet.pdf

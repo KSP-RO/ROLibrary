@@ -1,56 +1,68 @@
 
-http://astronautix.com/d/dynasoar.html
+Fuselage / Wing
+    "On the upper wing surface and upper fuselage, where temperatures were no higher than 2,000°F, the thermal-protection panels were also of Rene 41 rather than of a refractory"
+    "For the wing undersurface, and for other areas that were hotter than 2,000ºF, designers specified an insulated structure"
+
+
+    Insulation “pre-shrunk” Q-felt 
+    "density no greater than 6.2 pounds per cubic foot, one-tenth that of water. In addition, it withstood temperatures as high as 3,000°F. (1922.039 K)"
+
+
+Nose Vought variant
+    Layer 1 & 2:
+    "The final Vought design used a monolithic shell of siliconized graphite that was
+    covered over its full surface by zirconia tiles held in place using thick zirconia pins."
+    "siliconized carbon coated carbon graphite cap with an insulating layer of a temperature-resistant ceramic covering Zirconia"
+
+    Layer 3:
+    "A heat shield stood behind the graphite, fabricated as a thick disk-shaped
+    container made of coated TZM sheet metal and filled with Q-felt"
+
+    The nose cap attached to the vehicle with a forged ring and clamp that also were of coated TZM.
+
+Nose Boeing
+    Layer 1
+    "The Boeing concept used a monolithic zirconia nose cap that was reinforced
+    against cracking with two screens of platinum-rhodium wire."
+
+    Layer 2
+    "Like its counterpart from Vought, this design also installed a heat shield that 
+    used Q-felt insulation installed a heat shield that used Q-felt insulation"
+
+https://history.nasa.gov/sp4232-part2.pdf
+
+
+
 
 The internal structure of the X-20A was a truss structure of Rene 41 steel.
 The upper wing, body, and inside fin surfaces were also of Rene 41
 Coated molybdenum was used for the leading edge panels and the lower wing surface
 The nose cap was of zirconium
+http://astronautix.com/d/dynasoar.html
 
-
-
-
-
-Molybdenum Alloy mo99.5 ti0.5 / Mo 99,3 Ti 0,5 Zr 0,08
-Wing Leading Edges (Body)
-
-https://www.fb-tecno.com/en/prodotti/molybdenum-and-molybdenum-alloys/
-https://tpsx.arc.nasa.gov/Material?id=860
-Melt 2893.15 K
-10150 kg/m3
-
-Thermal conductivity
-a 20°C 126 w/m°C
-a 1000°C 98 w/m°C
-a 1500°C 86 w/m°C
-Spec Heat 305.6364 j/kg-K
 
 
 Nose Cap
+    Max 2422.039 K
+
     Chance-Vought concept 
     shell of National Carbon RT-0029 graphite protected by a silicon carbide coating.
         C/SiC (Carbon/Silicon-Carbide)
         
     further protected by an outer cover of zirconia tile 
-        Zirconium Diboride (ZrB2/SiC)
-        https://tpsx.arc.nasa.gov/Material?id=28
-        density 5560
-        conduct  373.15 K 9,87 w/m-K
-                2273.15 K 6.90 w/m-K
-        Specific Heat 1273.15 K 71.17 J/Kg
-                      2273.15 K 80.6 J/kg-K
-        MeltPoint 3103.15 K        (bades on ZrB2 3245°C  & SiC 2830°C Melting Points )
 
     Boeing Concept
     shell of zirconia reinforced with platinum wire
-
-
 ref: https://ntrs.nasa.gov/citations/19720063747/
 https://doi.org/10.2514/6.1985-834
 
 
-coated refacoory metals & Rene 41
 
-    René 41 was also used to create the outer shell of the Mercury space capsule
+René 41 was also used to create the outer shell of the Mercury space capsule
+
+
+
+Other Material:
 
 DYNA-SOAR-GLIDER FLIGHT-ENVELOPE STRUCTURAL PARAMETERS
 https://ntrs.nasa.gov/api/citations/19720063141/downloads/19720063141.pdf
@@ -58,29 +70,9 @@ https://ntrs.nasa.gov/api/citations/19720063141/downloads/19720063141.pdf
 HOT-GAS TESTS FOR DYNA-SOAR STRUCTURES AND MATERIALS DEVELOPMENent
 https://ntrs.nasa.gov/api/citations/19720063145/downloads/19720063145.pdf
 
-Q-Fiber felt, density = 48.06 kg/m^3
-https://tpsx.arc.nasa.gov/Material?id=1481
 
-
-Q-Fiber felt, density = 96.12 kg/m^
-https://tpsx.arc.nasa.gov/Material?id=1482
-
-
-nickel alloy rene 41
-https://tpsx.arc.nasa.gov/Material?id=928
-
-
-might be also woth lokkin in
-https://en.wikipedia.org/wiki/Ultra-high_temperature_ceramic
-
-https://tpsx.arc.nasa.gov/MaterialsDatabase?categoryfilter%3D8      // Ultra-high_temperature_ceramic
-https://tpsx.arc.nasa.gov/Material?id=30
-
+SUMMARY COMPARISON OF DYNA-SOAR REENTRY DEVICE
 https://ntrs.nasa.gov/api/citations/19720063135/downloads/19720063135.pdf
 
+DYNA-SOAR SKIN PANEL DEVELOPMENT
 https://ntrs.nasa.gov/api/citations/19720063143/downloads/19720063143.pdf
-
-
-
-
-https://tpsx.arc.nasa.gov/Material?id=26
