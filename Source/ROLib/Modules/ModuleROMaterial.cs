@@ -124,26 +124,45 @@ namespace ROLib
             get{ return presetCore.name; }
             set{ 
                 if (PresetROMatarial.PresetsCore.TryGetValue(value, out PresetROMatarial preset)) {
-                    if (value != presetCoreName)
-                        presetCoreName = value;
                     presetCoreNameAltDispl = value;
                     presetCore = preset;
                 }
-                else
-                    Debug.LogWarning("[ROThermal] " + part.name + " Preset Core: " + presetCoreName + " not in the Preset List"); 
+                else if (coreCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(coreCfg, out preset))
+                {
+                    Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetCoreName + " config not available, Faling back to" + coreCfg);
+                    presetCoreName = value;
+                    presetCore = preset;
                 }
+                else
+                {
+                    Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetCoreName + " config not available, Faling back to default");
+                    PresetROMatarial.PresetsSkin.TryGetValue("default", out preset);
+                    presetCoreName = value;
+                    presetCore = preset;
+                }
+            }
         }
         public string PresetTPS {
             get{ return presetTPS.name; }
             set{ 
                 if (PresetROMatarial.PresetsSkin.TryGetValue(value, out PresetROMatarial preset)) {
-                    if (value != presetSkinName)
-                        presetSkinName = value;
+                    presetSkinName = value;
                     presetTPS = preset;
                 }  
-                else
-                    Debug.LogWarning("[ROThermal] " + part.name + " Preset Skin: " + presetSkinName + " not in the Preset List"); 
+                else if (skinCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(skinCfg, out preset))
+                {
+                    Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetSkinName + " config not available, Faling back to" + skinCfg);
+                    presetSkinName = value;
+                    presetTPS = preset;
                 }
+                else
+                {
+                    Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetSkinName + " config not available, Faling back to None");
+                    PresetROMatarial.PresetsSkin.TryGetValue("None", out preset);
+                    presetSkinName = value;
+                    presetTPS = preset;
+                }
+            }      
         }
         public float SurfaceArea 
         {
@@ -311,6 +330,24 @@ namespace ROLib
             if (!PresetROMatarial.Initialized)
                 return;
 
+            if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
+            {
+                if (presetCoreName != "") 
+                    PresetCore = presetCoreName;
+                else if (coreCfg != "")
+                    PresetCore = coreCfg;
+                else
+                    PresetCore = "default";
+
+                if (presetSkinName != "") 
+                    PresetTPS = presetSkinName;
+                else if (skinCfg != "")
+                    PresetTPS = skinCfg;
+                else
+                    PresetTPS = "None";
+            }
+
+
             if (HighLogic.LoadedSceneIsEditor) {
                 
                 if (availablePresetNamesCore.Length > 0)
@@ -320,17 +357,7 @@ namespace ROLib
                     string[] unlockedPresetsName = RP1Found ? availablePresetNamesCore : GetUnlockedPresets(availablePresetNamesCore);
 
                     UpdatePresetsList(unlockedPresetsName, PresetType.Core);
-                }
-                if (presetCoreName == "")
-                {
-                    if (coreCfg != "")
-                        PresetCore = coreCfg;
-                    else
-                        PresetCore = "default";
-                }
-                else {
-                    PresetCore = presetCoreName;
-                }              
+                }          
 
                 Fields[nameof(presetCoreName)].uiControlEditor.onFieldChanged = 
                 Fields[nameof(presetCoreName)].uiControlEditor.onSymmetryFieldChanged =
@@ -350,16 +377,6 @@ namespace ROLib
                     string[] unlockedPresetsName = RP1Found ? availablePresetNamesSkin : GetUnlockedPresets(availablePresetNamesSkin);
                     UpdatePresetsList(unlockedPresetsName, PresetType.Skin);
                 }
-                if (presetSkinName == "")
-                {
-                    if (skinCfg != "")
-                        PresetTPS = skinCfg;
-                    else
-                        PresetTPS = "None";
-                }
-                else {
-                    PresetTPS = presetSkinName;
-                } 
                 
                 Fields[nameof(presetSkinName)].uiControlEditor.onFieldChanged =
                 Fields[nameof(presetSkinName)].uiControlEditor.onSymmetryFieldChanged =
@@ -368,19 +385,6 @@ namespace ROLib
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = OnHeightChanged;
                 
                 this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000f, SkinHeightMaxVal, 10f, 1f, 0.01f);
-            } 
-            else if (HighLogic.LoadedSceneIsFlight) {
-                if (presetCoreName == "")
-                    if (coreCfg != "")
-                        PresetCore = coreCfg;
-                    else
-                        PresetCore = "default";
-                if (presetSkinName == "")
-                    if (skinCfg != "")
-                        PresetTPS = skinCfg;
-                    else
-                        PresetTPS = "None";
-                PresetTPS = presetSkinName;
             }
         }     
 
