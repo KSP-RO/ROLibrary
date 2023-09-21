@@ -125,21 +125,23 @@ namespace ROLib
             get{ return presetCore.name; }
             set{ 
                 if (PresetROMatarial.PresetsCore.TryGetValue(value, out PresetROMatarial preset)) {
-                    presetCoreNameAltDispl = value;
                     presetCoreName = value;
+                    presetCoreNameAltDispl = value; 
                     presetCore = preset;
                 }
                 else if (coreCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(coreCfg, out preset))
                 {
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetCoreName + " config not available, Faling back to" + coreCfg);
-                    presetCoreName = value;
+                    presetCoreName = coreCfg;
+                    presetCoreNameAltDispl = coreCfg; 
                     presetCore = preset;
                 }
                 else
                 {
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetCoreName + " config not available, Faling back to default");
                     PresetROMatarial.PresetsSkin.TryGetValue("default", out preset);
-                    presetCoreName = value;
+                    presetCoreName = "default";
+                    presetCoreNameAltDispl = "default"; 
                     presetCore = preset;
                 }
             }
@@ -206,7 +208,7 @@ namespace ROLib
                     // 3x3 cylinder 42.4m^2 -> surfaceArea = 52.5300 (In Editor) 77.36965 (In Flight)
                     // 3x3x3 cube   54.0m^2 -> surfaceArea = 56.3686 (In Editor) 71.05373 (In Flight)
 
-                    ModularFlightIntegrator.CalculateAreaRadiative(part);
+                    //ModularFlightIntegrator.CalculateAreaRadiative(part);
 
                     surfaceArea = (float)(fARAeroPartModule?.ProjectedAreas.totalArea ?? 0.0f);
                     if (surfaceArea > 0.0) 
@@ -443,13 +445,12 @@ namespace ROLib
                 }
                 if (moduleFuelTanks is ModuleFuelTanks)
                 { 
-                    moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateCoreForRealfuels();
-                    moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateCoreForRealfuels();
+                    moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateCoreForRealfuels(true);
+                    moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateCoreForRealfuels(true);
                     Debug.Log("[ROThermal] " + part.name + " ModuleFuelTanks found " + moduleFuelTanks.name + " updating core material list");
-                    UpdateCoreForRealfuels();
-                } else {
-                    ApplyCorePreset(presetCoreName);
+                    UpdateCoreForRealfuels(false);
                 }
+                ApplyCorePreset(presetCoreName);
                 ApplySkinPreset(presetSkinName, false);
             }
             
@@ -638,8 +639,6 @@ namespace ROLib
 
             if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0) 
             {
-                Debug.Log($"[ROThermal] ApplyThermal() if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0)" 
-                         +presetTPS.skinHeightMax + ", " +presetTPS.skinSpecificHeatCapacityMax+ ", " +presetTPS.skinMassPerAreaMax);
                 double heightfactor = (tpsHeightDisplay / 1000 - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
 
                 tpsSurfaceDensity = (presetTPS.skinMassPerAreaMax - presetTPS.skinMassPerArea) * heightfactor + presetTPS.skinMassPerArea;
@@ -815,13 +814,13 @@ namespace ROLib
                     + "ThermalMass Part: Skin: " + FormatThermalMass((float)part.skinThermalMass) + " / Core: " + FormatThermalMass((float)part.thermalMass) + "\n"
                     + "          Module: Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass) + "\n"
                     + "ModuleMass (Skin) " + FormatMass(moduleMass) + ",    Total Mass: " + FormatMass(part.mass) + "\n"
-                    + "SurfaceArea: part.radiativeArea " + part.radiativeArea + ", module Calc " + moduleCalcArea + ", Module surfaceArea " + surfaceArea + "\n"
+                    + "SurfaceArea: part.radiativeArea " + part.radiativeArea + ", get_SurfaceArea" + moduleCalcArea + "\n"
                     //+ "SurfaceArea: part.exposedArea " + part.exposedArea + ", part.skinExposedArea "  + part.skinExposedArea + ", skinExposedAreaFrac " + part.skinExposedAreaFrac + "\n"
                     + "part.DragCubes->  PostOcclusionArea " + part.DragCubes.PostOcclusionArea  + ", cubeData.exposedArea "+ part.DragCubes.ExposedArea + ", Area "+ part.DragCubes.Area + "\n"
             );
         }
 
-        public void UpdateCoreForRealfuels()
+        public void UpdateCoreForRealfuels(bool applyPreset)
         {
             List<string> availableMaterialsNamesForFuelTank = new List<string>();
             string logStr = "";
@@ -841,9 +840,10 @@ namespace ROLib
                 presetCoreName = availableMaterialsNamesForFuelTank[0];
                 string[] strList = availableMaterialsNamesForFuelTank.ToArray();
                 UpdatePresetsList(strList, PresetType.Core);
-                Debug.Log("[ROThermal] UpdateFuelTankCore() " + moduleFuelTanks.type + " found in " + logStr 
+                Debug.Log($"[ROThermal] UpdateFuelTankCore() " + moduleFuelTanks.type + " found in " + logStr 
                             + "\n\r presetCoreName set as " + availableMaterialsNamesForFuelTank[0]);
-                ApplyCorePreset(presetCoreName);
+                if (applyPreset)
+                    ApplyCorePreset(presetCoreName);
             } else {
                 Debug.Log("[ROThermal] No fitting PresetROMatarial for " + moduleFuelTanks.type + " found in " + part.name);   
             }
