@@ -205,6 +205,9 @@ namespace ROLib
                     // Procedural Tank
                     // 3x3 cylinder 42.4m^2 -> surfaceArea = 52.5300 (In Editor) 77.36965 (In Flight)
                     // 3x3x3 cube   54.0m^2 -> surfaceArea = 56.3686 (In Editor) 71.05373 (In Flight)
+
+                    ModularFlightIntegrator.CalculateAreaRadiative(part);
+
                     surfaceArea = (float)(fARAeroPartModule?.ProjectedAreas.totalArea ?? 0.0f);
                     if (surfaceArea > 0.0) 
                     {
@@ -760,17 +763,17 @@ namespace ROLib
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
 
             double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
-            part.thermalMass = part.mass * (float)mult + resourceThermalMass;
-            part.skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)part.mass * mult * 0.5));
-            part.thermalMass = Math.Max(part.thermalMass - part.skinThermalMass, 0.1);
-            Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + part.skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
+            double thermalMass = part.mass * (float)mult + resourceThermalMass;
+            double skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)part.mass * mult * 0.5));
+            thermalMass = Math.Max(thermalMass - skinThermalMass, 0.1);
+            Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
 
             maxTempDisplay = "Skin: " + part.skinMaxTemp + "K / Core: " + part.maxTemp;
-            thermalMassDisplay = "Skin: " + FormatThermalMass(part.skinThermalMass) + " / Core: " + FormatThermalMass(part.thermalMass);
+            thermalMassDisplay = "Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass);
             Debug.Log($"[ROThermal] UpdateGUI() thermalInsulance: skinIntTransferCoefficient " + skinIntTransferCoefficient + " presetCore.skinIntTransferCoefficient " + presetCore.skinIntTransferCoefficient );
             thermalInsulanceDisplay = KSPUtil.PrintSI(1.0/skinIntTransferCoefficient, "m²*K/kW", 4);
             emissiveConstantDisplay = part.emissiveConstant.ToString("F2");
-            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(part.mass + part.GetResourceMass());
+            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(part.mass + resourceThermalMass);
             surfaceDensityDisplay = (float)tpsSurfaceDensity;
 
             FlightDisplay = "" + part.skinMaxTemp + "/" + part.maxTemp + "\nSkin: " + PresetTPS  + " " + tpsHeightDisplay + "mm\nCore: " + PresetCore ;
@@ -780,8 +783,8 @@ namespace ROLib
 
         public void DebugLog()
         {
-            part.DragCubes.RequestOcclusionUpdate();
-            part.DragCubes.SetPartOcclusion();
+            //part.DragCubes.RequestOcclusionUpdate();
+            //part.DragCubes.SetPartOcclusion();
             double skinThermalMassModifier;
             if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0) 
             {
