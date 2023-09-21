@@ -288,6 +288,7 @@ ref:
 
 FRSI Blanket (Nomex Felt)
 Emissivity: (?K) 0.8
+Absorbance: (?K) 0.32
 cp: (255.556 K)  1310 J/kg-K
 cp: (477.778 K)  1400 J/kg-K
 cp: (588.889 K)  1440 J/kg-K
@@ -302,7 +303,7 @@ Thermal Conductivity (700.09  K /  10136.2 Pa): 0.105  W/m-K (Isotropic)
 Multiple Use Temperature Limit: 506 K
 Single Use Temperature Limit: 644 K
 density: 86.5 kg/m3
-tickness used: 4.064 mm - 10.16 mm
+tickness used: 4.06 mm - 10.1 mm
 Purchase Cost: 1.72e+03 $/m^2
 Installation Time: 2.13e+04 s/m^2
 Inspection/Repair Time per Flight: 3.49e+03 s/m^2
@@ -310,6 +311,7 @@ Replacement Fraction per Flight: 2.80e-02
 Reuse Flight Limit:	0.0 # of flights
 ref:
 https://tpsx.arc.nasa.gov/Material?id=18
+archive.org/details/PressInformationSpaceShuttleTransportationSystemMarch1982 p.201
 
 AFRSI Blanket
 Emissivity: (255.556) 0.87
@@ -709,6 +711,8 @@ Cerachrome-12
 cp (340.556 K): 837 J/kg-K
 cp (780.556 K): 1090 J/kg-K
 Thermal Conductivity (311.111 K): 0.0402 W/m-K (Isotropic) (10132.5 Pa)
+Thermal Conductivity (755.556 K): 0.110 W/m-K (Isotropic) (10132.5 Pa)
+Thermal Conductivity (1422.22 K): 0.305 W/m-K (Isotropic) (10132.5 Pa)
 Thermal Conductivity (1644.44 K): 0.419 W/m-K (Isotropic) (10132.5 Pa)
 Single Use Temperature Limit: 1760 K
 density: 192
@@ -896,11 +900,25 @@ https://tpsx.arc.nasa.gov/Material?id=20
 
 
 
+/////////////////// Adhesives       /////////////////// /////////////////// ///////////////////
 
-
-
-
-
+RTV-560
+cp (311.111 K): 1180 J/kg-K
+cp (477.778 K): 1420 J/kg-K
+cp (555.555 K): 1520 J/kg-K
+cp (694.445 K): 1730 J/kg-K
+Thermal Conductivity (311.111 K): 0.407 W/m-K (Isotropic)
+Thermal Conductivity (477.778 K): 0.643 W/m-K (Isotropic)
+Thermal Conductivity (588.889 K): 0.831 W/m-K (Isotropic)
+Thermal Conductivity (700.000 K): 1.05 W/m-K (Isotropic)
+Multiple Use Temperature Limit: 651 K
+Single Use Temperature Limit: 672 K
+density: 1410
+Use:
+tickness 2x 0.19 mm on Shuttle 
+Ref: https://tpsx.arc.nasa.gov/Material?id=48
+// used in a variety of applications including the bonding of various thermal protection system (TPS) 
+// materials such as the ceramic tiles and blankets used on shuttle orbiters
 
 
 
