@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using ModularFI;
 
 
 namespace ROLib
@@ -125,6 +126,7 @@ namespace ROLib
             set{ 
                 if (PresetROMatarial.PresetsCore.TryGetValue(value, out PresetROMatarial preset)) {
                     presetCoreNameAltDispl = value;
+                    presetCoreName = value;
                     presetCore = preset;
                 }
                 else if (coreCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(coreCfg, out preset))
@@ -291,6 +293,16 @@ namespace ROLib
         }
 
         #region Standard KSP Overrides
+        private double tick = 470.0;
+        // Remove after Debugging is less needed
+        public override void OnUpdate() {
+            if (HighLogic.LoadedSceneIsFlight) {
+                if (tick % 500 == 0) {
+                    DebugLog();
+                }
+                tick ++;
+            }
+        }
 
         public override void OnLoad(ConfigNode node)
         {
@@ -823,15 +835,15 @@ namespace ROLib
                 
             }
             if (availableMaterialsNamesForFuelTank.Any()) {
-                PresetCore = availableMaterialsNamesForFuelTank[0];
+                presetCoreName = availableMaterialsNamesForFuelTank[0];
                 string[] strList = availableMaterialsNamesForFuelTank.ToArray();
                 UpdatePresetsList(strList, PresetType.Core);
                 Debug.Log("[ROThermal] UpdateFuelTankCore() " + moduleFuelTanks.type + " found in " + logStr 
                             + "\n\r presetCoreName set as " + availableMaterialsNamesForFuelTank[0]);
+                ApplyCorePreset(presetCoreName);
             } else {
                 Debug.Log("[ROThermal] No fitting PresetROMatarial for " + moduleFuelTanks.type + " found in " + part.name);   
             }
-            ApplyCorePreset(presetCoreName);
         }
 
         public string[] GetUnlockedPresets(string[] all)
