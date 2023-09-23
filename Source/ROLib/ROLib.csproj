@@ -112,6 +112,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\ModelSelectionGUI.cs" />
     <Compile Include="UI\ModelWindow.cs" />
+    <Compile Include="Utils\EditorCordinator.cs"/>
     <Compile Include="Utils\ProceduralTools\DragCubeTool.cs" />
     <Compile Include="Utils\ModuleDefinitionVariantSet.cs" />
     <Compile Include="Utils\ROLAttachNodeUtils.cs" />
