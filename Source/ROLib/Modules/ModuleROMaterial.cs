@@ -109,6 +109,7 @@ namespace ROLib
         }
 
         #endregion Private Variables
+        internal static bool onEditorShipModifiedFired = false;
         [KSPField] public float surfaceAreaPart = -0.1f;
         [KSPField] public float volumePart = -0.1f;
         [KSPField] public bool tpsMassIsAdditive = true;
@@ -170,6 +171,16 @@ namespace ROLib
                 }
             }      
         }
+        private float SkinHeightMaxVal 
+        {
+            get {
+                if (presetTPS.skinHeightMax > 0.0f) {
+                    return (float)presetTPS.skinHeightMax * 1000f;
+                }
+                return 0;
+            }
+        }
+
         public double SetSurfaceArea ()
         {
                 if (fARAeroPartModule != null) 
@@ -266,15 +277,7 @@ namespace ROLib
                 Debug.LogWarning("[ROThermal] get_SurfaceArea failed: Area=" + surfaceAreaCovered);
                 return 0f;
         }
-        private float SkinHeightMaxVal 
-        {
-            get {
-                if (presetTPS.skinHeightMax > 0.0f) {
-                    return (float)presetTPS.skinHeightMax * 1000f;
-                }
-                return 0;
-            }
-        }
+        
         public float TPSMass => (float)(surfaceArea * tpsSurfaceDensity * TPSAreaMult / 1000f);
         public float TPSCost => (float)surfaceArea * TPSAreaCost * TPSAreaMult;
 
@@ -294,8 +297,9 @@ namespace ROLib
         }
 
         #region Standard KSP Overrides
-        private double tick = 470.0;
+
         // Remove after Debugging is less needed
+        private double tick = 470.0;
         public override void OnUpdate() {
             if (HighLogic.LoadedSceneIsFlight) {
                 if (tick % 500 == 0) {
@@ -308,7 +312,7 @@ namespace ROLib
         public override void OnLoad(ConfigNode node)
         {
             onLoadFiredInEditor = HighLogic.LoadedSceneIsEditor;
-            heatConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
+            heatConductivityDiv = 1.0 / (10.0 * PhysicsGlobals.ConductionFactor );
             SkinInternalConductivityDiv = heatConductivityDiv / ( PhysicsGlobals.SkinInternalConductionFactor * 0.5);
             SkinSkinConductivityDiv = heatConductivityDiv / PhysicsGlobals.SkinSkinConductionFactor;
 
@@ -334,6 +338,8 @@ namespace ROLib
 
         public override void OnStart(StartState state)
         {
+            GameEvents.onEditorShipModified.Add(onEditorShipModified);
+
             Fields[nameof(presetCoreName)].guiActiveEditor = false;
             Fields[nameof(presetCoreNameAltDispl)].guiActiveEditor = true;
             
@@ -391,7 +397,8 @@ namespace ROLib
                 Fields[nameof(presetSkinName)].uiControlEditor.onSymmetryFieldChanged =
                     (bf, ob) => ApplySkinPreset(presetSkinName, true);
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onFieldChanged =
-                Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = OnHeightChanged;
+                Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = 
+                    (bf, ob) => OnHeightChanged(tpsHeightDisplay);
                 
                 this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000f, SkinHeightMaxVal, 10f, 1f, 0.01f);
             }
@@ -455,7 +462,7 @@ namespace ROLib
 
         private void OnDestroy()
         {
-            //GameEvents.onPartActionUIShown.Remove(OnPartActionUIShown);
+            GameEvents.onEditorShipModified.Remove(onEditorShipModified);
         }
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
@@ -475,9 +482,13 @@ namespace ROLib
         [KSPEvent]
         public void OnPartVolumeChanged(BaseEventDetails data)
         {
-            Debug.Log("[ROThermal] OnPartVolumeChanged Message caught");
+            Debug.Log($"[ROThermal] OnPartVolumeChanged Message caught");
             if (!HighLogic.LoadedSceneIsEditor) return;
             UpdateGeometricProperties();
+        }
+        public void onEditorShipModified(ShipConstruct construct)
+        {
+            Debug.Log($"[ROThermal] onEditorShipModified Message caught. Part {part}");
         }
 
         public bool TrySurfaceAreaUpdate()
@@ -492,12 +503,14 @@ namespace ROLib
             UpdateGeometricProperties();
             return true;
         }
-        public void OnHeightChanged(BaseField bf, object ob) {
-            if ((float)bf.GetValue(this) == prevHeight) return;
+        public void OnHeightChanged(float height) {
+            if (height == prevHeight) return;
 
             UpdateHeight();
             ApplyThermal();
             UpdateGeometricProperties();
+            onEditorShipModifiedFired = true;
+            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
         public void UpdateHeight(bool newSkin = false) {
@@ -649,9 +662,9 @@ namespace ROLib
         {
             // heatConductivity
             if (presetTPS.thermalConductivity > 0) {
-                part.heatConductivity =presetTPS.thermalConductivity * heatConductivityDiv;
+                part.heatConductivity = presetTPS.thermalConductivity * heatConductivityDiv;
             } else if (presetCore.thermalConductivity > 0 ) {
-                part.heatConductivity =presetCore.thermalConductivity * heatConductivityDiv;
+                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDiv;
             } else {
                 part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
             };
@@ -762,8 +775,9 @@ namespace ROLib
                     ca.amount = 0;
                 }
             }
-            if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch?.ship != null)
-                GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
+            part.UpdateMass();
+            //if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch?.ship != null)
+                //GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
            
             UpdateGUI();
 
@@ -781,7 +795,6 @@ namespace ROLib
         }
 
         public void UpdateGUI() {
-            part.UpdateMass(); // mass = prefabMass + moduleMass;
             part.GetResourceMass(out float resourceThermalMass);
 
             double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;

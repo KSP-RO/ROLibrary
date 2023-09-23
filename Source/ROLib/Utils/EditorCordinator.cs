@@ -52,6 +52,12 @@ namespace ROLib
                     }
                     if (farVoxelUpdateQueLast == true & farEditorGUI.VoxelizationUpdateQueued == false | waitForFAR > 0)
                     {
+                        if (ModuleROMaterials.onEditorShipModifiedFired)
+                        {
+                            ModuleROMaterials.onEditorShipModifiedFired = false;
+                            farVoxelUpdateQueLast = farEditorGUI.VoxelizationUpdateQueued;
+                            return;
+                        }
                         waitForFAR = 0;
                         List<Part> partsList = EditorLogic.SortedShipList; 
                         foreach (Part part in partsList)
