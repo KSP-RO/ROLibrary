@@ -12,7 +12,7 @@ namespace ROLib
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
-            pmROTank = part.Modules["ModuleROTank"];
+            pmROTank = part.Modules.GetModule<ModuleROTank>();
             if (state == StartState.Editor && pmROTank is ModuleROTank moduleROTank)
             {
                 if (moduleROTank?.Fields["currentCore"] is BaseField cCbf)
@@ -29,6 +29,7 @@ namespace ROLib
             UpdateAnimationAndTracking(bf);
             startFSM();
         }
+
         private void UpdateAnimationAndTracking(BaseField bf)
         {
             FindAnimations();
@@ -36,6 +37,7 @@ namespace ROLib
             hasPivot = panelRotationTransform is Transform;
             originalRotation = currentRotation = panelRotationTransform?.localRotation ?? Quaternion.identity;
         }
+
         private void FindAnimations()
         {
             anim = null;
