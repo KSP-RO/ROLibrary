@@ -943,12 +943,6 @@ namespace ROLib
 
         #region GUI
 
-        private void OnGUI()
-        {
-            foreach (var window in AbstractWindow.Windows.Values)
-                window.Draw();
-        }
-
         private void HideAllWindows()
         {
             if (dimWindow != null)
@@ -975,7 +969,8 @@ namespace ROLib
             }
             else
             {
-                dimWindow = new DimensionWindow(this);
+                dimWindow = gameObject.AddComponent<DimensionWindow>();
+                dimWindow.InitForModule(this);
                 dimWindow.Show();
             }
         }
@@ -989,7 +984,8 @@ namespace ROLib
                 modWindow = null;
                 if (!openedDifferentWindow) return;
             }
-            modWindow = new ModelWindow(this, m, defs, name);
+            modWindow = gameObject.AddComponent<ModelWindow>();
+            modWindow.InitForModule(this, m, defs, name);
             modWindow.Show();
         }
 

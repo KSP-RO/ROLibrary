@@ -4,27 +4,61 @@ using UnityEngine;
 
 namespace ROLib
 {
-    public abstract class AbstractWindow
+    public abstract class AbstractWindow : MonoBehaviour
     {
-        public Rect Position;
-        public string Title { get; set; }
-        public string Tooltip { get; set; }
-        public bool Enabled = false;
-        public static GUIStyle Frame = new GUIStyle(HighLogic.Skin.window);
-        private readonly Guid mGuid;
-        public static Dictionary<Guid, AbstractWindow> Windows = new Dictionary<Guid, AbstractWindow>();
-        public static GUIStyle headingStyle, boldBtnStyle, boldLblStyle, pressedButton;
+        private const string InputLockID = "ROLWindowLock";
 
-        // Initial width and height of the window
-        public float mInitialWidth;
-        public float mInitialHeight;
+        public abstract Rect InitialPosition { get; }
+        public abstract string Title { get; }
+
+        public Guid Guid { get; private set; }
+        public string Tooltip { get; private set; }
+
+        public Rect Position;
+        public bool Enabled = false;
+        public static Dictionary<Guid, AbstractWindow> Windows = new Dictionary<Guid, AbstractWindow>();
+
+        protected static GUIStyle Frame;
+        protected static GUIStyle headingStyle, boldBtnStyle, boldLblStyle, pressedButton;
 
         // Callback trigger for the change in the position
         public Action onPositionChanged = delegate { };
-        public Rect backupPosition;
+        protected Rect backupPosition;
 
-        static AbstractWindow()
+        protected void Awake()
         {
+            if (Guid == default) Guid = Guid.NewGuid();
+
+            InitGUI();
+
+            GameEvents.onHideUI.Add(OnHideUI);
+            GameEvents.onShowUI.Add(OnShowUI);
+        }
+
+        protected void OnGUI()
+        {
+            Draw();
+        }
+
+        protected void OnDestroy()
+        {
+            GameEvents.onHideUI.Remove(OnHideUI);
+            GameEvents.onShowUI.Remove(OnShowUI);
+
+            if (Enabled) Hide();
+        }
+
+        protected virtual void InitGUI()
+        {
+            if (Frame == null) InitStaticGUI();
+
+            Position = InitialPosition;
+            backupPosition = Position;
+        }
+
+        protected virtual void InitStaticGUI()
+        {
+            Frame = new GUIStyle(HighLogic.Skin.window);
             Frame.padding = new RectOffset(5, 5, 5, 5);
             headingStyle = new GUIStyle(HighLogic.Skin.label)
             {
@@ -47,19 +81,6 @@ namespace ROLib
             };
         }
 
-        public AbstractWindow(Guid id, string title, Rect position)
-        {
-            mGuid = id;
-            Title = title;
-            Position = position;
-            backupPosition = position;
-            mInitialHeight = position.height + 15;
-            mInitialWidth = position.width + 15;
-
-            GameEvents.onHideUI.Add(OnHideUI);
-            GameEvents.onShowUI.Add(OnShowUI);
-        }
-
         public Rect RequestPosition() => Position;
 
         public virtual void Show()
@@ -67,11 +88,11 @@ namespace ROLib
             if (Enabled)
                 return;
 
-            if (Windows.ContainsKey(mGuid))
+            if (Windows.ContainsKey(Guid))
             {
-                Windows[mGuid].Hide();
+                Windows[Guid].Hide();
             }
-            Windows[mGuid] = this;
+            Windows[Guid] = this;
             Enabled = true;
         }
 
@@ -80,21 +101,20 @@ namespace ROLib
 
         public virtual void Hide()
         {
-            Windows.Remove(mGuid);
+            Windows.Remove(Guid);
             Enabled = false;
-            GameEvents.onHideUI.Remove(OnHideUI);
-            GameEvents.onShowUI.Remove(OnShowUI);
-            InputLockManager.RemoveControlLock("ROLWindowLock");
+            InputLockManager.RemoveControlLock(InputLockID);
+            Destroy(this);
         }
 
         private void WindowPre(int uid)
         {
             try
             {
-                InputLockManager.RemoveControlLock("ROLWindowLock");
+                InputLockManager.RemoveControlLock(InputLockID);
                 /* Block clicks through window onto ship or other editor UI */
                 if (this.backupPosition.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)))
-                    InputLockManager.SetControlLock(ControlTypes.EDITOR_LOCK, "ROLWindowLock");
+                    InputLockManager.SetControlLock(ControlTypes.EDITOR_LOCK, InputLockID);
 
                 GUI.skin = HighLogic.Skin;
 
@@ -134,7 +154,7 @@ namespace ROLib
                 Position.height = 0;
             }
 
-            Position = GUILayout.Window(mGuid.GetHashCode(), Position, WindowPre, new GUIContent(), Frame);
+            Position = GUILayout.Window(Guid.GetHashCode(), Position, WindowPre, new GUIContent(), Frame);
 
             if (Event.current.type == EventType.Repaint)
             {
@@ -160,7 +180,7 @@ namespace ROLib
         /// <summary>
         /// Toggle the window
         /// </summary>
-        public void toggleWindow()
+        public void ToggleWindow()
         {
             if (Enabled) Hide();
             else Show();
@@ -185,7 +205,7 @@ namespace ROLib
         }
 
         public T RenderRadioSelectors<T>(T selected, Dictionary<T, string> options, params GUILayoutOption[] toggleOptions)
-        where T : Enum
+            where T : Enum
         {
             using (new GUILayout.HorizontalScope())
             {

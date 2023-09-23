@@ -5,7 +5,11 @@ namespace ROLib
 {
     public static class ROLLog
     {
+#if DEBUG
         public static readonly bool debugMode = true;
+#else
+        public static readonly bool debugMode = false;
+#endif
 
         public static void stacktrace()
         {

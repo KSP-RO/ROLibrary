@@ -5,27 +5,31 @@ namespace ROLib
 {
     class ModelWindow : AbstractWindow
     {
-        Vector2 selectModelScroll;
-        private readonly ModuleROTank pm;
-        public readonly ROLModelModule<ModuleROTank> module;
-        private readonly ModelDefinitionLayoutOptions[] def;
+        private Vector2 selectModelScroll;
+        private ModuleROTank pm;
+        public ROLModelModule<ModuleROTank> module;
+        private ModelDefinitionLayoutOptions[] def;
         private string modelName;
         private string oldModel;
 
-        public ModelWindow(ModuleROTank m, ROLModelModule<ModuleROTank> mod, ModelDefinitionLayoutOptions[] d, string name) :
-            base(Guid.NewGuid(), $"ROTanks {name} Selection", new Rect(800, 350, 250, 600))
+        public override Rect InitialPosition => new Rect(800, 350, 250, 600);
+
+        private string _title;
+        public override string Title => _title;
+
+        public void InitForModule(ModuleROTank m, ROLModelModule<ModuleROTank> mod, ModelDefinitionLayoutOptions[] d, string name)
         {
             selectModelScroll = new Vector2();
             pm = m;
             module = mod;
             def = d;
+            _title = $"ROTanks {name} Selection";
         }
 
         private void UpdateModelSelections()
         {
             foreach (ModelDefinitionLayoutOptions options in def)
             {
-
                 if (RenderToggleButton($"{options.definition.title}", options.definition.name == module.modelName))
                 {
                     modelName = options.definition.name;
@@ -71,7 +75,6 @@ namespace ROLib
                     fld.uiControlEditor.onFieldChanged.Invoke(fld, oldModel);
                 }
             }
-            //MonoUtilities.RefreshContextWindows(pm.part);
         }
 
         public void SelectModel()
