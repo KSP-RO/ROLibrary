@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using ModularFI;
 
 
 namespace ROLib
@@ -20,10 +19,10 @@ namespace ROLib
         #region KSPFields
 
         [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
-         UI_ChooseOption(scene = UI_Scene.Editor)]
+         UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public string presetCoreName = "";
         [KSPField(isPersistant = true, guiName = "TPS", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
-         UI_ChooseOption(scene = UI_Scene.Editor)]
+         UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public string presetSkinName = "";
         [KSPField(isPersistant = true, guiName = "TPS height (mm)", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_FloatEdit(sigFigs = 1, suppressEditorShipModified = true)]
@@ -68,6 +67,7 @@ namespace ROLib
         private double skinIntTransferCoefficient = 0.0;
         private double thermalMassAreaBefore = 0.0f;
         private float moduleMass = 0.0f;
+        private float partMassCached = 0.0f;
         private string ablatorResourceName;
         private string outputResourceName;
         private bool onLoadFiredInEditor;
@@ -109,7 +109,6 @@ namespace ROLib
         }
 
         #endregion Private Variables
-        internal static bool onEditorShipModifiedFired = false;
         [KSPField] public float surfaceAreaPart = -0.1f;
         [KSPField] public float volumePart = -0.1f;
         [KSPField] public bool tpsMassIsAdditive = true;
@@ -300,7 +299,8 @@ namespace ROLib
 
         // Remove after Debugging is less needed
         private double tick = 470.0;
-        public override void OnUpdate() {
+        public void Update() 
+        {
             if (HighLogic.LoadedSceneIsFlight) {
                 if (tick % 500 == 0) {
                     DebugLog();
@@ -338,8 +338,6 @@ namespace ROLib
 
         public override void OnStart(StartState state)
         {
-            GameEvents.onEditorShipModified.Add(onEditorShipModified);
-
             Fields[nameof(presetCoreName)].guiActiveEditor = false;
             Fields[nameof(presetCoreNameAltDispl)].guiActiveEditor = true;
             
@@ -424,29 +422,18 @@ namespace ROLib
             wingProceduralModule = part?.FindModuleImplementing<WingProcedural.WingProcedural>();
 
             if(HighLogic.LoadedSceneIsEditor) {
-                if (modularPart is ModuleROTank)
-                {
-                    //TODO implement Mount Nose or core variant change update
-                    modularPart.Fields[nameof(modularPart.currentDiameter)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                    modularPart.Fields[nameof(modularPart.currentLength)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                    modularPart.Fields[nameof(modularPart.currentVScale)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                    modularPart.Fields[nameof(modularPart.currentDiameter)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                    modularPart.Fields[nameof(modularPart.currentLength)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                    modularPart.Fields[nameof(modularPart.currentVScale)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                }
-                if (fARWingModule != null) {
-                    fARWingModule.Fields[nameof(fARWingModule.massMultiplier)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties(); //Mass-Strength Multiplier
-                    fARWingModule.Fields[nameof(fARWingModule.massMultiplier)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                    fARWingModule.Fields[nameof(fARWingModule.curWingMass)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                    fARWingModule.Fields[nameof(fARWingModule.curWingMass)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateGeometricProperties();
-                }
                 if (moduleFuelTanks is ModuleFuelTanks)
                 { 
+                    /// ModuleFuelTanks changes TankType & mass on Update()
                     moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateCoreForRealfuels(true);
                     moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateCoreForRealfuels(true);
+                    GameEvents.onPartResourceListChange.Add(onPartResourceListChange);
                     Debug.Log("[ROThermal] " + part.name + " ModuleFuelTanks found " + moduleFuelTanks.name + " updating core material list");
                     UpdateCoreForRealfuels(false);
                 }
+                if (EditorLogic.RootPart != null & (fARWingModule != null | moduleFuelTanks is ModuleFuelTanks))
+                    EditorCordinator.AddToMassCheckList(this);
+                    
                 ApplyCorePreset(presetCoreName);
                 ApplySkinPreset(presetSkinName, false);
             }
@@ -459,10 +446,12 @@ namespace ROLib
             if (HighLogic.LoadedSceneIsFlight)
                 DebugLog();
         }
-
+        
         private void OnDestroy()
         {
-            GameEvents.onEditorShipModified.Remove(onEditorShipModified);
+            EditorCordinator.RemoveToMassCheckList(this);
+            if (moduleFuelTanks is ModuleFuelTanks & HighLogic.LoadedSceneIsEditor)
+                GameEvents.onPartResourceListChange.Add(onPartResourceListChange);
         }
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
@@ -477,7 +466,7 @@ namespace ROLib
 
 
         /// <summary>
-        /// Message sent from ProceduralPart or ProceduralWing when it updates.
+        /// Message sent from ProceduralPart, ProceduralWing or ModuleROTanks when it updates.
         /// </summary>
         [KSPEvent]
         public void OnPartVolumeChanged(BaseEventDetails data)
@@ -486,9 +475,21 @@ namespace ROLib
             if (!HighLogic.LoadedSceneIsEditor) return;
             UpdateGeometricProperties();
         }
-        public void onEditorShipModified(ShipConstruct construct)
+        public void onPartResourceListChange(Part dPart)
         {
-            Debug.Log($"[ROThermal] onEditorShipModified Message caught. Part {part}");
+            Debug.Log($"[ROThermal] onPartResourceListChange Part {part} Message caught.");
+            checkMassUpdate(true);
+        }
+
+        public bool checkMassUpdate(bool recheck = true, int ntry = 0)
+        {
+            if(part.mass == partMassCached)
+                return false;
+
+            Debug.Log($"[ROThermal] checkMass Part {part} mass updated after {ntry} fixedUpdates new value {part.mass}, old {partMassCached}");
+            partMassCached = part.mass;
+            UpdateGUI();
+            return true;
         }
 
         public bool TrySurfaceAreaUpdate()
@@ -509,8 +510,6 @@ namespace ROLib
             UpdateHeight();
             ApplyThermal();
             UpdateGeometricProperties();
-            onEditorShipModifiedFired = true;
-            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
         public void UpdateHeight(bool newSkin = false) {
@@ -753,7 +752,14 @@ namespace ROLib
             tpsMass = TPSMass;
             tpsCost = TPSCost;
             if (tpsMassIsAdditive) {
-                moduleMass = tpsMass;
+                if (moduleMass != tpsMass)
+                {
+                    //TODO Fire EngineersReport update without FAR voxelization
+                    moduleMass = tpsMass;
+                    //EditorCordinator.ignoreNextShipModified = true;
+                    GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+                }
+                
             } else {
                 moduleMass = 0.0f;
             }
@@ -776,6 +782,7 @@ namespace ROLib
                 }
             }
             part.UpdateMass();
+            partMassCached = part.mass;
             //if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch?.ship != null)
                 //GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
            
@@ -787,19 +794,12 @@ namespace ROLib
                 modAblator?.Start();
         }
 
-        public void OnPartActionUIShown (UIPartActionWindow window, Part inptpart) 
-        {
-            if (inptpart != part)
-                Debug.Log($"[ROThermal] we also catch other parts GUIs");
-            UpdateGUI();
-        }
-
         public void UpdateGUI() {
             part.GetResourceMass(out float resourceThermalMass);
 
             double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
-            double thermalMass = part.mass * (float)mult + resourceThermalMass;
-            double skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)part.mass * mult * 0.5));
+            double thermalMass = partMassCached * (float)mult + resourceThermalMass;
+            double skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)partMassCached * mult * 0.5));
             thermalMass = Math.Max(thermalMass - skinThermalMass, 0.1);
             thermalMassAreaBefore = part.skinMassPerArea * part.skinThermalMassModifier;
             //Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
@@ -809,12 +809,12 @@ namespace ROLib
             //Debug.Log($"[ROThermal] UpdateGUI() thermalInsulance: skinIntTransferCoefficient " + skinIntTransferCoefficient + " presetCore.skinIntTransferCoefficient " + presetCore.skinIntTransferCoefficient );
             thermalInsulanceDisplay = KSPUtil.PrintSI(1.0/skinIntTransferCoefficient, "m²*K/kW", 4);
             emissiveConstantDisplay = part.emissiveConstant.ToString("F2");
-            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(part.mass + resourceThermalMass);
+            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(partMassCached + resourceThermalMass);
             surfaceDensityDisplay = (float)tpsSurfaceDensity;
 
             FlightDisplay = "" + part.skinMaxTemp + "/" + part.maxTemp + "\nSkin: " + PresetTPS  + " " + tpsHeightDisplay + "mm\nCore: " + PresetCore ;
-            if (HighLogic.LoadedSceneIsEditor)
-                DebugLog();
+            //if (HighLogic.LoadedSceneIsEditor)
+                //DebugLog();
             
             UpdatePAW();
         }
