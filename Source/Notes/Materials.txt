@@ -29,6 +29,9 @@ Emissivity: (1350.0 K) 0.297
 Emissivity: (1600.0 K) 0.248
 Emissivity: (1650.0 K) 0.241
 Emissivity: (1750.0 K) 0.286
+cp (avg 255-1760 K) 1164.22 J/kg-K
+cp (avg 255-1590 K) 1150.74 J/kg-K
+cp (avg 255-1366 K) 1126.76 J/kg-K
 cp (255.372 K): 628 J/kg-K
 cp (949.817 K): 1240 J/kg-K
 cp (1366.48 K): 1270 J/kg-K
@@ -64,6 +67,9 @@ LI-2200
 Emissivity: (300 K) 0.899
 Emissivity: (1650.0 K) 0.303
 Emissivity: (1750.0 K) 0.286
+cp (avg 255-1760 K) 1164.22 J/kg-K
+cp (avg 255-1640 K) 1156.04 J/kg-K
+cp (avg 255-1366 K) 1126.76 J/kg-K
 cp (255.372 K): 628 J/kg-K
 cp (1533.15 K): 1270 J/kg-K
 cp (1922.04 K): 1270 J/kg-K
@@ -96,6 +102,9 @@ Emissivity: (300 K) 9.17
 Emissivity: (1350.0 K) 0.387
 Emissivity: (1650.0 K) 0.341
 Emissivity: (1700.0 K) 0.305
+cp (avg 255-1810 K) 1167.62 J/kg-K
+cp (avg 255-1640 K) 1156.04 J/kg-K
+cp (avg 255-1366 K) 1126.76 J/kg-K
 cp (297.039 K):  712 J/kg-K
 cp (977.594 K): 1260 J/kg-K
 cp (1199.82 K): 1260 J/kg-K
@@ -228,6 +237,9 @@ RCC (Reinforced Carbon-Carbon Composite)
 Emissivity: (255.556 K) 0.78
 Emissivity: (1811.11 K) 0.75
 Emissivity: (2200.0) 0.54
+cp (avg 255-2030 K) 1401.37 J/kg-K
+cp (avg 255-1920 K) 1376.97 J/kg-K
+cp (avg 255-1366 K) 1235.75 J/kg-K
 cp (255.372 K): 712 J/kg-K
 cp (1811.11 K): 1720 J/kg-K
 cp (2200.0 K): 1840 J/kg-K
@@ -317,6 +329,8 @@ AFRSI Blanket
 Emissivity: (255.556) 0.87
 Emissivity: (950.00 K) 0.59
 Emissivity: (1088.89 K) 0.54
+cp (avg 255-1089 K) 1048.08 J/kg-K
+cp (avg 255-950 K) 1026.70 J/kg-K
 cp: (255.556 K)   741 J/kg-K
 cp: (950.00 K)   1130 J/kg-K
 cp: (1088.89 K)  1180 J/kg-K
@@ -469,6 +483,10 @@ https://tpsx.arc.nasa.gov/Material?id=100
 Inconel X-750
 Emissivity (588.7 K): 0.895 (oxidized surface)
 Emissivity (1366.48 K): 0.925 (oxidized surface)
+cp (avg 294-1144 K) 540.67 J/kg-K
+cp (avg 294-1033 K) 520.61 J/kg-K
+cp (avg 294-800  K) 494.67 J/kg-K
+cp (avg 294-589  K) 473.03 J/kg-K
 cp (294.26 K): 431.24 J/kg-K
 cp (1144.26 K): 715.9428 J/kg-K
 Thermal Conductivity (311.111 K): 11.970914776 W/m-K (Isotropic)
@@ -484,6 +502,9 @@ https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-allo
 Inconel 601
 Emissivity (588.7 K): 0.895? (X-750)(oxidized surface)
 Emissivity (1366.48 K): 0.925? (X-750)(oxidized surface)
+cp (avg 294-1273 K) 580.57 J/kg-K
+cp (avg 294-1173 K) 566.46 J/kg-K
+cp (avg 294-1073 K) 552,97 J/kg-K
 cp (294.444 K): 428 J/kg-K
 cp (1144.44 K): 678 J/kg-K
 cp (1366.67 K): 737 J/kg-K
@@ -647,7 +668,7 @@ https://www.steel-grades.com/Steel-Grades/High-Alloy/PH-14-8-Mo.html
 
 
 
-Molybdenum Alloy mo99.5 ti0.5 / Mo 99,3 Ti 0,5 Zr 0,08
+Molybdenum Alloy mo99.5 ti0.5 / Mo 99,3 Ti 0,5 Zr 0,08 (TZM)
 cp (? K): 305.6364 j/kg-K
 Thermal Conductivity (293.15 K): 126 W/m-K (Isotropic)
 Thermal Conductivity (1273.15 K): 98 W/m-K (Isotropic)
@@ -789,10 +810,14 @@ https://tpsx.arc.nasa.gov/Material?id=232
 
 
 Q-Fiber felt 48.06 kg/m^3
+cp (avg 330-1230 K) 1256.14 J/kg-K
+cp (avg 255-1644 K) 1224.75 J/kg-K
+cp (avg 255-1590 K) 1191.95 J/kg-K
+cp (avg 255-1366 K) 1157.19 J/kg-K
 cp (388.888 K):  845.7 J/kg-K
 cp (500.000 K):  975.5 J/kg-K
 cp (722.222 K): 1117.9 J/kg-K
-cp (833.333 K): 1147.2 J/kg-K
+cp (833.333 K): 11147.2 J/kg-K
 cp (944.444 K): 1172.3 J/kg-K
 cp (1166.66 K): 1189.1 J/kg-K
 Thermal Conductivity (331.495): 0.0355 W/m-K (Isotropic) (@ 13236.7  Pa)
@@ -835,6 +860,10 @@ Emissivity: (350 K) 0.875
 Emissivity: (400 K) 0.879
 Emissivity: (1650.0 K) 0.935
 Emissivity: (1850.0 K) 0.938
+cp (avg 255-1644 K) 1256.14 J/kg-K
+cp (avg 255-1644 K) 1224.75 J/kg-K
+cp (avg 255-1590 K) 1191.95 J/kg-K
+cp (avg 255-1366 K) 1157.19 J/kg-K
 cp (255.556 K): 795 J/kg-K
 cp (950.0 K): 1260 J/kg-K
 cp (1644.44 K): 1540 J/kg-K

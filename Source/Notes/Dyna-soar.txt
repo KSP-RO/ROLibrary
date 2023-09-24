@@ -29,8 +29,13 @@ Nose Boeing
     "Like its counterpart from Vought, this design also installed a heat shield that 
     used Q-felt insulation installed a heat shield that used Q-felt insulation"
 
-ref: https://history.nasa.gov/sp4232-part2.pdf
+Coating
+    "a thin layer of silicon carbide, applied to the surface, gave the vehicle its distinctive black color."
+    ref: https://history.nasa.gov/sp4232-part2.pdf
 
+    Emittance table
+    ref: Coatings of High - Temperature Materials 
+        doi.org/10.1007/978-1-4757-1284-1 p.180 +
 
 Fuselage / Wing undersurface
 Rene 41 ribed panel 0.01 inch thick
