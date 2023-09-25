@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using KerbalConstructionTime;
 
 
 namespace ROLib
@@ -46,6 +47,8 @@ namespace ROLib
 
         [KSPField(isPersistant = true, guiName = "Max Temp", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
         public string FlightDisplay = "";
+        [KSPField(isPersistant = true, guiName = "Exps", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
+        public string FlightDebug = "";
 
         #endregion KSPFields
 
@@ -58,9 +61,12 @@ namespace ROLib
         private FARAeroPartModule fARAeroPartModule; 
         private FARWingAerodynamicModel fARWingModule;
         private WingProcedural.WingProcedural wingProceduralModule;
+        private ModuleTagList CCTagListModule;
         private PresetROMatarial presetCore;
         private PresetROMatarial presetTPS;
         
+        private const string reentryTag = "Reentry";
+        private bool reentryByDefault = false;
         private float tpsCost = 0.0f;
         private float tpsMass = 0.0f;
         private double tpsSurfaceDensity = 0.0f; 
@@ -128,14 +134,14 @@ namespace ROLib
             set{ 
                 if (PresetROMatarial.PresetsCore.TryGetValue(value, out PresetROMatarial preset)) {
                     presetCoreName = value;
-                    presetCoreNameAltDispl = value; 
+                    presetCoreNameAltDispl = value;
                     presetCore = preset;
                 }
                 else if (coreCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(coreCfg, out preset))
                 {
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetCoreName + " config not available, Faling back to" + coreCfg);
                     presetCoreName = coreCfg;
-                    presetCoreNameAltDispl = coreCfg; 
+                    presetCoreNameAltDispl = coreCfg;
                     presetCore = preset;
                 }
                 else
@@ -143,7 +149,7 @@ namespace ROLib
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetCoreName + " config not available, Faling back to default");
                     PresetROMatarial.PresetsSkin.TryGetValue("default", out preset);
                     presetCoreName = "default";
-                    presetCoreNameAltDispl = "default"; 
+                    presetCoreNameAltDispl = "default";
                     presetCore = preset;
                 }
             }
@@ -193,7 +199,7 @@ namespace ROLib
                     
                     if (surfaceArea > 0.0)
                     {
-                        Debug.Log("[ROThermal] get_SurfaceArea derived from fARAeroPartModule: " + surfaceArea);
+                        // Debug.Log("[ROThermal] get_SurfaceArea derived from fARAeroPartModule: " + surfaceArea);
                         surfaceAreaCovered =  surfaceArea;
                     } 
                     else 
@@ -269,7 +275,7 @@ namespace ROLib
                             surfaceAreaCovered -= child.srfAttachNode.contactArea;
                         }
                     }
-                    Debug.Log(str + "  Result: " +  surfaceAreaCovered);
+                    //Debug.Log(str + "  Result: " +  surfaceAreaCovered);
                 }
                 if (surfaceAreaCovered > 0.0)
                     return surfaceAreaCovered;
@@ -299,9 +305,26 @@ namespace ROLib
 
         // Remove after Debugging is less needed
         private double tick = 470.0;
-        public void Update() 
+        private double peakTempSkin = 0.0;
+        private double peakTemp;
+        public void FixedUpdate()
         {
             if (HighLogic.LoadedSceneIsFlight) {
+                if (tick % 50 == 0) {
+                    if ( part.temperature > peakTemp)
+                        peakTemp = part.temperature;
+                    if (part.skinTemperature > peakTempSkin)
+                        peakTempSkin = part.skinTemperature;
+
+                    FlightDebug =   " Temp " + String.Format("{0000:0}", part.skinTemperature) + "K Exposed AreaFrac " + String.Format("{0:0.###}", part.skinExposedAreaFrac)
+                                     + "\nUnexp Temp " + String.Format("{0000:0}", part.skinUnexposedTemperature) + "K"
+                                     //+ "\nArea P exposed " + String.Format("{0:0.###}",part.exposedArea) + " P radiative " + String.Format("{0:0.###}",part.radiativeArea) 
+                                     //+ "\nSkin exposed " + String.Format("{0:0.###}",part.skinExposedArea) 
+                                     + "\nconvection AreaMult " + String.Format("{0:0.###}", part.ptd.convectionAreaMultiplier)
+                                     + " TempMult " + String.Format("{0:0.###}", part.ptd.convectionTempMultiplier)
+                                     + "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
+                                     + "\nPeak Temp Skin" + String.Format("{0:0.}", peakTempSkin)+ "K Core " + String.Format("{0:0.}", peakTemp) +"K";                         
+                }
                 if (tick % 500 == 0) {
                     DebugLog();
                 }
@@ -420,6 +443,7 @@ namespace ROLib
             fARWingModule = part?.FindModuleImplementing<FARControllableSurface>();
             fARWingModule = part?.FindModuleImplementing<FARWingAerodynamicModel>();
             wingProceduralModule = part?.FindModuleImplementing<WingProcedural.WingProcedural>();
+            CCTagListModule = part?.FindModuleImplementing<ModuleTagList>();
 
             if(HighLogic.LoadedSceneIsEditor) {
                 if (moduleFuelTanks is ModuleFuelTanks)
@@ -437,7 +461,10 @@ namespace ROLib
                 ApplyCorePreset(presetCoreName);
                 ApplySkinPreset(presetSkinName, false);
             }
-            
+            if(CCTagListModule is ModuleTagList & CCTagListModule.tags.Contains(reentryTag))
+            {
+                reentryByDefault = true;
+            }
 
             if (HighLogic.LoadedSceneIsFlight) {
                 ApplyCorePreset(presetCoreName);
@@ -492,7 +519,7 @@ namespace ROLib
             return true;
         }
 
-        public bool TrySurfaceAreaUpdate()
+        public bool TrySurfaceAreaUpdate(int ntry)
         {
             //Debug.Log($"[ROThermal] UpdateSurfaceArea Instance created surface area Part {surfaceArea}, fAR ProjectedArea {fARAeroPartModule?.ProjectedAreas.totalArea}");
             if (fARAeroPartModule.ProjectedAreas.totalArea < 0.000001)
@@ -500,7 +527,7 @@ namespace ROLib
             if (surfaceArea == fARAeroPartModule.ProjectedAreas.totalArea)
                 return false;
                 
-            //Debug.Log($"[ROThermal] UpdateSurfaceArea updating surface Area");
+            Debug.Log($"[ROThermal] UpdateSurfaceArea updating surface Area after {ntry} fixedUpdates");
             UpdateGeometricProperties();
             return true;
         }
@@ -569,6 +596,7 @@ namespace ROLib
             }
 
             ApplyThermal();
+            CCTagUpdate(presetCore);
 
             Debug.Log($"[ROThermal] applied preset {PresetCore} for part {part.name}");     
             UpdateGeometricProperties();
@@ -577,6 +605,7 @@ namespace ROLib
             PresetTPS = preset;
             UpdateHeight(skinNew);
             ApplyThermal();
+            CCTagUpdate(presetTPS);
 
             // update ModuleAblator parameters, if present and used
             if (modAblator != null && !presetTPS.disableModAblator)
@@ -756,7 +785,7 @@ namespace ROLib
                 {
                     //TODO Fire EngineersReport update without FAR voxelization
                     moduleMass = tpsMass;
-                    //EditorCordinator.ignoreNextShipModified = true;
+                    EditorCordinator.ignoreNextShipModified = true;
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
                 
@@ -804,7 +833,7 @@ namespace ROLib
             thermalMassAreaBefore = part.skinMassPerArea * part.skinThermalMassModifier;
             //Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
 
-            maxTempDisplay = "Skin: " + part.skinMaxTemp + "K / Core: " + part.maxTemp;
+            maxTempDisplay = "Skin: " + String.Format("{0:0.}", part.skinMaxTemp) + "K / Core: " + String.Format("{0:0.}", part.maxTemp) ;
             thermalMassDisplay = "Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass);
             //Debug.Log($"[ROThermal] UpdateGUI() thermalInsulance: skinIntTransferCoefficient " + skinIntTransferCoefficient + " presetCore.skinIntTransferCoefficient " + presetCore.skinIntTransferCoefficient );
             thermalInsulanceDisplay = KSPUtil.PrintSI(1.0/skinIntTransferCoefficient, "m²*K/kW", 4);
@@ -817,6 +846,35 @@ namespace ROLib
                 //DebugLog();
             
             UpdatePAW();
+        }
+
+        public void CCTagUpdate(PresetROMatarial preset ) 
+        {
+            if (!(CCTagListModule is ModuleTagList))
+                return;
+            
+            if(preset.name == "None")
+            {
+                if (reentryByDefault)
+                    CCTagListModule.tags.AddUnique(reentryTag);
+                else if (!reentryByDefault & CCTagListModule.tags.Contains(reentryTag))
+                    CCTagListModule.tags.Remove(reentryTag);
+
+                CCTagListModule.tags.Sort();
+            }
+            else if(preset.reentryTag == reentryTag &  !CCTagListModule.tags.Contains(reentryTag))
+            {
+                CCTagListModule.tags.Add(preset.reentryTag);
+                CCTagListModule.tags.Sort();
+
+            }
+            else if(preset.reentryTag != reentryTag &  CCTagListModule.tags.Contains(reentryTag))
+            {
+                CCTagListModule.tags.Remove(preset.reentryTag);
+                CCTagListModule.tags.Sort();
+
+            }
+
         }
 
         public void DebugLog()

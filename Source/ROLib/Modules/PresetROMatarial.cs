@@ -72,6 +72,7 @@ namespace ROLib
         [Persistent] public string _unitsName;
         [Persistent] public double _nominalAmountRecip;
 
+        [Persistent] public string reentryTag;
         [SerializeField] public string[] restrictors = new string[] { };
 
         public string AblativeResource;
@@ -131,6 +132,7 @@ namespace ROLib
             node.TryGetValue("skinMassPerAreaMax", ref skinMassPerAreaMax);
             node.TryGetValue("skinSpecificHeatCapacityMax", ref skinSpecificHeatCapacityMax);
             node.TryGetValue("thermalInsulanceMax", ref thermalInsulanceMax);
+            node.TryGetValue("Reentry", ref reentryTag);
 
             skinIntTransferCoefficient = 1.0 / thermalInsulance;
             skinIntTransferCoefficientMax = 1.0 / thermalInsulanceMax;

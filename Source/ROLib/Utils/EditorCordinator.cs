@@ -15,10 +15,11 @@ namespace ROLib
         private static List<ModuleROMaterials> massUpdateCheckList = new List<ModuleROMaterials>();
         private static bool farVoxelUpdateQueLast = false;
         private static int waitForFAR = 0;
-        private static int tryCount = 0;
-        private const int tries = 100; 
+        private static int waitCount = 0;
+        private const int tries = 5; 
         private static int recheckMassUpdateTry = tries;
         public static bool ignoreNextShipModified = false;
+        public static bool ignoreNextVoxelQue = false;
         private static bool massUpdateCheck = false;
         
 
@@ -97,32 +98,33 @@ namespace ROLib
                     {
                         waitForFAR --;
                     }
-                    else if (farVoxelUpdateQueLast == true & farEditorGUI.VoxelizationUpdateQueued == false | waitForFAR == 0)
+                    else if (farVoxelUpdateQueLast == true & farEditorGUI.VoxelizationUpdateQueued == false & !ignoreNextVoxelQue | waitForFAR == 0)
                     {
-
+                        bool faliedUpdate = false;
                         foreach (Part part in EditorLogic.SortedShipList)
                         {
                             if (part?.HasModuleImplementing<FARAeroPartModule>() == true 
                                 && part?.FindModuleImplementing<ModuleROMaterials>() is ModuleROMaterials b)
                             {
                                 // compere change in ProjectedAreas.totalArea
-                                if(!b.TrySurfaceAreaUpdate())
-                                {  
-                                    waitForFAR = 10;
-                                    tryCount += 10;
-                                    //EditorGUI.RequestUpdateVoxel();
-                                }
+                                if(!b.TrySurfaceAreaUpdate(waitCount))
+                                    faliedUpdate = true;
                             }
                         }
-                        if (waitForFAR == 0 | tryCount >= 410)
+                        if (faliedUpdate)
+                        {
+                            waitForFAR = 5;
+                            waitCount += 5;
+
+                        }          
+                        if (waitForFAR == 0 | waitCount >= 210)
                         {
                             waitForFAR = -1;
-                            tryCount = 0;
+                            waitCount = 0;
                         }
-                        farVoxelUpdateQueLast = farEditorGUI.VoxelizationUpdateQueued;
                     }
-                    else if (farVoxelUpdateQueLast != farEditorGUI.VoxelizationUpdateQueued)
-                        farVoxelUpdateQueLast = farEditorGUI.VoxelizationUpdateQueued;
+                    ignoreNextVoxelQue = false;
+                    farVoxelUpdateQueLast = farEditorGUI.VoxelizationUpdateQueued;
                 }
                 else
                 {
@@ -151,9 +153,10 @@ namespace ROLib
 
         public void OnEditorShipModified(ShipConstruct ship)
         {
-            Debug.Log($"[ROLib EditorCordinator] ShipModified");
+            
             if (ignoreNextShipModified)
             {
+                Debug.Log($"[ROLib EditorCordinator] ShipModified ignored");
                 ignoreNextShipModified = false;
                 return;
             }
