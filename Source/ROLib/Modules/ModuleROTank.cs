@@ -278,10 +278,17 @@ namespace ROLib
             UpdateAvailableVariants();
             SetPreviousModuleLength();
             UpdateDragCubes();
-            if (scaleMass)
-                UpdateMass();
-            if (scaleCost)
-                UpdateCost();
+            if (usePFStyleMass)
+            {
+                UpdatePFMassCost();
+            }
+            else
+            {
+                if (scaleMass)
+                    UpdateMass();
+                if (scaleCost)
+                    UpdateCost();
+            }
             SetupKorolevCross();
             ROLStockInterop.UpdatePartHighlighting(part);
             //if (HighLogic.LoadedSceneIsEditor)
@@ -312,6 +319,7 @@ namespace ROLib
             UpdateModulePositions();
             UpdateDimensions();
             UpdateModelMeshes();
+            SetPFFields();
         }
 
         public override void OnStart(StartState state)
@@ -322,6 +330,7 @@ namespace ROLib
             SetupKorolevCross();
             GameEvents.onVesselGoOffRails.Add(OnVesselOffRails);
             GameEvents.onVesselGoOnRails.Add(OnVesselOnRails);
+            SetPFFields();
         }
 
         public void OnDestroy()
@@ -1000,5 +1009,61 @@ namespace ROLib
         }
 
         #endregion GUI
+
+        #region PF-style mass
+
+        [KSPField] public bool usePFStyleMass = false;
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiName = "Side Density", groupName = GroupName, groupDisplayName = GroupDisplayName)]
+        [UI_FloatRange(minValue = 0.01f, maxValue = 1.0f, stepIncrement = 0.01f)]
+        public float density = 0.18f;
+        [KSPField] public float minDensity = 0.01f;
+        [KSPField] public float maxDensity = 1.0f;
+        [KSPField] public float stepDensity = 0.01f;
+        [KSPField] public Vector4 specificMass = new Vector4(0.005f, 0.011f, 0.009f, 0f);
+        [KSPField] public float decouplerMassMult = 4f;
+        [KSPField] public float pfCostPerTonBase = 500f;
+        [KSPField] public float pfCostPerTonSide = 100f;
+
+        private void SetPFFields()
+        {
+            var fieldDensity = Fields[nameof(density)];
+            var floatRange = fieldDensity.uiControlEditor as UI_FloatRange;
+            floatRange.minValue = minDensity;
+            floatRange.maxValue = maxDensity;
+            floatRange.stepIncrement = stepDensity;
+            fieldDensity.guiActiveEditor = usePFStyleMass;
+            if (usePFStyleMass)
+            {
+                floatRange.onFieldChanged = floatRange.onSymmetryFieldChanged = (a, b) =>
+                {
+                    ModelChangedHandler(true);
+                };
+            }
+        }
+
+        private void UpdatePFMassCost()
+        {
+            const float baseSideThickness = 0.05f;
+            float radiusBot = coreModule.moduleLowerDiameter * 0.5f;
+            float radiusTop = coreModule.moduleUpperDiameter * 0.5f;
+            // Technically we should use Mathf.Sqrt((radiusBot - radiusTop) * (radiusBot - radiusTop) + coreModule.moduleHeight * coreModule.moduleHeight);
+            // but PF just uses the height.
+            float sideLength = coreModule.moduleActualHeight;
+            float sideSideThickness = Mathf.Min(baseSideThickness * Mathf.Max(coreModule.moduleLowerDiameter, coreModule.moduleUpperDiameter), 0.25f * Mathf.Min(coreModule.moduleLowerDiameter, coreModule.moduleUpperDiameter));
+            float sideArea = Mathf.PI * sideLength * (radiusBot + radiusTop - 2f * sideSideThickness);
+            float sideMass = sideArea * sideSideThickness * density;
+
+            float baseDiameterAdj = coreModule.moduleLowerDiameter - 2f * sideSideThickness;
+            float baseMass = (((((specificMass.x * baseDiameterAdj) + specificMass.y) * baseDiameterAdj) + specificMass.z) * baseDiameterAdj) + specificMass.w;
+
+            if (scaleCost)
+                modifiedCost = sideMass * pfCostPerTonSide + baseMass * pfCostPerTonBase;
+            if (scaleMass)
+                modifiedMass = sideMass + baseMass * decouplerMassMult;
+        }
+
+        //%specificMass = 0.0002, 0.01, 0.005, 0
+
+        #endregion
     }
 }
