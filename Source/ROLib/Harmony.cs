@@ -97,15 +97,18 @@ namespace ROLib.Harmony
         public static double cacheStandardSpecificHeatCapacity;
         public static void SetSkinThermalMass(Part part)
         {
-            Debug.Log("[ROThermal] Harmony SetSkinThermalMass call for " + part);
             double num = cacheStandardSpecificHeatCapacity * part.thermalMassModifier;
             double massSkin = part.skinMassPerArea * part.radiativeArea;
 
-            part.thermalMass = ((double)part.mass - massSkin) * num + part.resourceThermalMass;
-
-            part.skinThermalMass = Math.Max(0.1, 0.001 * part.skinMassPerArea * part.skinThermalMassModifier * part.radiativeArea * num);
+            part.thermalMass =  Math.Max((double)part.mass - massSkin, 0.2) * num + part.resourceThermalMass;
+            
+            part.skinThermalMass = Math.Max(0.1, 0.001 * massSkin * part.skinThermalMassModifier * num);
             part.skinThermalMassRecip = 1.0 / part.skinThermalMass;
         }
     }
 }
-// /
+//  Original 
+//  double num = cacheStandardSpecificHeatCapacity * part.thermalMassModifier;
+//  part.thermalMass = (double)part.mass * cacheStandardSpecificHeatCapacity * part.thermalMassModifier + part.resourceThermalMass;
+//  part.skinThermalMass = Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * part.radiativeArea * num, (double)part.mass * num * 0.5));;
+//  part.thermalMass = Math.Max(part.thermalMass - part.skinThermalMass, 0.1);
