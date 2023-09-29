@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
+using EdyCommonTools;
+using System;
 using System.Collections.Generic;
+using System.IO;
 
 
 namespace ROLib
@@ -94,6 +97,8 @@ namespace ROLib
         public bool? Usekg;
         public string UnitsName;
         public double? NominalAmountRecip;
+        public float[,] array;
+        public bool hasCVS = false;
 
         public PresetROMatarial(ConfigNode node)
         {
@@ -187,6 +192,7 @@ namespace ROLib
 
         public static void LoadPresets()
         {
+             Debug.Log(" this is a branch");
             if (Initialized && PresetsCore.Count > 0 && PresetsSkin.Count > 0)
                 return;
 
@@ -202,6 +208,12 @@ namespace ROLib
                 if (preset != null) {
                     if (preset.type == PresetType.Skin) {
                         PresetsSkin[preset.name] = preset;
+                        if (File.Exists("GameData/ROLib/Data/csv/" + preset.name + ".csv")) {
+                            preset.loadCSV(preset.name);
+                        } else {
+                            Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/csv/" + preset.name + ".csv");
+                        }
+                        
                     } else {
                         PresetsCore[preset.name] = preset;
                     }
@@ -227,6 +239,49 @@ namespace ROLib
                 };
             }
             Initialized = true;
+        }
+
+        public void loadCSV (string fileName) 
+        {
+            CsvFileReader reader = new CsvFileReader("GameData/ROLib/Data/csv/" + fileName + ".csv");
+            CsvRow lines = new CsvRow();
+
+            bool skipFirst = true;
+            List<string[]> list = new List<string[]>();
+
+            while (reader.ReadRow(lines))
+            {
+                if (skipFirst)
+                {
+                    skipFirst = false;
+                    continue;
+                }
+                string[] row = lines.LineText.Split(
+                        new string[] { "," },
+                        StringSplitOptions.None
+                    );
+                list.Add(row);
+            }
+            reader.Close();
+
+            int rowCount = list.Count;
+            int columnCount = list[0].Length;
+
+            array = new float[rowCount, columnCount];
+
+            string str = "CSV table\n";
+            for (int i = 0; i < rowCount; i++)
+            {
+                for (int j = 0; j < columnCount; j++)
+                {
+                    array[i, j] = float.Parse(list[i][j]);
+                    str += array[i, j] + ", ";
+                }
+                str +='\n';
+            }
+            hasCVS = true;
+            //Debug.Log(str);
+            Debug.Log("[ROThermal] Loaded csv Data for " + fileName + ": GameData/ROLib/Data/csv/" + fileName + ".csv");
         }
     }
 }

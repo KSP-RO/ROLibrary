@@ -47,7 +47,7 @@ namespace ROLib
 
         [KSPField(isPersistant = true, guiName = "Max Temp", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
         public string FlightDisplay = "";
-        [KSPField(isPersistant = true, guiName = "Exps", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
+        [KSPField(isPersistant = true, guiName = ":", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
         public string FlightDebug = "";
 
         #endregion KSPFields
@@ -80,9 +80,9 @@ namespace ROLib
         private bool ignoreSurfaceAttach = true; // ignore all surface attached parts/childern when subtracting surface area
         private string[] ignoredNodes = new string[] {}; // ignored Nodes when subtracting surface area
         private float prevHeight = -10.001f;
-        private double heatConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
-        private double SkinInternalConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinInternalConductionFactor * 0.5);
-        private double SkinSkinConductivityDiv = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
+        private double heatConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
+        private double SkinInternalConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinInternalConductionFactor * 0.5);
+        private double SkinSkinConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double absorptiveConstantOrig;
         
         [SerializeField] private string[] availablePresetNamesCore = new string[] {};
@@ -105,9 +105,9 @@ namespace ROLib
         private double SkinSkinConductivity {
             get {
                 if (presetTPS.skinSkinConductivity > 0) {
-                    return presetTPS.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDiv;
+                    return presetTPS.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
                 } else if (presetCore.skinSkinConductivity > 0 ) {
-                    return presetCore.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDiv;
+                    return presetCore.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
                 } else {
                     return part.partInfo.partPrefab.skinSkinConductionMult;
                 }
@@ -307,37 +307,80 @@ namespace ROLib
         private double tick = 470.0;
         private double peakTempSkin = 0.0;
         private double peakTemp;
+        private float nextUpdateUp = 250;
+        private float nextUpdateDown = 200;
+        private int index = 0;
         public void FixedUpdate()
         {
             if (HighLogic.LoadedSceneIsFlight) {
-                if (tick % 50 == 0) {
-                    if ( part.temperature > peakTemp)
-                        peakTemp = part.temperature;
-                    if (part.skinTemperature > peakTempSkin)
-                        peakTempSkin = part.skinTemperature;
+                if (presetTPS.hasCVS & tick % 50 == 0) {
 
-                    FlightDebug =   " Temp " + String.Format("{0000:0}", part.skinTemperature) + "K Exposed AreaFrac " + String.Format("{0:0.###}", part.skinExposedAreaFrac)
-                                     + "\nUnexp Temp " + String.Format("{0000:0}", part.skinUnexposedTemperature) + "K"
-                                     //+ "\nArea P exposed " + String.Format("{0:0.###}",part.exposedArea) + " P radiative " + String.Format("{0:0.###}",part.radiativeArea) 
-                                     //+ "\nSkin exposed " + String.Format("{0:0.###}",part.skinExposedArea) 
-                                     + "\nconvection AreaMult " + String.Format("{0:0.###}", part.ptd.convectionAreaMultiplier)
-                                     + " TempMult " + String.Format("{0:0.###}", part.ptd.convectionTempMultiplier)
-                                     + "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
-                                     + "\nPeak Temp Skin" + String.Format("{0:0.}", peakTempSkin)+ "K Core " + String.Format("{0:0.}", peakTemp) +"K";                         
+                    // Replacing SetSkinThermalMass would be better 
+                    // No register in ModularFlightIntegrator for SetSkinThermalMass
+                    // back to good ol'Harmony
+                    if (part.skinTemperature > nextUpdateUp) {
+                        
+                        nextUpdateDown = presetTPS.array[index,0];
+                        index ++;
+                        nextUpdateUp = presetTPS.array[index,0];
+                        Debug.Log("[ROThermal] "+ part.name + " moving temperature values up, between " +  nextUpdateDown + "-" + nextUpdateUp);
+
+                        part.skinThermalMassModifier = presetTPS.array[index,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+                        part.skinInternalConductionMult = presetTPS.array[index,2] * SkinInternalConductivityDivGlobal / part.heatConductivity;
+                        part.emissiveConstant = presetTPS.array[index,3];
+                        part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
+                    } 
+                    else if (part.skinTemperature < nextUpdateDown) {
+                        nextUpdateUp = presetTPS.array[index,0];
+                        index --;
+                        if (index < 0) {
+                            index = 0;
+                            return;
+                        }
+                        nextUpdateUp = presetTPS.array[index,0];
+                        Debug.Log("[ROThermal] "+ part.name + " moving temperature values down, between " +  nextUpdateDown + "-" + nextUpdateUp);
+
+                        part.skinThermalMassModifier = presetTPS.array[index,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+                        part.skinInternalConductionMult = presetTPS.array[index,2] * SkinInternalConductivityDivGlobal / part.heatConductivity;
+                        part.emissiveConstant = presetTPS.array[index,3];
+                        part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
+                    }
                 }
-                if (tick % 500 == 0) {
+                if (tick % 15 == 0) {
+                    UpdateFlightDebug();
+                }
+                /*if (tick % 500 == 0) {
                     DebugLog();
-                }
+                }*/
                 tick ++;
             }
+        }
+
+        public void UpdateFlightDebug() 
+        {
+            if ( part.temperature > peakTemp)
+                        peakTemp = part.temperature;
+            if (part.skinTemperature > peakTempSkin)
+                peakTempSkin = part.skinTemperature;
+
+            FlightDebug =   "Temp Exp " + String.Format("{0000:0}", part.skinTemperature) + " Unexp " + String.Format("{0000:0}", part.skinUnexposedTemperature) + "K"
+                                + "\nK Exposed AreaFrac " + String.Format("{0:0.###}", part.skinExposedAreaFrac)
+                                + "\nSkinThermalMass " + String.Format("{0:0.#}", part.skinThermalMass)
+                                + "\nSkinHeatCap " + String.Format("{0:0.#}", part.skinThermalMassModifier * PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier) 
+                                + "\nInternalCondMult" + String.Format("{0:0.######}", part.skinInternalConductionMult)
+                                + "\ne " + String.Format("{0:0.###}", part.emissiveConstant)
+                                + "\nPeak Temp Skin/Core " + String.Format("{0:0.}", peakTempSkin)+ " / " + String.Format("{0:0.}", peakTemp) +"K"
+                                + "\nconvection AreaMult " + String.Format("{0:0.###}", part.ptd.convectionAreaMultiplier)
+                                + "\nTempMult " + String.Format("{0:0.###}", part.ptd.convectionTempMultiplier)
+                                + "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed);
         }
 
         public override void OnLoad(ConfigNode node)
         {
             onLoadFiredInEditor = HighLogic.LoadedSceneIsEditor;
-            heatConductivityDiv = 1.0 / (10.0 * PhysicsGlobals.ConductionFactor );
-            SkinInternalConductivityDiv = heatConductivityDiv / ( PhysicsGlobals.SkinInternalConductionFactor * 0.5);
-            SkinSkinConductivityDiv = heatConductivityDiv / PhysicsGlobals.SkinSkinConductionFactor;
+            heatConductivityDivGlobal = 1.0 / (10.0 * PhysicsGlobals.ConductionFactor );
+            SkinInternalConductivityDivGlobal = heatConductivityDivGlobal / ( PhysicsGlobals.SkinInternalConductionFactor * 0.5);
+            SkinSkinConductivityDivGlobal = heatConductivityDivGlobal / PhysicsGlobals.SkinSkinConductionFactor;
 
             node.TryGetValue("TPSSurfaceArea", ref surfaceAreaPart);
             node.TryGetValue("Volume", ref volumePart);
@@ -469,9 +512,23 @@ namespace ROLib
             if (HighLogic.LoadedSceneIsFlight) {
                 ApplyCorePreset(presetCoreName);
                 ApplySkinPreset(presetSkinName, false);
-            }
-            if (HighLogic.LoadedSceneIsFlight)
                 DebugLog();
+            }
+                
+            if (HighLogic.LoadedSceneIsFlight | presetTPS.hasCVS) {
+                for (int i = 0; i < presetTPS.array.GetLength(0); i++)
+                {
+                    if (part.skinTemperature > presetTPS.array[i,0]) {
+                        index = i;
+                        nextUpdateDown = presetTPS.array[i,0];
+                        nextUpdateUp = presetTPS.array[i+1,0];
+                    }
+                }
+                skinIntTransferCoefficient = 1.0 / presetTPS.array[index,2];
+                part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal / part.heatConductivity;
+                part.skinThermalMassModifier = presetTPS.array[index,1] / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                part.emissiveConstant = presetTPS.array[index,3];
+            }
         }
         
         private void OnDestroy()
@@ -690,9 +747,9 @@ namespace ROLib
         {
             // heatConductivity
             if (presetTPS.thermalConductivity > 0) {
-                part.heatConductivity = presetTPS.thermalConductivity * heatConductivityDiv;
+                part.heatConductivity = presetTPS.thermalConductivity * heatConductivityDivGlobal;
             } else if (presetCore.thermalConductivity > 0 ) {
-                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDiv;
+                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobal;
             } else {
                 part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
             };
@@ -706,7 +763,7 @@ namespace ROLib
                 part.skinThermalMassModifier = ((presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) * heightfactor + presetTPS.skinSpecificHeatCapacity)
                                                 / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
                 skinIntTransferCoefficient = (presetTPS.skinIntTransferCoefficientMax - presetTPS.skinIntTransferCoefficient) * heightfactor + presetTPS.skinIntTransferCoefficient;
-                part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity ;
+                part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal / part.heatConductivity ;
             } 
             else 
             {
@@ -731,13 +788,13 @@ namespace ROLib
                 // skinIntTransferCoefficient
                 if (presetTPS.skinIntTransferCoefficient != double.PositiveInfinity | presetTPS.skinIntTransferCoefficient  > 0.0) {
                     skinIntTransferCoefficient = presetTPS.skinIntTransferCoefficient;
-                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity;
+                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal / part.heatConductivity;
                 } else if (presetCore.skinIntTransferCoefficient > 0.0 ) {
                     skinIntTransferCoefficient = presetCore.skinIntTransferCoefficient;
-                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity;
+                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal / part.heatConductivity;
                 } else {
                     part.skinInternalConductionMult = part.partInfo.partPrefab.skinInternalConductionMult;
-                    skinIntTransferCoefficient = part.partInfo.partPrefab.skinInternalConductionMult / SkinInternalConductivityDiv * part.heatConductivity;
+                    skinIntTransferCoefficient = part.partInfo.partPrefab.skinInternalConductionMult / SkinInternalConductivityDivGlobal * part.heatConductivity;
                 }
             }
             part.skinSkinConductionMult = part.skinInternalConductionMult;
@@ -904,7 +961,7 @@ namespace ROLib
                     + "             Module Skin: " + skinThermalMassModifier + ", Core: "  + presetCore.specificHeatCapacity + "\n"
                     + "skinMassPerArea Part" + part.skinMassPerArea + ", Module " + tpsSurfaceDensity + "\n"
                     + "ConductionMult Part: Internal " + part.skinInternalConductionMult + ", SkintoSkin " + part.skinSkinConductionMult + ", Conductivity " + part.heatConductivity + "\n"
-                    + "             Module: Internal " + skinIntTransferCoefficient * SkinInternalConductivityDiv / part.heatConductivity + ", Skin to Skin " 
+                    + "             Module: Internal " + skinIntTransferCoefficient * SkinInternalConductivityDivGlobal / part.heatConductivity + ", Skin to Skin " 
                                         + presetTPS.skinSkinConductivity + ", Conductivity " + presetCore.thermalConductivity + "\n"
                     + "emissiveConstant part " + part.emissiveConstant + ",    preset" + presetTPS.emissiveConstantOverride + "\n"
                     + "ThermalMass Part: Skin: " + FormatThermalMass((float)part.skinThermalMass) + " / Core: " + FormatThermalMass((float)part.thermalMass) + "\n"
