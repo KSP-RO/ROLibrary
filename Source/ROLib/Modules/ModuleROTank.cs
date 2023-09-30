@@ -1062,8 +1062,6 @@ namespace ROLib
                 modifiedMass = sideMass + baseMass * decouplerMassMult;
         }
 
-        //%specificMass = 0.0002, 0.01, 0.005, 0
-
         #endregion
     }
 }
