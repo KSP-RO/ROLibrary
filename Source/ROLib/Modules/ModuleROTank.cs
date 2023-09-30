@@ -1013,7 +1013,7 @@ namespace ROLib
         #region PF-style mass
 
         [KSPField] public bool usePFStyleMass = false;
-        [KSPField(isPersistant = true, guiActiveEditor = false, guiName = "Side Density", groupName = GroupName, groupDisplayName = GroupDisplayName)]
+        [KSPField(isPersistant = true, guiActiveEditor = false, guiName = "Stringer Mass", groupName = GroupName, groupDisplayName = GroupDisplayName)]
         [UI_FloatRange(minValue = 0.01f, maxValue = 1.0f, stepIncrement = 0.01f)]
         public float density = 0.18f;
         [KSPField] public float minDensity = 0.01f;
