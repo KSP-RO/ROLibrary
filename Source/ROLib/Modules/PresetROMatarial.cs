@@ -44,12 +44,12 @@ namespace ROLib
         [Persistent] public double skinSkinConductivity = -1f;
         
 
-        [Persistent] public double skinHeightMin = 0.0f;
+        [Persistent] public float skinHeightMin = 0.0f;
         [Persistent] public double skinMassPerArea = -1f;
         [Persistent] public double skinSpecificHeatCapacity = -1f;
         [Persistent] public double skinIntTransferCoefficient = -1f;
 
-        [Persistent] public double skinHeightMax = -1.0f;
+        [Persistent] public float skinHeightMax = -1.0f;
         [Persistent] public double skinMassPerAreaMax = -1f;
         [Persistent] public double skinSpecificHeatCapacityMax = -1f;
         [Persistent] public double skinIntTransferCoefficientMax = -1f;
@@ -139,6 +139,9 @@ namespace ROLib
             node.TryGetValue("skinSpecificHeatCapacityMax", ref skinSpecificHeatCapacityMax);
             node.TryGetValue("thermalInsulanceMax", ref thermalInsulanceMax);
             node.TryGetValue("Reentry", ref reentryTag);
+
+            skinHeightMin *= 1000f;
+            skinHeightMax *= 1000f;
 
             skinIntTransferCoefficient = 1.0 / thermalInsulance;
             skinIntTransferCoefficientMax = 1.0 / thermalInsulanceMax;

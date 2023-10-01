@@ -185,7 +185,7 @@ namespace ROLib
         {
             get {
                 if (presetTPS.skinHeightMax > 0.0f) {
-                    return (float)presetTPS.skinHeightMax * 1000f;
+                    return presetTPS.skinHeightMax;
                 }
                 return 0;
             }
@@ -470,7 +470,7 @@ namespace ROLib
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = 
                     (bf, ob) => OnHeightChanged(tpsHeightDisplay);
                 
-                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), (float)presetTPS.skinHeightMin * 1000f, SkinHeightMaxVal, 10f, 1f, 0.01f);
+                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetTPS.skinHeightMin, SkinHeightMaxVal, 10f, 1f, 0.01f);
             }
         } 
 
@@ -608,7 +608,7 @@ namespace ROLib
 
         public void UpdateHeight(bool newSkin = false) {
             float heightMax = SkinHeightMaxVal; 
-            float heightMin = (float)presetTPS.skinHeightMin * 1000f;
+            float heightMin = presetTPS.skinHeightMin;
 
             if (newSkin == true) {
                 if (heightMax < heightMin)
@@ -620,9 +620,9 @@ namespace ROLib
                 {
                     double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
 
-                    double heightfactor  = (thermalMassAreaBefore -  presetTPS.skinSpecificHeatCapacity * presetTPS.skinMassPerArea / mult)
+                    float heightfactor  = (float)((thermalMassAreaBefore -  presetTPS.skinSpecificHeatCapacity * presetTPS.skinMassPerArea / mult)
                                             / (presetTPS.skinMassPerAreaMax - presetTPS.skinMassPerArea 
-                                               + presetTPS.skinMassPerArea * (presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) / mult);
+                                               + presetTPS.skinMassPerArea * (presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) / mult));
                     
                     if (heightfactor == 0 | heightfactor == double.NegativeInfinity | heightfactor == double.PositiveInfinity) 
                     {
@@ -630,7 +630,7 @@ namespace ROLib
                     } 
                     else
                     {
-                        tpsHeightDisplay = 1000.0f * (float)(heightfactor * (presetTPS.skinHeightMax - presetTPS.skinHeightMin) + presetTPS.skinHeightMin);
+                        tpsHeightDisplay = heightfactor * (presetTPS.skinHeightMax - presetTPS.skinHeightMin) + presetTPS.skinHeightMin;
 
                         tpsHeightDisplay = Mathf.Clamp(tpsHeightDisplay, heightMin, heightMax);
                     }
@@ -772,7 +772,7 @@ namespace ROLib
 
             if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0) 
             {
-                double heightfactor = (tpsHeightDisplay / 1000 - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
+                double heightfactor = (tpsHeightDisplay - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
 
                 tpsSurfaceDensity = (presetTPS.skinMassPerAreaMax - presetTPS.skinMassPerArea) * heightfactor + presetTPS.skinMassPerArea;
                 part.skinMassPerArea = tpsSurfaceDensity;
@@ -904,7 +904,7 @@ namespace ROLib
                 double heightfactor = 0;
                 if (presetTPS.skinHeightMax != presetTPS.skinHeightMin)
                 {
-                    heightfactor = (tpsHeightDisplay / 1000 - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
+                    heightfactor = (tpsHeightDisplay - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
                 }
 
                 thermalPropertiesRows = presetTPS.thermalPropMin.GetLength(0);
@@ -986,7 +986,7 @@ namespace ROLib
             double skinThermalMassModifier;
             if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0) 
             {
-                double heightfactor = (tpsHeightDisplay / 1000 - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
+                float heightfactor = (tpsHeightDisplay - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
                 skinThermalMassModifier = (presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) * heightfactor + presetTPS.skinSpecificHeatCapacity
                                                     / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
             } else {
