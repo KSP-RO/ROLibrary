@@ -97,7 +97,8 @@ namespace ROLib
         public bool? Usekg;
         public string UnitsName;
         public double? NominalAmountRecip;
-        public float[,] array;
+        public double[,] thermalPropMin;
+        public double[,] thermalPropMax;
         public bool hasCVS = false;
 
         public PresetROMatarial(ConfigNode node)
@@ -208,9 +209,13 @@ namespace ROLib
                 if (preset != null) {
                     if (preset.type == PresetType.Skin) {
                         PresetsSkin[preset.name] = preset;
-                        if (File.Exists("GameData/ROLib/Data/csv/" + preset.name + ".csv")) {
-                            preset.loadCSV(preset.name);
-                        } else {
+                        if (File.Exists("GameData/ROLib/Data/csv/" + preset.name + "_min.csv") & File.Exists("GameData/ROLib/Data/csv/" + preset.name + "_max.csv")) 
+                        {
+                            preset.loadCSV("GameData/ROLib/Data/csv/" + preset.name + "_min.csv", out preset.thermalPropMin);
+                            preset.loadCSV("GameData/ROLib/Data/csv/" + preset.name + "_max.csv", out preset.thermalPropMax);
+                            preset.hasCVS = true;
+                        } 
+                        else {
                             Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/csv/" + preset.name + ".csv");
                         }
                         
@@ -241,9 +246,9 @@ namespace ROLib
             Initialized = true;
         }
 
-        public void loadCSV (string fileName) 
+        public bool loadCSV (string fileName, out double[,] array) 
         {
-            CsvFileReader reader = new CsvFileReader("GameData/ROLib/Data/csv/" + fileName + ".csv");
+            CsvFileReader reader = new CsvFileReader(fileName);
             CsvRow lines = new CsvRow();
 
             bool skipFirst = true;
@@ -267,21 +272,21 @@ namespace ROLib
             int rowCount = list.Count;
             int columnCount = list[0].Length;
 
-            array = new float[rowCount, columnCount];
+            array = new double[rowCount, columnCount];
 
             string str = "CSV table\n";
             for (int i = 0; i < rowCount; i++)
             {
                 for (int j = 0; j < columnCount; j++)
                 {
-                    array[i, j] = float.Parse(list[i][j]);
+                    array[i, j] = double.Parse(list[i][j]);
                     str += array[i, j] + ", ";
                 }
                 str +='\n';
             }
-            hasCVS = true;
-            //Debug.Log(str);
             Debug.Log("[ROThermal] Loaded csv Data for " + fileName + ": GameData/ROLib/Data/csv/" + fileName + ".csv");
+            Debug.Log(str);
+            return true;
         }
     }
 }
