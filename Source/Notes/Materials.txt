@@ -888,7 +888,7 @@ https://ntrs.nasa.gov/api/citations/19930020032/downloads/19930020032.pdf
 https://ntrs.nasa.gov/api/citations/19840002091/downloads/19840002091.pdf
 
 
-RCG Coating Reaction Cured Glass (Class 1 White) 
+RCG Coating Reaction Cured Glass (Class 1 White) 0036C
 absorptiveConstant: 
 ratio of solar absorptance emittance 0.2 - 0.4 from 160 to 330K
 
