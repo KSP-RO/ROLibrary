@@ -2,7 +2,6 @@
 using FerramAerospaceResearch.FARAeroComponents;
 using ProceduralParts;
 using RealFuels.Tanks;
-using WingProcedural;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +16,7 @@ namespace ROLib
         private const string GroupDisplayName = "RO-Thermal_Protection";
         private const string GroupName = "ModuleROMaterials";
 
-        #region KSPFields
+        #region Display
 
         [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
@@ -50,7 +49,7 @@ namespace ROLib
         [KSPField(isPersistant = true, guiName = ":", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
         public string FlightDebug = "";
 
-        #endregion KSPFields
+        #endregion Display
 
         #region Private Variables
 
@@ -92,35 +91,32 @@ namespace ROLib
         private int thermalPropertyRowsCore = 1000;
         private bool hasThermalProperties = false;
         private bool pawOpen = false;
+        private double tick = 470.0;
+        private double peakTempSkin = 0.0;
+        private double peakTemp;
+        private double nextUpdateUpSkin = double.MaxValue;
+        private double nextUpdateDownSkin = double.MinValue;
+        private double nextUpdateUpCore = double.MaxValue;
+        private double nextUpdateDownCore = double.MinValue;
+        private int indexSkin = 0;
+        private int indexCore = 0;
+
+        private static bool? _RP1Found = null;
+        public static bool RP1Found
+        {
+            get
+            {
+                if (!_RP1Found.HasValue)
+                {
+                    var assembly = AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.assembly.GetName().Name == "RP0")?.assembly;
+                    _RP1Found = assembly != null;
+                }
+                return _RP1Found.Value;
+            }
+        }
         
         [SerializeField] private string[] availablePresetNamesCore = new string[] {};
         [SerializeField] private string[] availablePresetNamesSkin = new string[] {};
-        
-        // TODO need detailed implementation
-        //
-        // HeatConductivity seems to be a replacement value for thermal contact resistance in inverse
-        // which then get multltiplied together
-        // since heat transfer calculations usualy add them together & don't multiply them, like the game does 
-        // flux: Q = U * A * ΔT     U [kW/(m²·K)]: overall heat transfer coefficient 
-        //                          U = 1 /( l1/k1 + l2/k2 + 1/hc) bc. temperatures inside parts are uniform l1&2 get infinitely small
-        //                          U = hc      in ksp U -> part.heatConductivity * part2.heatConductivity * global mult
-        //                          Al->Al@1atm ~2200 hc
-        // partThermalData.localIntConduction[kW] += thermalLink.contactArea[m^2] * thermalLink.temperatureDelta[K]
-        //                                       * thermalLink.remotePart.heatConductivity[Sqrt(kW/(m²·K))] * part.heatConductivity[Sqrt(kW/(m²·K))]
-        //                                       * PhysicsGlobals.ConductionFactor * 10.0
-
-        // TODO need detailed implementation
-        private double SkinSkinConductivity {
-            get {
-                if (presetSkin.skinSkinConductivity > 0) {
-                    return presetSkin.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
-                } else if (presetCore.skinSkinConductivity > 0 ) {
-                    return presetCore.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
-                } else {
-                    return part.partInfo.partPrefab.skinSkinConductionMult;
-                }
-            }
-        }
 
         #endregion Private Variables
         [KSPField] public float surfaceAreaPart = -0.1f;
@@ -183,15 +179,6 @@ namespace ROLib
                     presetSkin = preset;
                 }
             }      
-        }
-        private float SkinHeightMaxVal 
-        {
-            get {
-                if (presetSkin.skinHeightMax > 0.0f) {
-                    return presetSkin.skinHeightMax;
-                }
-                return 0;
-            }
         }
 
         public double SetSurfaceArea ()
@@ -290,45 +277,53 @@ namespace ROLib
                 Debug.LogWarning("[ROThermal] get_SurfaceArea failed: Area=" + surfaceAreaCovered);
                 return 0f;
         }
+
+
+        // TODO need detailed implementation
+        //
+        // HeatConductivity seems to be a replacement value for thermal contact resistance in inverse
+        // which then get multltiplied together
+        // since heat transfer calculations usualy add them together & don't multiply them, like the game does 
+        // flux: Q = U * A * ΔT     U [kW/(m²·K)]: overall heat transfer coefficient 
+        //                          U = 1 /( l1/k1 + l2/k2 + 1/hc) bc. temperatures inside parts are uniform l1&2 get infinitely small
+        //                          U = hc      in ksp U -> part.heatConductivity * part2.heatConductivity * global mult
+        //                          Al->Al@1atm ~2200 hc
+        // partThermalData.localIntConduction[kW] += thermalLink.contactArea[m^2] * thermalLink.temperatureDelta[K]
+        //                                       * thermalLink.remotePart.heatConductivity[Sqrt(kW/(m²·K))] * part.heatConductivity[Sqrt(kW/(m²·K))]
+        //                                       * PhysicsGlobals.ConductionFactor * 10.0
+
+        // TODO need detailed implementation
+        private double SkinSkinConductivity {
+            get {
+                if (presetSkin.skinSkinConductivity > 0) {
+                    return presetSkin.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
+                } else if (presetCore.skinSkinConductivity > 0 ) {
+                    return presetCore.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
+                } else {
+                    return part.partInfo.partPrefab.skinSkinConductionMult;
+                }
+            }
+        }
         
         public float TPSMass => (float)(surfaceArea * tpsSurfaceDensity * TPSAreaMult / 1000f);
         public float TPSCost => (float)surfaceArea * TPSAreaCost * TPSAreaMult;
 
         public float Ablator => Mathf.Round((float)surfaceArea * presetSkin.heatShieldAblator * 10f) / 10f;       
-        private static bool? _RP1Found = null;
-        public static bool RP1Found
-        {
-            get
-            {
-                if (!_RP1Found.HasValue)
-                {
-                    var assembly = AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.assembly.GetName().Name == "RP0")?.assembly;
-                    _RP1Found = assembly != null;
-                }
-                return _RP1Found.Value;
-            }
-        }
+       
 
         #region Standard KSP Overrides
 
-        // Remove after Debugging is less needed
-        private double tick = 470.0;
-        private double peakTempSkin = 0.0;
-        private double peakTemp;
-        private double nextUpdateUpSkin = double.MaxValue;
-        private double nextUpdateDownSkin = double.MinValue;
-        private double nextUpdateUpCore = double.MaxValue;
-        private double nextUpdateDownCore = double.MinValue;
-        private int indexSkin = 0;
-        private int indexCore = 0;
+
         public void FixedUpdate()
         {
-            if (HighLogic.LoadedSceneIsFlight && hasThermalProperties) {
+            if (HighLogic.LoadedSceneIsFlight && hasThermalProperties) 
+            {
                 if (part.skinTemperature > nextUpdateUpSkin) 
                 {  
                     nextUpdateDownSkin = thermalPropertiesSkin[indexSkin,0];
                     indexSkin ++;
-                    if (indexSkin >= thermalPropertyRowsSkin) {
+                    if (indexSkin >= thermalPropertyRowsSkin) 
+                    {
                         indexSkin --;
                         nextUpdateUpSkin = double.PositiveInfinity;
                         return;
@@ -345,7 +340,8 @@ namespace ROLib
                 {
                     nextUpdateUpSkin = thermalPropertiesSkin[indexSkin,0];
                     indexSkin --;
-                    if (indexSkin < 0) {
+                    if (indexSkin < 0) 
+                    {
                         indexSkin = 0;
                         nextUpdateDownSkin = -1;
                         return;
@@ -358,10 +354,12 @@ namespace ROLib
                     part.emissiveConstant = thermalPropertiesSkin[indexSkin,3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
                 }
-                if (part.temperature > nextUpdateUpCore) {
+                if (part.temperature > nextUpdateUpCore) 
+                {
                     nextUpdateDownCore = thermalPropertiesCore[indexCore,0];
                     indexCore ++;
-                    if (indexCore >= thermalPropertyRowsCore) {
+                    if (indexCore >= thermalPropertyRowsCore) 
+                    {
                         indexCore --;
                         nextUpdateUpCore = double.PositiveInfinity;
                         return;
@@ -374,7 +372,8 @@ namespace ROLib
                 {
                     nextUpdateUpCore = thermalPropertiesCore[indexCore,0];
                     indexCore --;
-                    if (indexCore < 0) {
+                    if (indexCore < 0) 
+                    {
                         indexCore = 0;
                         nextUpdateDownCore = -1;
                         return;
@@ -383,50 +382,14 @@ namespace ROLib
                     part.thermalMassModifier = thermalPropertiesCore[indexCore,1];
                     Debug.Log("[ROThermal] "+ part.name + " moving Core temperature values up, between " +  nextUpdateDownCore + "-" + nextUpdateUpCore);
                 }
-                if (pawOpen && PhysicsGlobals.ThermalDataDisplay) {
-                    if (tick % 25 == 0) {
-                        UpdateFlightDebug();
-                    }
-                    tick ++;
+            }
+            if (pawOpen && PhysicsGlobals.ThermalDataDisplay) 
+            {
+                if (tick % 25 == 0) {
+                    UpdateFlightDebug();
                 }
+                tick ++;
             }
-        }
-
-        public void OnPartActionUIShown (UIPartActionWindow window, Part p) 
-        {
-            if (PhysicsGlobals.ThermalDataDisplay) 
-            {
-                Fields[nameof(FlightDebug)].guiActiveEditor = true;
-            }
-            pawOpen = true;
-        }
-
-        public void OnPartActionUIDismiss(Part p)
-        {
-            if (!PhysicsGlobals.ThermalDataDisplay) 
-            {
-                Fields[nameof(FlightDebug)].guiActiveEditor = false;
-            }
-            pawOpen = false;
-        }
-
-        public void UpdateFlightDebug() 
-        {
-            if ( part.temperature > peakTemp)
-                        peakTemp = part.temperature;
-            if (part.skinTemperature > peakTempSkin)
-                peakTempSkin = part.skinTemperature;
-
-            FlightDebug =   "Temp Exp " + part.skinTemperature.ToString("F1") + " Unexp " + part.skinUnexposedTemperature.ToString("F1") + "K"
-                                + "\nPeak Temp Skin/Core " + peakTempSkin.ToString("F1")+ " / " + peakTemp.ToString("F1") +"K"
-                                + "\ne " + part.emissiveConstant.ToString("F3") + " Exp AreaF " + part.skinExposedAreaFrac.ToString("F3")
-                                + "\nSkinThermalMass " + part.skinThermalMass.ToString("F1")
-                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier).ToString("F1") 
-                                + "\nInternalCondMult" + part.skinInternalConductionMult.ToString("F6")
-                                + "\nconvection AreaMult " + part.ptd.convectionAreaMultiplier.ToString("F3")
-                                + "\nTempMult " + part.ptd.convectionTempMultiplier.ToString("F3")
-                                //+ "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
-                                + "\nSurface " + part.radiativeArea.ToString("F1") + "m2, Skin" + part.skinThermalMassModifier.ToString("F4") + "kg/m2-K";  
         }
 
         public override void OnLoad(ConfigNode node)
@@ -518,7 +481,7 @@ namespace ROLib
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = 
                     (bf, ob) => OnHeightChanged(tpsHeightDisplay);
                 
-                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetSkin.skinHeightMin, SkinHeightMaxVal, 10f, 1f, 0.01f);
+                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetSkin.skinHeightMin, presetSkin.SkinHeightMaxVal, 10f, 1f, 0.01f);
             }
         } 
 
@@ -542,13 +505,14 @@ namespace ROLib
             wingProceduralModule = part?.FindModuleImplementing<WingProcedural.WingProcedural>();
             CCTagListModule = part?.FindModuleImplementing<ModuleTagList>();
 
-            if(HighLogic.LoadedSceneIsEditor) {
+            if(HighLogic.LoadedSceneIsEditor) 
+            {
                 if (moduleFuelTanks is ModuleFuelTanks)
                 { 
                     /// ModuleFuelTanks changes TankType & mass on Update()
                     moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onFieldChanged += (bf, ob) => UpdateCoreForRealfuels(true);
                     moduleFuelTanks.Fields[nameof(moduleFuelTanks.typeDisp)].uiControlEditor.onSymmetryFieldChanged += (bf, ob) => UpdateCoreForRealfuels(true);
-                    GameEvents.onPartResourceListChange.Add(onPartResourceListChange);
+                    GameEvents.onPartResourceListChange.Add(OnPartResourceListChange);
                     Debug.Log("[ROThermal] " + part.name + " ModuleFuelTanks found " + moduleFuelTanks.name + " updating core material list");
                     UpdateCoreForRealfuels(false);
                 }
@@ -618,7 +582,7 @@ namespace ROLib
             GameEvents.onPartActionUIDismiss.Remove(OnPartActionUIDismiss);
             GameEvents.onPartActionUIShown.Remove(OnPartActionUIShown);
             if (moduleFuelTanks is ModuleFuelTanks & HighLogic.LoadedSceneIsEditor)
-                GameEvents.onPartResourceListChange.Remove(onPartResourceListChange);
+                GameEvents.onPartResourceListChange.Remove(OnPartResourceListChange);
         }
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
@@ -628,25 +592,7 @@ namespace ROLib
 
         #endregion Standard KSP Overrides
 
-
         #region Custom Methods
-
-
-        /// <summary>
-        /// Message sent from ProceduralPart, ProceduralWing or ModuleROTanks when it updates.
-        /// </summary>
-        [KSPEvent]
-        public void OnPartVolumeChanged(BaseEventDetails data)
-        {
-            Debug.Log($"[ROThermal] OnPartVolumeChanged Message caught");
-            if (!HighLogic.LoadedSceneIsEditor) return;
-            UpdateGeometricProperties();
-        }
-        public void onPartResourceListChange(Part dPart)
-        {
-            Debug.Log($"[ROThermal] onPartResourceListChange Part {part} Message caught.");
-            checkMassUpdate(true);
-        }
 
         public bool checkMassUpdate(bool recheck = true, int ntry = 0)
         {
@@ -671,15 +617,17 @@ namespace ROLib
             UpdateGeometricProperties();
             return true;
         }
-        public void OnHeightChanged(float height) {
+        public void OnHeightChanged(float height) 
+        {
             if (height == prevHeight) return;
             UpdateHeight();
             ApplyThermal();
             UpdateGeometricProperties();
         }
 
-        public void UpdateHeight(bool newSkin = false) {
-            float heightMax = SkinHeightMaxVal; 
+        public void UpdateHeight(bool newSkin = false) 
+        {
+            float heightMax = presetSkin.SkinHeightMaxVal; 
             float heightMin = presetSkin.skinHeightMin;
 
             if (newSkin == true) {
@@ -925,12 +873,14 @@ namespace ROLib
 
         public void UpdateGeometricProperties()
         {
-            if (HighLogic.LoadedSceneIsEditor) {
+            if (HighLogic.LoadedSceneIsEditor) 
+            {
                 part.radiativeArea = SetSurfaceArea();
             }
             tpsMass = TPSMass;
             tpsCost = TPSCost;
-            if (tpsMassIsAdditive) {
+            if (tpsMassIsAdditive) 
+            {
                 if (moduleMass != tpsMass)
                 {
                     //TODO Fire EngineersReport update without FAR voxelization
@@ -939,7 +889,8 @@ namespace ROLib
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
                 
-            } else {
+            } else 
+            {
                 moduleMass = 0.0f;
             }
             
@@ -999,7 +950,8 @@ namespace ROLib
                 }
                 Debug.Log($"[ROThermal] LoadThermalPropertiesArray() Array[{thermalPropertyRowsSkin}, {columns}] {PresetTPS} for part {part.name}");    
             }
-            if (presetCore.hasCVS == true) {
+            if (presetCore.hasCVS == true) 
+            {
 
                 thermalPropertyRowsCore = presetCore.thermalPropMin.GetLength(0);
                 int columns = presetCore.thermalPropMin.GetLength(1);
@@ -1014,31 +966,6 @@ namespace ROLib
                 }
                 Debug.Log($"[ROThermal] LoadThermalPropertiesArray() Array[{thermalPropertyRowsCore}, {columns}] {presetCore} for part {part.name}");   
             }
-        }
-
-        public void UpdateGUI() {
-            part.GetResourceMass(out float resourceThermalMass);
-
-            double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
-            double thermalMass = partMassCached * (float)mult + resourceThermalMass;
-            double skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)partMassCached * mult * 0.5));
-            thermalMass = Math.Max(thermalMass - skinThermalMass, 0.1);
-            thermalMassAreaBefore = part.skinMassPerArea * part.skinThermalMassModifier;
-            //Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
-
-            maxTempDisplay = "Skin: " + String.Format("{0:0.}", part.skinMaxTemp) + "K / Core: " + String.Format("{0:0.}", part.maxTemp) ;
-            thermalMassDisplay = "Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass);
-            //Debug.Log($"[ROThermal] UpdateGUI() thermalInsulance: skinIntTransferCoefficient " + skinIntTransferCoefficient + " presetCore.skinIntTransferCoefficient " + presetCore.skinIntTransferCoefficient );
-            thermalInsulanceDisplay = KSPUtil.PrintSI(1.0/skinIntTransferCoefficient, "m²*K/kW", 4);
-            emissiveConstantDisplay = part.emissiveConstant.ToString("F2");
-            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(partMassCached + resourceThermalMass);
-            surfaceDensityDisplay = (float)tpsSurfaceDensity;
-
-            FlightDisplay = "" + part.skinMaxTemp + "/" + part.maxTemp + "\nSkin: " + PresetTPS  + " " + tpsHeightDisplay + "mm\nCore: " + PresetCore ;
-            //if (HighLogic.LoadedSceneIsEditor)
-                //DebugLog();
-            
-            UpdatePAW();
         }
 
         public void CCTagUpdate(PresetROMatarial preset ) 
@@ -1068,50 +995,6 @@ namespace ROLib
 
             }
 
-        }
-
-        public void DebugLog()
-        {
-            //part.DragCubes.RequestOcclusionUpdate();
-            //part.DragCubes.SetPartOcclusion();
-            double skinThermalMassModifier;
-            if (presetSkin.skinHeightMax > 0.0 & presetSkin.skinSpecificHeatCapacityMax > 0.0 & presetSkin.skinMassPerAreaMax > 0.0) 
-            {
-                
-                double heightfactor = 0;
-                if (presetSkin.skinHeightMax != presetSkin.skinHeightMin)
-                {
-                    heightfactor = (tpsHeightDisplay - presetSkin.skinHeightMin) / (presetSkin.skinHeightMax - presetSkin.skinHeightMin);
-                }
-                skinThermalMassModifier = (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * heightfactor + presetSkin.skinSpecificHeatCapacity
-                                                    / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
-            } else {
-               skinThermalMassModifier = presetSkin.skinSpecificHeatCapacity > 0.0 ? presetSkin.skinSpecificHeatCapacity : presetCore.skinSpecificHeatCapacity;
-            }
-            skinThermalMassModifier /= PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
-            part.GetResourceMass(out float resourceThermalMass);
-            double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
-            float thermalMass = part.mass * (float)mult + resourceThermalMass;
-            float skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)part.mass * mult * 0.5));
-            thermalMass = Mathf.Max(thermalMass - skinThermalMass, 0.1f);
-
-            Debug.Log($"[ROThermal] (" + HighLogic.LoadedScene + ") Values for " + part.name + "\n"
-                    + "Core Preset: " + presetCore.name + ", Skin Preset: " +  presetSkin.name + ": " + tpsHeightDisplay + " mm\n"
-                    + "TempMax: Skin: " + part.skinMaxTemp + "K / Core: " + part.maxTemp + "K\n"
-                    + "ThermalMassMod Part Skin: " + part.skinThermalMassModifier + ", Core: "  + part.thermalMassModifier + "\n"
-                    + "             Module Skin: " + skinThermalMassModifier + ", Core: "  + presetCore.specificHeatCapacity + "\n"
-                    + "skinMassPerArea Part" + part.skinMassPerArea + ", Module " + tpsSurfaceDensity + "\n"
-                    + "ConductionMult Part: Internal " + part.skinInternalConductionMult + ", SkintoSkin " + part.skinSkinConductionMult + ", Conductivity " + part.heatConductivity + "\n"
-                    + "             Module: Internal " + skinIntTransferCoefficient * SkinInternalConductivityDivGlobal + ", Skin to Skin " 
-                                        + presetSkin.skinSkinConductivity + ", Conductivity " + presetCore.thermalConductivity + "\n"
-                    + "emissiveConstant part " + part.emissiveConstant + ",    preset" + presetSkin.emissiveConstantOverride + "\n"
-                    + "ThermalMass Part: Skin: " + FormatThermalMass((float)part.skinThermalMass) + " / Core: " + FormatThermalMass((float)part.thermalMass) + "\n"
-                    + "          Module: Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass) + "\n"
-                    + "ModuleMass (Skin) " + FormatMass(moduleMass) + ",    Total Mass: " + FormatMass(part.mass) + "\n"
-                    + "SurfaceArea: part.radiativeArea " + part.radiativeArea + ", get_SurfaceArea" + surfaceArea + "far" + fARAeroPartModule?.ProjectedAreas.totalArea + "\n"
-                    //+ "SurfaceArea: part.exposedArea " + part.exposedArea + ", part.skinExposedArea "  + part.skinExposedArea + ", skinExposedAreaFrac " + part.skinExposedAreaFrac + "\n"
-                    + "part.DragCubes->  PostOcclusionArea " + part.DragCubes.PostOcclusionArea  + ", cubeData.exposedArea "+ part.DragCubes.ExposedArea + ", Area "+ part.DragCubes.Area + "\n"
-            );
         }
 
         public void UpdateCoreForRealfuels(bool applyPreset)
@@ -1145,8 +1028,7 @@ namespace ROLib
 
         public string[] GetUnlockedPresets(string[] all)
         {
-            if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER &&
-                HighLogic.CurrentGame.Mode != Game.Modes.SCIENCE_SANDBOX)
+            if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER && HighLogic.CurrentGame.Mode != Game.Modes.SCIENCE_SANDBOX)
             {
                 Debug.Log($"[ROThermal] All presets unlocked");
                 return all;
@@ -1309,6 +1191,46 @@ namespace ROLib
                 list[i] = preset;
             }
         }
+        #endregion Custom Methods
+
+        #region Game Events
+        public void OnPartActionUIShown (UIPartActionWindow window, Part p) 
+        {
+            if (PhysicsGlobals.ThermalDataDisplay) 
+            {
+                Fields[nameof(FlightDebug)].guiActiveEditor = true;
+            }
+            pawOpen = true;
+        }
+
+        public void OnPartActionUIDismiss(Part p)
+        {
+            if (!PhysicsGlobals.ThermalDataDisplay) 
+            {
+                Fields[nameof(FlightDebug)].guiActiveEditor = false;
+            }
+            pawOpen = false;
+        }
+
+        public void OnPartResourceListChange(Part dPart)
+        {
+            Debug.Log($"[ROThermal] onPartResourceListChange Part {part} Message caught.");
+            checkMassUpdate(true);
+        }
+
+        #endregion Game Events
+
+        /// <summary>
+        /// Message sent from ProceduralPart, ProceduralWing or ModuleROTanks when it updates.
+        /// </summary>
+        [KSPEvent]
+        public void OnPartVolumeChanged(BaseEventDetails data)
+        {
+            Debug.Log($"[ROThermal] OnPartVolumeChanged Message caught");
+            if (!HighLogic.LoadedSceneIsEditor) return;
+            UpdateGeometricProperties();
+        }
+        
 
         /// <summary>
         /// Called from RP0KCT
@@ -1354,10 +1276,99 @@ namespace ROLib
 
             return PurchaseConfig(upgd);
         }
+
+        public void UpdateGUI() 
+        {
+            part.GetResourceMass(out float resourceThermalMass);
+
+            double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
+            double thermalMass = partMassCached * (float)mult + resourceThermalMass;
+            double skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)partMassCached * mult * 0.5));
+            thermalMass = Math.Max(thermalMass - skinThermalMass, 0.1);
+            thermalMassAreaBefore = part.skinMassPerArea * part.skinThermalMassModifier;
+            //Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
+
+            maxTempDisplay = "Skin: " + String.Format("{0:0.}", part.skinMaxTemp) + "K / Core: " + String.Format("{0:0.}", part.maxTemp) ;
+            thermalMassDisplay = "Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass);
+            //Debug.Log($"[ROThermal] UpdateGUI() thermalInsulance: skinIntTransferCoefficient " + skinIntTransferCoefficient + " presetCore.skinIntTransferCoefficient " + presetCore.skinIntTransferCoefficient );
+            thermalInsulanceDisplay = KSPUtil.PrintSI(1.0/skinIntTransferCoefficient, "m²*K/kW", 4);
+            emissiveConstantDisplay = part.emissiveConstant.ToString("F2");
+            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(partMassCached + resourceThermalMass);
+            surfaceDensityDisplay = (float)tpsSurfaceDensity;
+
+            FlightDisplay = "" + part.skinMaxTemp + "/" + part.maxTemp + "\nSkin: " + PresetTPS  + " " + tpsHeightDisplay + "mm\nCore: " + PresetCore ;
+            //if (HighLogic.LoadedSceneIsEditor)
+                //DebugLog();
+            
+            UpdatePAW();
+        }
         public static string FormatMass(float mass) => mass < 1.0f ? KSPUtil.PrintSI(mass * 1e6, "g", 4) : KSPUtil.PrintSI(mass, "t", 4);
         public static string FormatThermalMass(float thermalmass) => KSPUtil.PrintSI(thermalmass * 1e3, "J/K", 4);
         public static string FormatThermalMass(double thermalmass) => KSPUtil.PrintSI(thermalmass * 1e3, "J/K", 4);
 
-        #endregion Custom Methods
+        public void UpdateFlightDebug() 
+        {
+            if ( part.temperature > peakTemp)
+                        peakTemp = part.temperature;
+            if (part.skinTemperature > peakTempSkin)
+                peakTempSkin = part.skinTemperature;
+
+            FlightDebug =   "Temp Exp " + part.skinTemperature.ToString("F1") + " Unexp " + part.skinUnexposedTemperature.ToString("F1") + "K"
+                                + "\nPeak Temp Skin/Core " + peakTempSkin.ToString("F1")+ " / " + peakTemp.ToString("F1") +"K"
+                                + "\ne " + part.emissiveConstant.ToString("F3") + " Exp AreaF " + part.skinExposedAreaFrac.ToString("F3")
+                                + "\nSkinThermalMass " + part.skinThermalMass.ToString("F1")
+                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier).ToString("F1") 
+                                + "\nInternalCondMult" + part.skinInternalConductionMult.ToString("F6")
+                                + "\nconvection AreaMult " + part.ptd.convectionAreaMultiplier.ToString("F3")
+                                + "\nTempMult " + part.ptd.convectionTempMultiplier.ToString("F3")
+                                //+ "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
+                                + "\nSurface " + part.radiativeArea.ToString("F1") + "m2, Skin" + part.skinThermalMassModifier.ToString("F4") + "kg/m2-K";  
+        }
+        public void DebugLog()
+        {
+            //part.DragCubes.RequestOcclusionUpdate();
+            //part.DragCubes.SetPartOcclusion();
+            double skinThermalMassModifier;
+            if (presetSkin.skinHeightMax > 0.0 & presetSkin.skinSpecificHeatCapacityMax > 0.0 & presetSkin.skinMassPerAreaMax > 0.0) 
+            {
+                
+                double heightfactor = 0;
+                if (presetSkin.skinHeightMax != presetSkin.skinHeightMin)
+                {
+                    heightfactor = (tpsHeightDisplay - presetSkin.skinHeightMin) / (presetSkin.skinHeightMax - presetSkin.skinHeightMin);
+                }
+                skinThermalMassModifier = (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * heightfactor + presetSkin.skinSpecificHeatCapacity
+                                                    / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+            } else 
+            {
+               skinThermalMassModifier = presetSkin.skinSpecificHeatCapacity > 0.0 ? presetSkin.skinSpecificHeatCapacity : presetCore.skinSpecificHeatCapacity;
+            }
+            skinThermalMassModifier /= PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+            part.GetResourceMass(out float resourceThermalMass);
+            double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
+            float thermalMass = part.mass * (float)mult + resourceThermalMass;
+            float skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)part.mass * mult * 0.5));
+            thermalMass = Mathf.Max(thermalMass - skinThermalMass, 0.1f);
+
+            Debug.Log($"[ROThermal] (" + HighLogic.LoadedScene + ") Values for " + part.name + "\n"
+                    + "Core Preset: " + presetCore.name + ", Skin Preset: " +  presetSkin.name + ": " + tpsHeightDisplay + " mm\n"
+                    + "TempMax: Skin: " + part.skinMaxTemp + "K / Core: " + part.maxTemp + "K\n"
+                    + "ThermalMassMod Part Skin: " + part.skinThermalMassModifier + ", Core: "  + part.thermalMassModifier + "\n"
+                    + "             Module Skin: " + skinThermalMassModifier + ", Core: "  + presetCore.specificHeatCapacity + "\n"
+                    + "skinMassPerArea Part" + part.skinMassPerArea + ", Module " + tpsSurfaceDensity + "\n"
+                    + "ConductionMult Part: Internal " + part.skinInternalConductionMult + ", SkintoSkin " + part.skinSkinConductionMult + ", Conductivity " + part.heatConductivity + "\n"
+                    + "             Module: Internal " + skinIntTransferCoefficient * SkinInternalConductivityDivGlobal + ", Skin to Skin " 
+                                        + presetSkin.skinSkinConductivity + ", Conductivity " + presetCore.thermalConductivity + "\n"
+                    + "emissiveConstant part " + part.emissiveConstant + ",    preset" + presetSkin.emissiveConstantOverride + "\n"
+                    + "ThermalMass Part: Skin: " + FormatThermalMass((float)part.skinThermalMass) + " / Core: " + FormatThermalMass((float)part.thermalMass) + "\n"
+                    + "          Module: Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass) + "\n"
+                    + "ModuleMass (Skin) " + FormatMass(moduleMass) + ",    Total Mass: " + FormatMass(part.mass) + "\n"
+                    + "SurfaceArea: part.radiativeArea " + part.radiativeArea + ", get_SurfaceArea" + surfaceArea + "far" + fARAeroPartModule?.ProjectedAreas.totalArea + "\n"
+                    //+ "SurfaceArea: part.exposedArea " + part.exposedArea + ", part.skinExposedArea "  + part.skinExposedArea + ", skinExposedAreaFrac " + part.skinExposedAreaFrac + "\n"
+                    + "part.DragCubes->  PostOcclusionArea " + part.DragCubes.PostOcclusionArea  + ", cubeData.exposedArea "+ part.DragCubes.ExposedArea + ", Area "+ part.DragCubes.Area + "\n"
+            );
+        }
+
+        
     }
 }

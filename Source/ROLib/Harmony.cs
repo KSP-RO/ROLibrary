@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using Smooth.Slinq.Context;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
@@ -20,7 +19,8 @@ namespace ROLib.Harmony
         }
     }
 
-    static class HarmonyPatches {
+    static class HarmonyPatches 
+    {
         
         [HarmonyPatch(typeof(FlightIntegrator), "FixedUpdate")] 
         public class FixedUpdate_patch{
@@ -31,7 +31,8 @@ namespace ROLib.Harmony
         }
 
         [HarmonyPatch(typeof(FlightIntegrator), "UpdateMassStats")]
-        public static class UpdateMassStats_patch {
+        public static class UpdateMassStats_patch 
+        {
             static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codeInstructions) {
                 var SetSkinThermalMass = AccessTools.Method(typeof(FlightIntegrator), nameof(FlightIntegrator.SetSkinThermalMass));
                 var resourceMass = AccessTools.Field(typeof(Part), nameof(Part.resourceMass));

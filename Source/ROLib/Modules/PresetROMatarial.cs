@@ -33,7 +33,6 @@ namespace ROLib
         [Persistent] public float heatShieldDiameterCost = 0.0f;
 
         // part parameters override
-        //[Persistent] public float massOverride = -1;
         [Persistent] public double maxTempOverride = -1f;
         [Persistent] public double skinMaxTempOverride = -1f;
         [Persistent] public double specificHeatCapacity = -1f;
@@ -41,8 +40,7 @@ namespace ROLib
         [Persistent] public double emissiveConstantOverride = -1f;
         [Persistent] public double absorptiveConstant = -1f;
         [Persistent] public double thermalConductivity = -1f;
-        [Persistent] public double skinSkinConductivity = -1f;
-        
+        [Persistent] public double skinSkinConductivity = -1f;    
 
         [Persistent] public float skinHeightMin = 0.0f;
         [Persistent] public double skinMassPerArea = -1f;
@@ -100,6 +98,15 @@ namespace ROLib
         public double[,] thermalPropMin;
         public double[,] thermalPropMax;
         public bool hasCVS = false;
+        public float SkinHeightMaxVal
+        {
+            get {
+                if (skinHeightMax > 0.0f) {
+                    return skinHeightMax;
+                }
+                return 0;
+            }
+        }
 
         public PresetROMatarial(ConfigNode node)
         {
@@ -234,12 +241,12 @@ namespace ROLib
                         }
                     }
                 }
-
-                UnityEngine.Debug.Log($"[ROThermal] Found and loaded preset {preset.name}");
+                Debug.Log($"[ROThermal] Found and loaded preset {preset.name}");
             }
 
             // initialize default fallback preset
-            if (!PresetsCore.ContainsKey("default")){
+            if (!PresetsCore.ContainsKey("default"))
+            {
                 Debug.Log("[ROThermal] Preset \"default\" not found, creating an empty one");
                 PresetsCore["default"] = new PresetROMatarial("default")
                 {
