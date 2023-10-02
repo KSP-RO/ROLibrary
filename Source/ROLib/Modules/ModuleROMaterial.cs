@@ -91,6 +91,7 @@ namespace ROLib
         private int thermalPropertyRowsSkin = 1000;
         private int thermalPropertyRowsCore = 1000;
         private bool hasThermalProperties = false;
+        private bool pawOpen = false;
         
         [SerializeField] private string[] availablePresetNamesCore = new string[] {};
         [SerializeField] private string[] availablePresetNamesSkin = new string[] {};
@@ -382,14 +383,25 @@ namespace ROLib
                     part.thermalMassModifier = thermalPropertiesCore[indexCore,1];
                     Debug.Log("[ROThermal] "+ part.name + " moving Core temperature values up, between " +  nextUpdateDownCore + "-" + nextUpdateUpCore);
                 }
-                if (tick % 25 == 0) {
-                    UpdateFlightDebug();
+                if (pawOpen && PhysicsGlobals.ThermalDataDisplay) {
+                    if (tick % 25 == 0) {
+                        UpdateFlightDebug();
+                    }
+                    tick ++;
                 }
-                /*if (tick % 500 == 0) {
-                    DebugLog();
-                }*/
-                tick ++;
             }
+        }
+
+        public void OnPartActionUIShown (UIPartActionWindow window, Part p) 
+        {
+            Fields[nameof(FlightDebug)].guiActiveEditor = true;
+            pawOpen = true;
+        }
+
+        public void OnPartActionUIDismiss(Part p)
+        {
+            Fields[nameof(FlightDebug)].guiActiveEditor = false;
+            pawOpen = false;
         }
 
         public void UpdateFlightDebug() 
@@ -399,16 +411,16 @@ namespace ROLib
             if (part.skinTemperature > peakTempSkin)
                 peakTempSkin = part.skinTemperature;
 
-            FlightDebug =   "Temp Exp " + String.Format("{0000:0}", part.skinTemperature) + " Unexp " + String.Format("{0000:0}", part.skinUnexposedTemperature) + "K"
-                                + "\nPeak Temp Skin/Core " + String.Format("{0:0.}", peakTempSkin)+ " / " + String.Format("{0:0.}", peakTemp) +"K"
-                                + "\ne " + String.Format("{0:0.###}", part.emissiveConstant) + " Exp AreaF " + String.Format("{0:0.###}", part.skinExposedAreaFrac)
-                                + "\nSkinThermalMass " + String.Format("{0:0.#}", part.skinThermalMass)
-                                + "\nSkinHeatCap " + String.Format("{0:0.#}", part.skinThermalMassModifier * PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier) 
-                                + "\nInternalCondMult" + String.Format("{0:0.######}", part.skinInternalConductionMult)   
-                                + "\nconvection AreaMult " + String.Format("{0:0.###}", part.ptd.convectionAreaMultiplier)
-                                + "\nTempMult " + String.Format("{0:0.###}", part.ptd.convectionTempMultiplier)
+            FlightDebug =   "Temp Exp " + part.skinTemperature.ToString("F1") + " Unexp " + part.skinUnexposedTemperature.ToString("F1") + "K"
+                                + "\nPeak Temp Skin/Core " + peakTempSkin.ToString("F1")+ " / " + peakTemp.ToString("F1") +"K"
+                                + "\ne " + part.emissiveConstant.ToString("F3") + " Exp AreaF " + part.skinExposedAreaFrac.ToString("F3")
+                                + "\nSkinThermalMass " + part.skinThermalMass.ToString("F1")
+                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier).ToString("F1") 
+                                + "\nInternalCondMult" + part.skinInternalConductionMult.ToString("F6")
+                                + "\nconvection AreaMult " + part.ptd.convectionAreaMultiplier.ToString("F3")
+                                + "\nTempMult " + part.ptd.convectionTempMultiplier.ToString("F3")
                                 //+ "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
-                                + "\nSurface " + String.Format("{0:0.#}", part.radiativeArea) + "m2, Skin" + String.Format("{0:0.######}", part.skinThermalMassModifier) + "kg/m2-K";  
+                                + "\nSurface " + part.radiativeArea.ToString("F1") + "m2, Skin" + part.skinThermalMassModifier.ToString("F4") + "kg/m2-K";  
         }
 
         public override void OnLoad(ConfigNode node)
@@ -545,7 +557,10 @@ namespace ROLib
                 reentryByDefault = true;
             }
 
-            if (HighLogic.LoadedSceneIsFlight) {
+            if (HighLogic.LoadedSceneIsFlight) 
+            {
+                GameEvents.onPartActionUIDismiss.Add(OnPartActionUIDismiss);
+                GameEvents.onPartActionUIShown.Add(OnPartActionUIShown);
                 ApplyCorePreset(presetCoreName);
                 ApplySkinPreset(presetSkinName, false);
                 DebugLog();
@@ -594,8 +609,10 @@ namespace ROLib
         private void OnDestroy()
         {
             EditorCordinator.RemoveToMassCheckList(this);
+            GameEvents.onPartActionUIDismiss.Remove(OnPartActionUIDismiss);
+            GameEvents.onPartActionUIShown.Remove(OnPartActionUIShown);
             if (moduleFuelTanks is ModuleFuelTanks & HighLogic.LoadedSceneIsEditor)
-                GameEvents.onPartResourceListChange.Add(onPartResourceListChange);
+                GameEvents.onPartResourceListChange.Remove(onPartResourceListChange);
         }
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
