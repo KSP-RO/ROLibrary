@@ -394,13 +394,19 @@ namespace ROLib
 
         public void OnPartActionUIShown (UIPartActionWindow window, Part p) 
         {
-            Fields[nameof(FlightDebug)].guiActiveEditor = true;
+            if (PhysicsGlobals.ThermalDataDisplay) 
+            {
+                Fields[nameof(FlightDebug)].guiActiveEditor = true;
+            }
             pawOpen = true;
         }
 
         public void OnPartActionUIDismiss(Part p)
         {
-            Fields[nameof(FlightDebug)].guiActiveEditor = false;
+            if (!PhysicsGlobals.ThermalDataDisplay) 
+            {
+                Fields[nameof(FlightDebug)].guiActiveEditor = false;
+            }
             pawOpen = false;
         }
 
