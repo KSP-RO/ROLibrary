@@ -331,7 +331,7 @@ namespace ROLib
                     Debug.Log("[ROThermal] "+ part.name + " moving temperature values up, between " +  nextUpdateDown + "-" + nextUpdateUp);
 
                     part.skinThermalMassModifier = thermalProperties[index,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
-                    part.skinInternalConductionMult = thermalProperties[index,2] * SkinInternalConductivityDivGlobal;
+                    part.skinInternalConductionMult = thermalProperties[index,2];
                     part.emissiveConstant = thermalProperties[index,3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
                 } 
@@ -348,7 +348,7 @@ namespace ROLib
                     Debug.Log("[ROThermal] "+ part.name + " moving temperature values down, between " +  nextUpdateDown + "-" + nextUpdateUp);
 
                     part.skinThermalMassModifier = thermalProperties[index,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
-                    part.skinInternalConductionMult = thermalProperties[index,2] * SkinInternalConductivityDivGlobal;
+                    part.skinInternalConductionMult = thermalProperties[index,2];
                     part.emissiveConstant = thermalProperties[index,3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
                 }
@@ -378,7 +378,7 @@ namespace ROLib
                                 + "\nconvection AreaMult " + String.Format("{0:0.###}", part.ptd.convectionAreaMultiplier)
                                 + "\nTempMult " + String.Format("{0:0.###}", part.ptd.convectionTempMultiplier)
                                 //+ "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
-                                + "\nSurface " + String.Format("{0:0.#}", part.radiativeArea) + "m2, Skin" + String.Format("{0:0.######}", part.skinThermalMassModifier) + "kg/m2";  
+                                + "\nSurface " + String.Format("{0:0.#}", part.radiativeArea) + "m2, Skin" + String.Format("{0:0.######}", part.skinThermalMassModifier) + "kg/m2-K";  
         }
 
         public override void OnLoad(ConfigNode node)
