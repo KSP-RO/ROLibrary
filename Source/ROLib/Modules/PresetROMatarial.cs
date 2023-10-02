@@ -224,6 +224,14 @@ namespace ROLib
                         
                     } else {
                         PresetsCore[preset.name] = preset;
+                        if (File.Exists("GameData/ROLib/Data/csv/" + preset.name + ".csv")) 
+                        {
+                            preset.loadCSV("GameData/ROLib/Data/csv/" + preset.name + ".csv", out preset.thermalPropMin);
+                            preset.hasCVS = true;
+                        } 
+                        else {
+                            Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/csv/" + preset.name + ".csv");
+                        }
                     }
                 }
 

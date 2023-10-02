@@ -63,7 +63,7 @@ namespace ROLib
         private WingProcedural.WingProcedural wingProceduralModule;
         private ModuleTagList CCTagListModule;
         private PresetROMatarial presetCore;
-        private PresetROMatarial presetTPS;
+        private PresetROMatarial presetSkin;
         
         private const string reentryTag = "Reentry";
         private bool reentryByDefault = false;
@@ -86,8 +86,10 @@ namespace ROLib
         // 0.12 = part.heatConductivity default
         private double SkinSkinConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double absorptiveConstantOrig;
-        private double[,] thermalProperties;
-        private int thermalPropertiesRows = 1000;
+        private double[,] thermalPropertiesSkin;
+        private double[,] thermalPropertiesCore;
+        private int thermalPropertyRowsSkin = 1000;
+        private int thermalPropertyRowsCore = 1000;
         private bool hasThermalProperties = false;
         
         [SerializeField] private string[] availablePresetNamesCore = new string[] {};
@@ -109,8 +111,8 @@ namespace ROLib
         // TODO need detailed implementation
         private double SkinSkinConductivity {
             get {
-                if (presetTPS.skinSkinConductivity > 0) {
-                    return presetTPS.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
+                if (presetSkin.skinSkinConductivity > 0) {
+                    return presetSkin.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
                 } else if (presetCore.skinSkinConductivity > 0 ) {
                     return presetCore.skinSkinConductivity / part.heatConductivity * SkinSkinConductivityDivGlobal;
                 } else {
@@ -128,8 +130,8 @@ namespace ROLib
         [Persistent] public string coreCfg = "";
         [Persistent] public string skinCfg = "";
         [Persistent] public float skinHeightCfg = -1.0f;
-        public float TPSAreaCost => presetTPS?.costPerArea ?? 1.0f;
-        public float TPSAreaMult => presetTPS?.heatShieldAreaMult ?? 1.0f;
+        public float TPSAreaCost => presetSkin?.costPerArea ?? 1.0f;
+        public float TPSAreaMult => presetSkin?.heatShieldAreaMult ?? 1.0f;
 
         public float CurrentDiameter => modularPart?.currentDiameter ?? 0f;
         public float LargestDiameter => modularPart?.largestDiameter ?? 0f;
@@ -160,32 +162,32 @@ namespace ROLib
             }
         }
         public string PresetTPS {
-            get{ return presetTPS.name; }
+            get{ return presetSkin.name; }
             set{ 
                 if (PresetROMatarial.PresetsSkin.TryGetValue(value, out PresetROMatarial preset)) {
                     presetSkinName = value;
-                    presetTPS = preset;
+                    presetSkin = preset;
                 }  
                 else if (skinCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(skinCfg, out preset))
                 {
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetSkinName + " config not available, Faling back to" + skinCfg);
                     presetSkinName = value;
-                    presetTPS = preset;
+                    presetSkin = preset;
                 }
                 else
                 {
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetSkinName + " config not available, Faling back to None");
                     PresetROMatarial.PresetsSkin.TryGetValue("None", out preset);
                     presetSkinName = value;
-                    presetTPS = preset;
+                    presetSkin = preset;
                 }
             }      
         }
         private float SkinHeightMaxVal 
         {
             get {
-                if (presetTPS.skinHeightMax > 0.0f) {
-                    return presetTPS.skinHeightMax;
+                if (presetSkin.skinHeightMax > 0.0f) {
+                    return presetSkin.skinHeightMax;
                 }
                 return 0;
             }
@@ -291,7 +293,7 @@ namespace ROLib
         public float TPSMass => (float)(surfaceArea * tpsSurfaceDensity * TPSAreaMult / 1000f);
         public float TPSCost => (float)surfaceArea * TPSAreaCost * TPSAreaMult;
 
-        public float Ablator => Mathf.Round((float)surfaceArea * presetTPS.heatShieldAblator * 10f) / 10f;       
+        public float Ablator => Mathf.Round((float)surfaceArea * presetSkin.heatShieldAblator * 10f) / 10f;       
         private static bool? _RP1Found = null;
         public static bool RP1Found
         {
@@ -312,45 +314,73 @@ namespace ROLib
         private double tick = 470.0;
         private double peakTempSkin = 0.0;
         private double peakTemp;
-        private double nextUpdateUp = double.MaxValue;
-        private double nextUpdateDown = double.MinValue;
-        private int index = 0;
+        private double nextUpdateUpSkin = double.MaxValue;
+        private double nextUpdateDownSkin = double.MinValue;
+        private double nextUpdateUpCore = double.MaxValue;
+        private double nextUpdateDownCore = double.MinValue;
+        private int indexSkin = 0;
+        private int indexCore = 0;
         public void FixedUpdate()
         {
             if (HighLogic.LoadedSceneIsFlight && hasThermalProperties) {
-                if (part.skinTemperature > nextUpdateUp) 
+                if (part.skinTemperature > nextUpdateUpSkin) 
                 {  
-                    nextUpdateDown = thermalProperties[index,0];
-                    index ++;
-                    if (index >= thermalPropertiesRows) {
-                        index --;
-                        nextUpdateUp = double.PositiveInfinity;
+                    nextUpdateDownSkin = thermalPropertiesSkin[indexSkin,0];
+                    indexSkin ++;
+                    if (indexSkin >= thermalPropertyRowsSkin) {
+                        indexSkin --;
+                        nextUpdateUpSkin = double.PositiveInfinity;
                         return;
                     }
-                    nextUpdateUp = thermalProperties[index,0];
-                    Debug.Log("[ROThermal] "+ part.name + " moving temperature values up, between " +  nextUpdateDown + "-" + nextUpdateUp);
+                    nextUpdateUpSkin = thermalPropertiesSkin[indexSkin,0];
+                    //Debug.Log("[ROThermal] "+ part.name + " moving temperature values up, between " +  nextUpdateDownSkin + "-" + nextUpdateUpSkin);
 
-                    part.skinThermalMassModifier = thermalProperties[index,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
-                    part.skinInternalConductionMult = thermalProperties[index,2];
-                    part.emissiveConstant = thermalProperties[index,3];
+                    part.skinThermalMassModifier = thermalPropertiesSkin[indexSkin,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+                    part.skinInternalConductionMult = thermalPropertiesSkin[indexSkin,2];
+                    part.emissiveConstant = thermalPropertiesSkin[indexSkin,3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
                 } 
-                else if (part.skinTemperature < nextUpdateDown) 
+                else if (part.skinTemperature < nextUpdateDownSkin) 
                 {
-                    nextUpdateUp = thermalProperties[index,0];
-                    index --;
-                    if (index < 0) {
-                        index = 0;
-                        nextUpdateDown = -1;
+                    nextUpdateUpSkin = thermalPropertiesSkin[indexSkin,0];
+                    indexSkin --;
+                    if (indexSkin < 0) {
+                        indexSkin = 0;
+                        nextUpdateDownSkin = -1;
                         return;
                     }
-                    nextUpdateDown = thermalProperties[index,0];
-                    Debug.Log("[ROThermal] "+ part.name + " moving temperature values down, between " +  nextUpdateDown + "-" + nextUpdateUp);
+                    nextUpdateDownSkin = thermalPropertiesSkin[indexSkin,0];
+                    //Debug.Log("[ROThermal] "+ part.name + " moving temperature values down, between " +  nextUpdateDownSkin + "-" + nextUpdateUpSkin);
 
-                    part.skinThermalMassModifier = thermalProperties[index,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
-                    part.skinInternalConductionMult = thermalProperties[index,2];
-                    part.emissiveConstant = thermalProperties[index,3];
+                    part.skinThermalMassModifier = thermalPropertiesSkin[indexSkin,1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+                    part.skinInternalConductionMult = thermalPropertiesSkin[indexSkin,2];
+                    part.emissiveConstant = thermalPropertiesSkin[indexSkin,3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
+                }
+                if (part.temperature > nextUpdateUpCore) {
+                    nextUpdateDownCore = thermalPropertiesCore[indexCore,0];
+                    indexCore ++;
+                    if (indexCore >= thermalPropertyRowsCore) {
+                        indexCore --;
+                        nextUpdateUpCore = double.PositiveInfinity;
+                        return;
+                    }
+                    nextUpdateUpCore = thermalPropertiesCore[indexCore,0];
+                    part.thermalMassModifier = thermalPropertiesCore[indexCore,1]; 
+                    Debug.Log("[ROThermal] "+ part.name + " moving Core temperature values up, between " +  nextUpdateDownCore + "-" + nextUpdateUpCore);
+                }
+                else if (part.temperature < nextUpdateDownCore) 
+                {
+                    nextUpdateUpCore = thermalPropertiesCore[indexCore,0];
+                    indexCore --;
+                    if (indexCore < 0) {
+                        indexCore = 0;
+                        nextUpdateDownCore = -1;
+                        return;
+                    }
+                    nextUpdateDownCore = thermalPropertiesCore[indexCore,0];
+                    part.thermalMassModifier = thermalPropertiesCore[indexCore,1];
+                    Debug.Log("[ROThermal] "+ part.name + " moving Core temperature values up, between " +  nextUpdateDownCore + "-" + nextUpdateUpCore);
                 }
                 if (tick % 25 == 0) {
                     UpdateFlightDebug();
@@ -470,7 +500,7 @@ namespace ROLib
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = 
                     (bf, ob) => OnHeightChanged(tpsHeightDisplay);
                 
-                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetTPS.skinHeightMin, SkinHeightMaxVal, 10f, 1f, 0.01f);
+                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetSkin.skinHeightMin, SkinHeightMaxVal, 10f, 1f, 0.01f);
             }
         } 
 
@@ -521,24 +551,43 @@ namespace ROLib
                 DebugLog();
             }
                 
-            if (HighLogic.LoadedSceneIsFlight && presetTPS.hasCVS) {
+            if (HighLogic.LoadedSceneIsFlight && presetSkin.hasCVS) 
+            {
                 LoadThermalPropertiesArray();
-                Debug.Log($"[ROThermal] OnStartFinished Message skinTemperature is " + part.skinTemperature + " part " + part);
-                for (int i = 0; i < thermalProperties.GetLength(0) - 1; i++)
+                if (presetSkin.hasCVS) 
                 {
-                    if (thermalProperties[i,0] >= 300.0) {
-                        index = i;
-                        nextUpdateDown = thermalProperties[i-1,0];
-                        nextUpdateUp = thermalProperties[i,0];
+                    for (int i = 0; i < thermalPropertiesSkin.GetLength(0) - 1; i++)
+                    {
+                        if (thermalPropertiesSkin[i,0] >= 250.0) {
+                            indexSkin = i;
+                            nextUpdateDownSkin = thermalPropertiesSkin[i-1,0];
+                            nextUpdateUpSkin = thermalPropertiesSkin[i,0];
+                            break;
+                        }
                     }
+                    skinIntTransferCoefficient = thermalPropertiesSkin[indexCore,2];
+                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal;
+                    part.skinThermalMassModifier = thermalPropertiesSkin[indexCore,1] / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                    part.emissiveConstant = thermalPropertiesSkin[indexCore,3];
+                    hasThermalProperties = true;
+                    Debug.Log($"[ROThermal] OnStartFinished Message Array set to " + thermalPropertiesSkin[indexSkin,0] + " part " + part);
                 }
-                Debug.Log($"[ROThermal] OnStartFinished Message Array set to " + thermalProperties[index,0] + " part " + part);
-                skinIntTransferCoefficient = thermalProperties[index,2];
-                part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal;
-                part.skinThermalMassModifier = thermalProperties[index,1] / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
-                part.emissiveConstant = thermalProperties[index,3];
-                hasThermalProperties = true;
-                Debug.Log($"[ROThermal] OnStartFinished Message done part " + part);
+                
+                if (presetCore.hasCVS) 
+                {
+                    for (int i = 0; i < thermalPropertiesCore.GetLength(0) - 1; i++)
+                    {
+                        if (thermalPropertiesCore[i,0] >= 250.0) {
+                            indexCore = i;
+                            nextUpdateDownCore = thermalPropertiesCore[i-1,0];
+                            nextUpdateUpCore = thermalPropertiesCore[i,0];
+                            break;
+                        }
+                    }
+                    part.thermalMassModifier = thermalPropertiesCore[indexCore,1];
+                    hasThermalProperties = true;
+                    Debug.Log($"[ROThermal] OnStartFinished Message Array set to " + thermalPropertiesCore[indexCore,0] + " part " + part);
+                }
             }
         }
         
@@ -608,21 +657,21 @@ namespace ROLib
 
         public void UpdateHeight(bool newSkin = false) {
             float heightMax = SkinHeightMaxVal; 
-            float heightMin = presetTPS.skinHeightMin;
+            float heightMin = presetSkin.skinHeightMin;
 
             if (newSkin == true) {
                 if (heightMax < heightMin)
                 {
-                    Debug.LogWarning($"[ROThermal] Warning Preset "+ presetTPS.name + " skinHeightMax lower then skinHeightMin");
+                    Debug.LogWarning($"[ROThermal] Warning Preset "+ presetSkin.name + " skinHeightMax lower then skinHeightMin");
                     tpsHeightDisplay = heightMin;
                 }
                 else if (thermalMassAreaBefore != 0.0) 
                 {
                     double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
 
-                    float heightfactor  = (float)((thermalMassAreaBefore -  presetTPS.skinSpecificHeatCapacity * presetTPS.skinMassPerArea / mult)
-                                            / (presetTPS.skinMassPerAreaMax - presetTPS.skinMassPerArea 
-                                               + presetTPS.skinMassPerArea * (presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) / mult));
+                    float heightfactor  = (float)((thermalMassAreaBefore -  presetSkin.skinSpecificHeatCapacity * presetSkin.skinMassPerArea / mult)
+                                            / (presetSkin.skinMassPerAreaMax - presetSkin.skinMassPerArea 
+                                               + presetSkin.skinMassPerArea * (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) / mult));
                     
                     if (heightfactor == 0 | heightfactor == double.NegativeInfinity | heightfactor == double.PositiveInfinity) 
                     {
@@ -630,7 +679,7 @@ namespace ROLib
                     } 
                     else
                     {
-                        tpsHeightDisplay = heightfactor * (presetTPS.skinHeightMax - presetTPS.skinHeightMin) + presetTPS.skinHeightMin;
+                        tpsHeightDisplay = heightfactor * (presetSkin.skinHeightMax - presetSkin.skinHeightMin) + presetSkin.skinHeightMin;
 
                         tpsHeightDisplay = Mathf.Clamp(tpsHeightDisplay, heightMin, heightMax);
                     }
@@ -678,72 +727,72 @@ namespace ROLib
             PresetTPS = preset;
             UpdateHeight(skinNew);
             ApplyThermal();
-            CCTagUpdate(presetTPS);
+            CCTagUpdate(presetSkin);
 
             // update ModuleAblator parameters, if present and used
-            if (modAblator != null && !presetTPS.disableModAblator)
+            if (modAblator != null && !presetSkin.disableModAblator)
             {
-                if (!string.IsNullOrWhiteSpace(presetTPS.AblativeResource))
-                    modAblator.ablativeResource = presetTPS.AblativeResource;
-                if (!string.IsNullOrWhiteSpace(presetTPS.OutputResource))
-                    modAblator.outputResource = presetTPS.OutputResource;
+                if (!string.IsNullOrWhiteSpace(presetSkin.AblativeResource))
+                    modAblator.ablativeResource = presetSkin.AblativeResource;
+                if (!string.IsNullOrWhiteSpace(presetSkin.OutputResource))
+                    modAblator.outputResource = presetSkin.OutputResource;
 
-                if (!string.IsNullOrWhiteSpace(presetTPS.NodeName))
-                    modAblator.nodeName = presetTPS.NodeName;
-                if (!string.IsNullOrWhiteSpace(presetTPS.CharModuleName))
-                    modAblator.charModuleName = presetTPS.CharModuleName;
-                if (!string.IsNullOrWhiteSpace(presetTPS.UnitsName))
-                    modAblator.unitsName = presetTPS.UnitsName;
+                if (!string.IsNullOrWhiteSpace(presetSkin.NodeName))
+                    modAblator.nodeName = presetSkin.NodeName;
+                if (!string.IsNullOrWhiteSpace(presetSkin.CharModuleName))
+                    modAblator.charModuleName = presetSkin.CharModuleName;
+                if (!string.IsNullOrWhiteSpace(presetSkin.UnitsName))
+                    modAblator.unitsName = presetSkin.UnitsName;
 
-                if (presetTPS.LossExp.HasValue)
-                    modAblator.lossExp = presetTPS.LossExp.Value;
-                if (presetTPS.LossConst.HasValue)
-                    modAblator.lossConst = presetTPS.LossConst.Value;
-                if (presetTPS.PyrolysisLossFactor.HasValue)
-                    modAblator.pyrolysisLossFactor = presetTPS.PyrolysisLossFactor.Value;
-                if (presetTPS.AblationTempThresh.HasValue)
-                    modAblator.ablationTempThresh = presetTPS.AblationTempThresh.Value;
-                if (presetTPS.ReentryConductivity.HasValue)
-                    modAblator.reentryConductivity = presetTPS.ReentryConductivity.Value;
-                if (presetTPS.UseNode.HasValue)
-                    modAblator.useNode = presetTPS.UseNode.Value;
-                if (presetTPS.CharAlpha.HasValue)
-                    modAblator.charAlpha = presetTPS.CharAlpha.Value;
-                if (presetTPS.CharMax.HasValue)
-                    modAblator.charMax = presetTPS.CharMax.Value;
-                if (presetTPS.CharMin.HasValue)
-                    modAblator.charMin = presetTPS.CharMin.Value;
-                if (presetTPS.UseChar.HasValue)
-                    modAblator.useChar = presetTPS.UseChar.Value;
-                if (presetTPS.OutputMult.HasValue)
-                    modAblator.outputMult = presetTPS.OutputMult.Value;
-                if (presetTPS.InfoTemp.HasValue)
-                    modAblator.infoTemp = presetTPS.InfoTemp.Value;
-                if (presetTPS.Usekg.HasValue)
-                    modAblator.usekg = presetTPS.Usekg.Value;
-                if (presetTPS.NominalAmountRecip.HasValue)
-                    modAblator.nominalAmountRecip = presetTPS.NominalAmountRecip.Value;
+                if (presetSkin.LossExp.HasValue)
+                    modAblator.lossExp = presetSkin.LossExp.Value;
+                if (presetSkin.LossConst.HasValue)
+                    modAblator.lossConst = presetSkin.LossConst.Value;
+                if (presetSkin.PyrolysisLossFactor.HasValue)
+                    modAblator.pyrolysisLossFactor = presetSkin.PyrolysisLossFactor.Value;
+                if (presetSkin.AblationTempThresh.HasValue)
+                    modAblator.ablationTempThresh = presetSkin.AblationTempThresh.Value;
+                if (presetSkin.ReentryConductivity.HasValue)
+                    modAblator.reentryConductivity = presetSkin.ReentryConductivity.Value;
+                if (presetSkin.UseNode.HasValue)
+                    modAblator.useNode = presetSkin.UseNode.Value;
+                if (presetSkin.CharAlpha.HasValue)
+                    modAblator.charAlpha = presetSkin.CharAlpha.Value;
+                if (presetSkin.CharMax.HasValue)
+                    modAblator.charMax = presetSkin.CharMax.Value;
+                if (presetSkin.CharMin.HasValue)
+                    modAblator.charMin = presetSkin.CharMin.Value;
+                if (presetSkin.UseChar.HasValue)
+                    modAblator.useChar = presetSkin.UseChar.Value;
+                if (presetSkin.OutputMult.HasValue)
+                    modAblator.outputMult = presetSkin.OutputMult.Value;
+                if (presetSkin.InfoTemp.HasValue)
+                    modAblator.infoTemp = presetSkin.InfoTemp.Value;
+                if (presetSkin.Usekg.HasValue)
+                    modAblator.usekg = presetSkin.Usekg.Value;
+                if (presetSkin.NominalAmountRecip.HasValue)
+                    modAblator.nominalAmountRecip = presetSkin.NominalAmountRecip.Value;
             }
 
             if (modAblator != null)
             {
-                if (presetTPS.AblativeResource == null || ablatorResourceName !=presetTPS.AblativeResource ||
-                    presetTPS.OutputResource == null || outputResourceName != presetTPS.OutputResource ||
-                    presetTPS.disableModAblator)
+                if (presetSkin.AblativeResource == null || ablatorResourceName !=presetSkin.AblativeResource ||
+                    presetSkin.OutputResource == null || outputResourceName != presetSkin.OutputResource ||
+                    presetSkin.disableModAblator)
                 {
                     RemoveAblatorResources();
                 }
 
-                ablatorResourceName = presetTPS.AblativeResource;
-                outputResourceName = presetTPS.OutputResource;
+                ablatorResourceName = presetSkin.AblativeResource;
+                outputResourceName = presetSkin.OutputResource;
 
-                modAblator.isEnabled = modAblator.enabled = !presetTPS.disableModAblator;
+                modAblator.isEnabled = modAblator.enabled = !presetSkin.disableModAblator;
             }
 
-            if (!string.IsNullOrEmpty(presetTPS.description))
+            if (!string.IsNullOrEmpty(presetSkin.description))
             {
                 Fields[nameof(description)].guiActiveEditor = true;
-                description = presetTPS.description;
+                description = presetSkin.description;
             }
             else
                 Fields[nameof(description)].guiActiveEditor = false;
@@ -762,35 +811,35 @@ namespace ROLib
         //
         {
             // heatConductivity
-            if (presetTPS.thermalConductivity > 0) {
-                part.heatConductivity = presetTPS.thermalConductivity * heatConductivityDivGlobal;
+            if (presetSkin.thermalConductivity > 0) {
+                part.heatConductivity = presetSkin.thermalConductivity * heatConductivityDivGlobal;
             } else if (presetCore.thermalConductivity > 0 ) {
                 part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobal;
             } else {
                 part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
             };
 
-            if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0) 
+            if (presetSkin.skinHeightMax > 0.0 & presetSkin.skinSpecificHeatCapacityMax > 0.0 & presetSkin.skinMassPerAreaMax > 0.0) 
             {
                 double heightfactor = 0;
-                if (presetTPS.skinHeightMax != presetTPS.skinHeightMin)
+                if (presetSkin.skinHeightMax != presetSkin.skinHeightMin)
                 {
-                    heightfactor = (tpsHeightDisplay - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
+                    heightfactor = (tpsHeightDisplay - presetSkin.skinHeightMin) / (presetSkin.skinHeightMax - presetSkin.skinHeightMin);
                 }
 
-                tpsSurfaceDensity = (presetTPS.skinMassPerAreaMax - presetTPS.skinMassPerArea) * heightfactor + presetTPS.skinMassPerArea;
+                tpsSurfaceDensity = (presetSkin.skinMassPerAreaMax - presetSkin.skinMassPerArea) * heightfactor + presetSkin.skinMassPerArea;
                 part.skinMassPerArea = tpsSurfaceDensity;
-                part.skinThermalMassModifier = ((presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) * heightfactor + presetTPS.skinSpecificHeatCapacity)
+                part.skinThermalMassModifier = ((presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * heightfactor + presetSkin.skinSpecificHeatCapacity)
                                                 / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
-                skinIntTransferCoefficient = (presetTPS.skinIntTransferCoefficientMax - presetTPS.skinIntTransferCoefficient) * heightfactor + presetTPS.skinIntTransferCoefficient;
+                skinIntTransferCoefficient = (presetSkin.skinIntTransferCoefficientMax - presetSkin.skinIntTransferCoefficient) * heightfactor + presetSkin.skinIntTransferCoefficient;
                 part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal ;
             } 
             else 
             {
                 // skinMassPerArea
-                if (presetTPS.skinMassPerArea > 0.0) {
-                    part.skinMassPerArea = presetTPS.skinMassPerArea;
-                    tpsSurfaceDensity = (float)presetTPS.skinMassPerArea;
+                if (presetSkin.skinMassPerArea > 0.0) {
+                    part.skinMassPerArea = presetSkin.skinMassPerArea;
+                    tpsSurfaceDensity = (float)presetSkin.skinMassPerArea;
                 } else if (presetCore.skinMassPerArea > 0.0 ) {
                     part.skinMassPerArea = presetCore.skinMassPerArea;
                     tpsSurfaceDensity = 0.0f;
@@ -799,16 +848,16 @@ namespace ROLib
                     tpsSurfaceDensity = 0.0f;
                 }
                 // skinThermalMassModifier
-                if (presetTPS.skinSpecificHeatCapacity > 0.0) {
-                    part.skinThermalMassModifier = presetTPS.skinSpecificHeatCapacity / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                if (presetSkin.skinSpecificHeatCapacity > 0.0) {
+                    part.skinThermalMassModifier = presetSkin.skinSpecificHeatCapacity / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
                 } else if (presetCore.skinSpecificHeatCapacity > 0.0) {
                     part.skinThermalMassModifier = presetCore.skinSpecificHeatCapacity / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
                 } else {
                     part.skinThermalMassModifier = part.partInfo.partPrefab.skinThermalMassModifier;
                 }
                 // skinIntTransferCoefficient
-                if (presetTPS.skinIntTransferCoefficient != double.PositiveInfinity | presetTPS.skinIntTransferCoefficient  > 0.0) {
-                    skinIntTransferCoefficient = presetTPS.skinIntTransferCoefficient;
+                if (presetSkin.skinIntTransferCoefficient != double.PositiveInfinity | presetSkin.skinIntTransferCoefficient  > 0.0) {
+                    skinIntTransferCoefficient = presetSkin.skinIntTransferCoefficient;
                     part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal;
                 } else if (presetCore.skinIntTransferCoefficient > 0.0 ) {
                     skinIntTransferCoefficient = presetCore.skinIntTransferCoefficient;
@@ -822,24 +871,24 @@ namespace ROLib
 
 
             // skinMaxTempOverride
-            if (presetTPS.skinMaxTempOverride > 0) {
-                part.skinMaxTemp = presetTPS.skinMaxTempOverride;
+            if (presetSkin.skinMaxTempOverride > 0) {
+                part.skinMaxTemp = presetSkin.skinMaxTempOverride;
             } else if (presetCore.skinMaxTempOverride > 0 ) {
                 part.skinMaxTemp = presetCore.skinMaxTempOverride;
             } else {
                 part.skinMaxTemp = part.partInfo.partPrefab.skinMaxTemp;
             }
             // emissiveConstant
-            if (presetTPS.emissiveConstantOverride > 0) {
-                part.emissiveConstant = presetTPS.emissiveConstantOverride;
+            if (presetSkin.emissiveConstantOverride > 0) {
+                part.emissiveConstant = presetSkin.emissiveConstantOverride;
             } else if (presetCore.emissiveConstantOverride > 0 ) {
                 part.emissiveConstant = presetCore.emissiveConstantOverride;
             } else {
                 part.emissiveConstant = part.partInfo.partPrefab.emissiveConstant;
             }
             // absorptiveConstant
-            if (presetTPS.absorptiveConstant > 0) {
-                part.absorptiveConstant = presetTPS.absorptiveConstant;
+            if (presetSkin.absorptiveConstant > 0) {
+                part.absorptiveConstant = presetSkin.absorptiveConstant;
             } else if (presetCore.absorptiveConstant > 0 ) {
                 part.absorptiveConstant = presetCore.absorptiveConstant;
             } else {
@@ -903,29 +952,44 @@ namespace ROLib
         public void LoadThermalPropertiesArray() 
         {
             double StandardSpecificHeatCapacity = PhysicsGlobals.StandardSpecificHeatCapacity;
-            if (presetTPS.hasCVS == true)
+            if (presetSkin.hasCVS == true)
             {
                 double heightfactor = 0;
-                if (presetTPS.skinHeightMax != presetTPS.skinHeightMin)
+                if (presetSkin.skinHeightMax != presetSkin.skinHeightMin)
                 {
-                    heightfactor = (tpsHeightDisplay - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
+                    heightfactor = (tpsHeightDisplay - presetSkin.skinHeightMin) / (presetSkin.skinHeightMax - presetSkin.skinHeightMin);
                 }
 
-                thermalPropertiesRows = presetTPS.thermalPropMin.GetLength(0);
-                int columns = presetTPS.thermalPropMin.GetLength(1);
+                thermalPropertyRowsSkin = presetSkin.thermalPropMin.GetLength(0);
+                int columns = presetSkin.thermalPropMin.GetLength(1);
 
-                thermalProperties = new double[thermalPropertiesRows, columns];
-                for (int r = 0; r < thermalPropertiesRows; r++) 
+                thermalPropertiesSkin = new double[thermalPropertyRowsSkin, columns];
+                for (int r = 0; r < thermalPropertyRowsSkin; r++) 
                 {
-                    thermalProperties[r,0] = presetTPS.thermalPropMin[r,0];
-                    thermalProperties[r,1] = ((presetTPS.thermalPropMax[r,1] - presetTPS.thermalPropMin[r,1]) * heightfactor + presetTPS.thermalPropMin[r,1])
+                    thermalPropertiesSkin[r,0] = presetSkin.thermalPropMin[r,0];
+                    thermalPropertiesSkin[r,1] = ((presetSkin.thermalPropMax[r,1] - presetSkin.thermalPropMin[r,1]) * heightfactor + presetSkin.thermalPropMin[r,1])
                                              / (StandardSpecificHeatCapacity * part.thermalMassModifier);
-                    thermalProperties[r,2] = ((presetTPS.thermalPropMax[r,2] - presetTPS.thermalPropMin[r,2]) * heightfactor + presetTPS.thermalPropMin[r,2])
+                    thermalPropertiesSkin[r,2] = ((presetSkin.thermalPropMax[r,2] - presetSkin.thermalPropMin[r,2]) * heightfactor + presetSkin.thermalPropMin[r,2])
                                              * SkinInternalConductivityDivGlobal;
-                    thermalProperties[r,3] = presetTPS.thermalPropMin[r,3];
+                    thermalPropertiesSkin[r,3] = presetSkin.thermalPropMin[r,3];
                     //presetTPS.array[i, 2] *= SkinInternalConductivityDivGlobal; // *=1/6
                 }
-                Debug.Log($"[ROThermal] LoadThermalPropertiesArray() Array[{thermalPropertiesRows}, {columns}] {PresetTPS} for part {part.name}");    
+                Debug.Log($"[ROThermal] LoadThermalPropertiesArray() Array[{thermalPropertyRowsSkin}, {columns}] {PresetTPS} for part {part.name}");    
+            }
+            if (presetCore.hasCVS == true) {
+
+                thermalPropertyRowsCore = presetCore.thermalPropMin.GetLength(0);
+                int columns = presetCore.thermalPropMin.GetLength(1);
+
+                thermalPropertiesCore = new double[thermalPropertyRowsCore, columns];
+                for (int r = 0; r < thermalPropertyRowsCore; r++) 
+                {
+                    thermalPropertiesCore[r,0] = presetCore.thermalPropMin[r,0];
+                    thermalPropertiesCore[r,1] = presetCore.thermalPropMin[r,1] / PhysicsGlobals.StandardSpecificHeatCapacity;
+                    //thermalPropertiesCore[r,2] = presetCore.thermalPropMin[r,2]
+                    //thermalPropertiesCore[r,3] = presetCore.thermalPropMin[r,3];
+                }
+                Debug.Log($"[ROThermal] LoadThermalPropertiesArray() Array[{thermalPropertyRowsCore}, {columns}] {presetCore} for part {part.name}");   
             }
         }
 
@@ -988,18 +1052,18 @@ namespace ROLib
             //part.DragCubes.RequestOcclusionUpdate();
             //part.DragCubes.SetPartOcclusion();
             double skinThermalMassModifier;
-            if (presetTPS.skinHeightMax > 0.0 & presetTPS.skinSpecificHeatCapacityMax > 0.0 & presetTPS.skinMassPerAreaMax > 0.0) 
+            if (presetSkin.skinHeightMax > 0.0 & presetSkin.skinSpecificHeatCapacityMax > 0.0 & presetSkin.skinMassPerAreaMax > 0.0) 
             {
                 
                 double heightfactor = 0;
-                if (presetTPS.skinHeightMax != presetTPS.skinHeightMin)
+                if (presetSkin.skinHeightMax != presetSkin.skinHeightMin)
                 {
-                    heightfactor = (tpsHeightDisplay - presetTPS.skinHeightMin) / (presetTPS.skinHeightMax - presetTPS.skinHeightMin);
+                    heightfactor = (tpsHeightDisplay - presetSkin.skinHeightMin) / (presetSkin.skinHeightMax - presetSkin.skinHeightMin);
                 }
-                skinThermalMassModifier = (presetTPS.skinSpecificHeatCapacityMax - presetTPS.skinSpecificHeatCapacity) * heightfactor + presetTPS.skinSpecificHeatCapacity
+                skinThermalMassModifier = (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * heightfactor + presetSkin.skinSpecificHeatCapacity
                                                     / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
             } else {
-               skinThermalMassModifier = presetTPS.skinSpecificHeatCapacity > 0.0 ? presetTPS.skinSpecificHeatCapacity : presetCore.skinSpecificHeatCapacity;
+               skinThermalMassModifier = presetSkin.skinSpecificHeatCapacity > 0.0 ? presetSkin.skinSpecificHeatCapacity : presetCore.skinSpecificHeatCapacity;
             }
             skinThermalMassModifier /= PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
             part.GetResourceMass(out float resourceThermalMass);
@@ -1009,15 +1073,15 @@ namespace ROLib
             thermalMass = Mathf.Max(thermalMass - skinThermalMass, 0.1f);
 
             Debug.Log($"[ROThermal] (" + HighLogic.LoadedScene + ") Values for " + part.name + "\n"
-                    + "Core Preset: " + presetCore.name + ", Skin Preset: " +  presetTPS.name + ": " + tpsHeightDisplay + " mm\n"
+                    + "Core Preset: " + presetCore.name + ", Skin Preset: " +  presetSkin.name + ": " + tpsHeightDisplay + " mm\n"
                     + "TempMax: Skin: " + part.skinMaxTemp + "K / Core: " + part.maxTemp + "K\n"
                     + "ThermalMassMod Part Skin: " + part.skinThermalMassModifier + ", Core: "  + part.thermalMassModifier + "\n"
                     + "             Module Skin: " + skinThermalMassModifier + ", Core: "  + presetCore.specificHeatCapacity + "\n"
                     + "skinMassPerArea Part" + part.skinMassPerArea + ", Module " + tpsSurfaceDensity + "\n"
                     + "ConductionMult Part: Internal " + part.skinInternalConductionMult + ", SkintoSkin " + part.skinSkinConductionMult + ", Conductivity " + part.heatConductivity + "\n"
                     + "             Module: Internal " + skinIntTransferCoefficient * SkinInternalConductivityDivGlobal + ", Skin to Skin " 
-                                        + presetTPS.skinSkinConductivity + ", Conductivity " + presetCore.thermalConductivity + "\n"
-                    + "emissiveConstant part " + part.emissiveConstant + ",    preset" + presetTPS.emissiveConstantOverride + "\n"
+                                        + presetSkin.skinSkinConductivity + ", Conductivity " + presetCore.thermalConductivity + "\n"
+                    + "emissiveConstant part " + part.emissiveConstant + ",    preset" + presetSkin.emissiveConstantOverride + "\n"
                     + "ThermalMass Part: Skin: " + FormatThermalMass((float)part.skinThermalMass) + " / Core: " + FormatThermalMass((float)part.thermalMass) + "\n"
                     + "          Module: Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass) + "\n"
                     + "ModuleMass (Skin) " + FormatMass(moduleMass) + ",    Total Mass: " + FormatMass(part.mass) + "\n"
