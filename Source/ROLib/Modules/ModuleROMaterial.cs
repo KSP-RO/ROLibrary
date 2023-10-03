@@ -80,7 +80,7 @@ namespace ROLib
         private string[] ignoredNodes = new string[] {}; // ignored Nodes when subtracting surface area
         private float prevHeight = -10.001f;
         private double heatConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
-        private double SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * 0.5 * PhysicsGlobals.SkinInternalConductionFactor);
+        private double SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * PhysicsGlobals.SkinInternalConductionFactor);
         //private double SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * 0.12 * 0.5 * PhysicsGlobals.SkinInternalConductionFactor);
         // 0.12 = part.heatConductivity default
         private double SkinSkinConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
@@ -396,7 +396,7 @@ namespace ROLib
         {
             onLoadFiredInEditor = HighLogic.LoadedSceneIsEditor;
             heatConductivityDivGlobal = 1.0 / (10.0 * PhysicsGlobals.ConductionFactor );
-            SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * 0.5 * PhysicsGlobals.SkinInternalConductionFactor);
+            SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * PhysicsGlobals.SkinInternalConductionFactor);
             SkinSkinConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
 
             node.TryGetValue("TPSSurfaceArea", ref surfaceAreaPart);
