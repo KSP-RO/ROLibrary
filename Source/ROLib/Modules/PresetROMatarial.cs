@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-
 namespace ROLib
 {
     public enum PresetType
@@ -193,7 +192,7 @@ namespace ROLib
                 NominalAmountRecip = _nominalAmountRecip;
 
             if (node.TryGetValue("restrictors", ref restrictors))
-                Debug.Log("[ROThermal] available restrictors loaded");
+                Debug.Log("[ROThermal] available restrictors loaded" + node.name);
         }
 
         public PresetROMatarial(string name)
@@ -203,7 +202,7 @@ namespace ROLib
 
         public static void LoadPresets()
         {
-             Debug.Log(" this is a branch");
+            Debug.Log("[ROThermal] Loading Presets");
             if (Initialized && PresetsCore.Count > 0 && PresetsSkin.Count > 0)
                 return;
 
@@ -221,9 +220,11 @@ namespace ROLib
                         PresetsSkin[preset.name] = preset;
                         if (File.Exists("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_min.csv") & File.Exists("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_max.csv")) 
                         {
-                            preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_min.csv", out preset.thermalPropMin);
-                            preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_max.csv", out preset.thermalPropMax);
-                            preset.hasCVS = true;
+                            if (preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_min.csv", out preset.thermalPropMin)
+                                && preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_max.csv", out preset.thermalPropMax))
+                            {
+                                preset.hasCVS = true;
+                            }
                         } 
                         else {
                             Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv");
@@ -233,8 +234,8 @@ namespace ROLib
                         PresetsCore[preset.name] = preset;
                         if (File.Exists("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv")) 
                         {
-                            preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv", out preset.thermalPropMin);
-                            preset.hasCVS = true;
+                            if (preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv", out preset.thermalPropMin))
+                                preset.hasCVS = true;
                         } 
                         else {
                             Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv");
@@ -266,46 +267,57 @@ namespace ROLib
 
         public bool loadCSV (string fileName, out double[][] array) 
         {
-            CsvFileReader reader = new CsvFileReader(fileName);
-            CsvRow lines = new CsvRow();
+            try {
+                Debug.Log("[ROThermal] loadCSV reading " + fileName);
 
-            bool skipFirst = true;
-            List<string[]> list = new List<string[]>();
+                CsvFileReader reader = new CsvFileReader(fileName);
+                CsvRow lines = new CsvRow();
 
-            while (reader.ReadRow(lines))
-            {
-                if (skipFirst)
+                bool skipFirst = true;
+                List<string[]> list = new List<string[]>();
+
+                while (reader.ReadRow(lines))
                 {
-                    skipFirst = false;
-                    continue;
+                    if (skipFirst)
+                    {
+                        skipFirst = false;
+                        continue;
+                    }
+                    string[] row = lines.LineText.Split(
+                            new string[] { "," },
+                            StringSplitOptions.None
+                        );
+                    list.Add(row);
                 }
-                string[] row = lines.LineText.Split(
-                        new string[] { "," },
-                        StringSplitOptions.None
-                    );
-                list.Add(row);
-            }
-            reader.Close();
+                reader.Close();
 
-            int rowCount = list.Count;
-            int columnCount = list[0].Length;
+                int rowCount = list.Count;
+                int columnCount = list[0].Length;
 
-            array = new double[rowCount][];
+                array = new double[rowCount][];
 
-            string str = "CSV table\n";
-            for (int i = 0; i < rowCount; i++)
-            {
-                array[i] = new double[columnCount];
-                for (int j = 0; j < columnCount; j++)
+                string str = "CSV table\n";
+                for (int i = 0; i < rowCount; i++)
                 {
-                    array[i][j] = double.Parse(list[i][j]);
-                    str += array[i][j] + ", ";
+                    array[i] = new double[columnCount];
+                    for (int j = 0; j < columnCount; j++)
+                    {
+                        array[i][j] = double.Parse(list[i][j]);
+                        str += array[i][j] + ", ";
+                    }
+                    str +='\n';
                 }
-                str +='\n';
+                Debug.Log("[ROThermal] Loaded csv Data for " + fileName + ": GameData/ROLib/Data/ROMaterials/csv/" + fileName + ".csv");
+                Debug.Log(str);
+                return true;
             }
-            Debug.Log("[ROThermal] Loaded csv Data for " + fileName + ": GameData/ROLib/Data/ROMaterials/csv/" + fileName + ".csv");
-            Debug.Log(str);
-            return true;
+            catch (FormatException e)
+            {
+                Debug.LogError("[ROThermal] FormatException while reading: " + fileName);
+                Debug.LogException(e);
+                array = null;
+                return false;
+            }
         }
     }
 }
