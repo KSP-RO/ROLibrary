@@ -95,8 +95,8 @@ namespace ROLib
         public bool? Usekg;
         public string UnitsName;
         public double? NominalAmountRecip;
-        public double[,] thermalPropMin;
-        public double[,] thermalPropMax;
+        public double[][] thermalPropMin;
+        public double[][] thermalPropMax;
         public bool hasCVS = false;
         public float SkinHeightMaxVal
         {
@@ -264,7 +264,7 @@ namespace ROLib
             Initialized = true;
         }
 
-        public bool loadCSV (string fileName, out double[,] array) 
+        public bool loadCSV (string fileName, out double[][] array) 
         {
             CsvFileReader reader = new CsvFileReader(fileName);
             CsvRow lines = new CsvRow();
@@ -290,15 +290,16 @@ namespace ROLib
             int rowCount = list.Count;
             int columnCount = list[0].Length;
 
-            array = new double[rowCount, columnCount];
+            array = new double[rowCount][];
 
             string str = "CSV table\n";
             for (int i = 0; i < rowCount; i++)
             {
+                array[i] = new double[columnCount];
                 for (int j = 0; j < columnCount; j++)
                 {
-                    array[i, j] = double.Parse(list[i][j]);
-                    str += array[i, j] + ", ";
+                    array[i][j] = double.Parse(list[i][j]);
+                    str += array[i][j] + ", ";
                 }
                 str +='\n';
             }
