@@ -219,25 +219,25 @@ namespace ROLib
                 if (preset != null) {
                     if (preset.type == PresetType.Skin) {
                         PresetsSkin[preset.name] = preset;
-                        if (File.Exists("GameData/ROLib/Data/csv/" + preset.name + "_min.csv") & File.Exists("GameData/ROLib/Data/csv/" + preset.name + "_max.csv")) 
+                        if (File.Exists("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_min.csv") & File.Exists("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_max.csv")) 
                         {
-                            preset.loadCSV("GameData/ROLib/Data/csv/" + preset.name + "_min.csv", out preset.thermalPropMin);
-                            preset.loadCSV("GameData/ROLib/Data/csv/" + preset.name + "_max.csv", out preset.thermalPropMax);
+                            preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_min.csv", out preset.thermalPropMin);
+                            preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + "_max.csv", out preset.thermalPropMax);
                             preset.hasCVS = true;
                         } 
                         else {
-                            Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/csv/" + preset.name + ".csv");
+                            Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv");
                         }
                         
                     } else {
                         PresetsCore[preset.name] = preset;
-                        if (File.Exists("GameData/ROLib/Data/csv/" + preset.name + ".csv")) 
+                        if (File.Exists("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv")) 
                         {
-                            preset.loadCSV("GameData/ROLib/Data/csv/" + preset.name + ".csv", out preset.thermalPropMin);
+                            preset.loadCSV("GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv", out preset.thermalPropMin);
                             preset.hasCVS = true;
                         } 
                         else {
-                            Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/csv/" + preset.name + ".csv");
+                            Debug.Log("[ROThermal] CSV doesnt exit: GameData/ROLib/Data/ROMaterials/csv/" + preset.name + ".csv");
                         }
                     }
                 }
@@ -302,7 +302,7 @@ namespace ROLib
                 }
                 str +='\n';
             }
-            Debug.Log("[ROThermal] Loaded csv Data for " + fileName + ": GameData/ROLib/Data/csv/" + fileName + ".csv");
+            Debug.Log("[ROThermal] Loaded csv Data for " + fileName + ": GameData/ROLib/Data/ROMaterials/csv/" + fileName + ".csv");
             Debug.Log(str);
             return true;
         }
