@@ -79,11 +79,9 @@ namespace ROLib
         private bool ignoreSurfaceAttach = true; // ignore all surface attached parts/childern when subtracting surface area
         private string[] ignoredNodes = new string[] {}; // ignored Nodes when subtracting surface area
         private float prevHeight = -10.001f;
-        private double heatConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor );
-        private double SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * 0.5 * PhysicsGlobals.SkinInternalConductionFactor);
-        //private double SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * 0.12 * 0.5 * PhysicsGlobals.SkinInternalConductionFactor);
-        // 0.12 = part.heatConductivity default
-        private double SkinSkinConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
+        private double heatConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor);
+        private double SkinInternalConductivityDivGlobal => 1.0 / (PhysicsGlobals.SkinInternalConductionFactor * 0.5 * PhysicsGlobals.ConductionFactor * 10.0 * part.heatConductivity);
+        private double SkinSkinConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double absorptiveConstantOrig;
         private double[][] thermalPropertiesSkin;
         private double[][] thermalPropertiesCore;
@@ -395,9 +393,6 @@ namespace ROLib
         public override void OnLoad(ConfigNode node)
         {
             onLoadFiredInEditor = HighLogic.LoadedSceneIsEditor;
-            heatConductivityDivGlobal = 1.0 / (10.0 * PhysicsGlobals.ConductionFactor );
-            SkinInternalConductivityDivGlobal = 1f / (PhysicsGlobals.ConductionFactor * 10.0 * 0.5*  PhysicsGlobals.SkinInternalConductionFactor);
-            SkinSkinConductivityDivGlobal = 1f / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
 
             node.TryGetValue("TPSSurfaceArea", ref surfaceAreaPart);
             node.TryGetValue("Volume", ref volumePart);
@@ -690,6 +685,12 @@ namespace ROLib
             } else {
                 part.thermalMassModifier = part.partInfo.partPrefab.thermalMassModifier;
             }
+            // heatConductivity
+            if (presetCore.thermalConductivity > 0 ) {
+                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobal;
+            } else {
+                part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
+            };
 
             ApplyThermal();
             CCTagUpdate(presetCore);
@@ -784,15 +785,6 @@ namespace ROLib
         // skinIntTransferCoefficient[kW/(m^2*K)] = 1 / ThermalResistance [(m^2*K)/kW]
         //
         {
-            // heatConductivity
-            if (presetSkin.thermalConductivity > 0) {
-                part.heatConductivity = presetSkin.thermalConductivity * heatConductivityDivGlobal;
-            } else if (presetCore.thermalConductivity > 0 ) {
-                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobal;
-            } else {
-                part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
-            };
-
             if (presetSkin.skinHeightMax > 0.0 & presetSkin.skinSpecificHeatCapacityMax > 0.0 & presetSkin.skinMassPerAreaMax > 0.0) 
             {
                 double heightfactor = 0;
@@ -952,6 +944,7 @@ namespace ROLib
         }
         public void LoadThermalPropertiesArraySkin() 
         {
+            double skinInternalConductivityDivChache = SkinInternalConductivityDivGlobal;
             thermalPropertyRowsSkin = presetSkin.thermalPropMin.Length;
             int columns = presetSkin.thermalPropMin[0].Length;
 
@@ -971,7 +964,7 @@ namespace ROLib
                     thermalPropertiesSkin[r][1] = ((presetSkin.thermalPropMax[r][1] - presetSkin.thermalPropMin[r][1]) * heightfactor + presetSkin.thermalPropMin[r][1])
                                              / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
                     thermalPropertiesSkin[r][2] = ((presetSkin.thermalPropMax[r][2] - presetSkin.thermalPropMin[r][2]) * heightfactor + presetSkin.thermalPropMin[r][2])
-                                             * SkinInternalConductivityDivGlobal;
+                                             * skinInternalConductivityDivChache;
                     thermalPropertiesSkin[r][3] = presetSkin.thermalPropMin[r][3];
                     //presetTPS.array[i, 2] *= SkinInternalConductivityDivGlobal; // *=1/6
                 }
