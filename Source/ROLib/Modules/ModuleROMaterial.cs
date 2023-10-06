@@ -82,6 +82,7 @@ namespace ROLib
         private double heatConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor);
         private double SkinInternalConductivityDivGlobal => 1.0 / (PhysicsGlobals.SkinInternalConductionFactor * 0.5 * PhysicsGlobals.ConductionFactor * 10.0 * part.heatConductivity);
         private double SkinSkinConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
+        private double SkinThermalMassModifierDiv => 1.0 / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
         private double absorptiveConstantOrig;
         private double[][] thermalPropertiesSkin;
         private double[][] thermalPropertiesCore;
@@ -329,7 +330,7 @@ namespace ROLib
                     nextUpdateUpSkin = thermalPropertiesSkin[indexSkin][0];
                     Debug.Log("[ROThermal] "+ part.name + " moving temperature values up, between " +  nextUpdateDownSkin + "-" + nextUpdateUpSkin);
 
-                    part.skinThermalMassModifier = thermalPropertiesSkin[indexSkin][1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+                    part.skinThermalMassModifier = thermalPropertiesSkin[indexSkin][1];
                     part.skinInternalConductionMult = thermalPropertiesSkin[indexSkin][2];
                     part.emissiveConstant = thermalPropertiesSkin[indexSkin][3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
@@ -347,7 +348,7 @@ namespace ROLib
                     nextUpdateDownSkin = thermalPropertiesSkin[indexSkin][0];
                     Debug.Log("[ROThermal] "+ part.name + " moving temperature values down, between " +  nextUpdateDownSkin + "-" + nextUpdateUpSkin);
 
-                    part.skinThermalMassModifier = thermalPropertiesSkin[indexSkin][1]; // / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+                    part.skinThermalMassModifier = thermalPropertiesSkin[indexSkin][1];
                     part.skinInternalConductionMult = thermalPropertiesSkin[indexSkin][2];
                     part.emissiveConstant = thermalPropertiesSkin[indexSkin][3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
@@ -383,7 +384,7 @@ namespace ROLib
             }
             if (pawOpen && PhysicsGlobals.ThermalDataDisplay) 
             {
-                if (tick % 25 == 0) {
+                if (tick % 25 == 0 && HighLogic.LoadedSceneIsEditor) {
                     UpdateFlightDebug();
                 }
                 tick ++;
@@ -562,9 +563,8 @@ namespace ROLib
                             break;
                         }
                     }
-                    skinIntTransferCoefficient = thermalPropertiesSkin[indexCore][2];
-                    part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal;
-                    part.skinThermalMassModifier = thermalPropertiesSkin[indexCore][1] / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                    part.skinInternalConductionMult = thermalPropertiesSkin[indexCore][2];
+                    part.skinThermalMassModifier = thermalPropertiesSkin[indexCore][1];
                     part.emissiveConstant = thermalPropertiesSkin[indexCore][3];
                     hasThermalProperties = true;
                     Debug.Log($"[ROThermal] OnStartFinished thermalPropertiesSkin array temperature set to " + thermalPropertiesSkin[indexSkin][0] + " part " + part);
@@ -636,11 +636,9 @@ namespace ROLib
                 }
                 else if (thermalMassAreaBefore != 0.0) 
                 {
-                    double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
-
-                    float heightfactor  = (float)((thermalMassAreaBefore -  presetSkin.skinSpecificHeatCapacity * presetSkin.skinMassPerArea / mult)
+                    float heightfactor  = (float)((thermalMassAreaBefore -  presetSkin.skinSpecificHeatCapacity * presetSkin.skinMassPerArea * SkinThermalMassModifierDiv)
                                             / (presetSkin.skinMassPerAreaMax - presetSkin.skinMassPerArea 
-                                               + presetSkin.skinMassPerArea * (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) / mult));
+                                               + presetSkin.skinMassPerArea * (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * SkinThermalMassModifierDiv));
                     
                     if (heightfactor == 0 | heightfactor == double.NegativeInfinity | heightfactor == double.PositiveInfinity) 
                     {
@@ -796,7 +794,7 @@ namespace ROLib
                 tpsSurfaceDensity = (presetSkin.skinMassPerAreaMax - presetSkin.skinMassPerArea) * heightfactor + presetSkin.skinMassPerArea;
                 part.skinMassPerArea = tpsSurfaceDensity;
                 part.skinThermalMassModifier = ((presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * heightfactor + presetSkin.skinSpecificHeatCapacity)
-                                                / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                                                * SkinThermalMassModifierDiv;
                 skinIntTransferCoefficient = (presetSkin.skinIntTransferCoefficientMax - presetSkin.skinIntTransferCoefficient) * heightfactor + presetSkin.skinIntTransferCoefficient;
                 part.skinInternalConductionMult = skinIntTransferCoefficient * SkinInternalConductivityDivGlobal ;
             } 
@@ -815,9 +813,9 @@ namespace ROLib
                 }
                 // skinThermalMassModifier
                 if (presetSkin.skinSpecificHeatCapacity > 0.0) {
-                    part.skinThermalMassModifier = presetSkin.skinSpecificHeatCapacity / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                    part.skinThermalMassModifier = presetSkin.skinSpecificHeatCapacity * SkinThermalMassModifierDiv;
                 } else if (presetCore.skinSpecificHeatCapacity > 0.0) {
-                    part.skinThermalMassModifier = presetCore.skinSpecificHeatCapacity / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                    part.skinThermalMassModifier = presetCore.skinSpecificHeatCapacity * SkinThermalMassModifierDiv;
                 } else {
                     part.skinThermalMassModifier = part.partInfo.partPrefab.skinThermalMassModifier;
                 }
@@ -962,9 +960,9 @@ namespace ROLib
                     thermalPropertiesSkin[r] = new double[columns];
                     thermalPropertiesSkin[r][0] = presetSkin.thermalPropMin[r][0];
                     thermalPropertiesSkin[r][1] = ((presetSkin.thermalPropMax[r][1] - presetSkin.thermalPropMin[r][1]) * heightfactor + presetSkin.thermalPropMin[r][1])
-                                             / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+                                                    * SkinThermalMassModifierDiv;
                     thermalPropertiesSkin[r][2] = ((presetSkin.thermalPropMax[r][2] - presetSkin.thermalPropMin[r][2]) * heightfactor + presetSkin.thermalPropMin[r][2])
-                                             * skinInternalConductivityDivChache;
+                                                    * skinInternalConductivityDivChache;
                     thermalPropertiesSkin[r][3] = presetSkin.thermalPropMin[r][3];
                     //presetTPS.array[i, 2] *= SkinInternalConductivityDivGlobal; // *=1/6
                 }
@@ -1290,10 +1288,10 @@ namespace ROLib
         {
             part.GetResourceMass(out float resourceThermalMass);
 
-            double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
-            double thermalMass = partMassCached * (float)mult + resourceThermalMass;
-            double skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)partMassCached * mult * 0.5));
-            thermalMass = Math.Max(thermalMass - skinThermalMass, 0.1);
+            double mult = 1.0 / SkinInternalConductivityDivGlobal;
+            double skinThermalMass = (float)Math.Max(0.1, 0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult);
+            double massSkin = part.skinMassPerArea * part.radiativeArea;
+            double thermalMass =  Math.Max((double)part.mass - massSkin, 0.2) * mult + part.resourceThermalMass;
             thermalMassAreaBefore = part.skinMassPerArea * part.skinThermalMassModifier;
             //Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
 
@@ -1326,7 +1324,7 @@ namespace ROLib
                                 + "\nPeak Temp Skin/Core " + peakTempSkin.ToString("F1")+ " / " + peakTemp.ToString("F1") +"K"
                                 + "\ne " + part.emissiveConstant.ToString("F3") + " Exp AreaF " + part.skinExposedAreaFrac.ToString("F3")
                                 + "\nSkinThermalMass " + part.skinThermalMass.ToString("F1")
-                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier).ToString("F1") 
+                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * 1.0 / SkinInternalConductivityDivGlobal).ToString("F1") 
                                 + "\nInternalCondMult" + part.skinInternalConductionMult.ToString("F6")
                                 + "\nconvection AreaMult " + part.ptd.convectionAreaMultiplier.ToString("F3")
                                 + "\nTempMult " + part.ptd.convectionTempMultiplier.ToString("F3")
@@ -1347,14 +1345,14 @@ namespace ROLib
                     heightfactor = (tpsHeightDisplay - presetSkin.skinHeightMin) / (presetSkin.skinHeightMax - presetSkin.skinHeightMin);
                 }
                 skinThermalMassModifier = (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * heightfactor + presetSkin.skinSpecificHeatCapacity
-                                                    / PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+                                                    * SkinThermalMassModifierDiv;
             } else 
             {
                skinThermalMassModifier = presetSkin.skinSpecificHeatCapacity > 0.0 ? presetSkin.skinSpecificHeatCapacity : presetCore.skinSpecificHeatCapacity;
             }
-            skinThermalMassModifier /= PhysicsGlobals.StandardSpecificHeatCapacity / part.thermalMassModifier;
+            skinThermalMassModifier *= SkinThermalMassModifierDiv;
             part.GetResourceMass(out float resourceThermalMass);
-            double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
+            double mult = 1 / SkinThermalMassModifierDiv;
             float thermalMass = part.mass * (float)mult + resourceThermalMass;
             float skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)part.mass * mult * 0.5));
             thermalMass = Mathf.Max(thermalMass - skinThermalMass, 0.1f);
