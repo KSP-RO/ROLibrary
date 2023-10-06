@@ -140,7 +140,7 @@ namespace ROLib
                     presetCoreNameAltDispl = value;
                     presetCore = preset;
                 }
-                else if (coreCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(coreCfg, out preset))
+                else if (coreCfg != "" && PresetROMatarial.PresetsSkin.TryGetValue(coreCfg, out preset))
                 {
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetCoreName + " config not available, falling back to" + coreCfg);
                     presetCoreName = coreCfg;
@@ -164,7 +164,7 @@ namespace ROLib
                     presetSkinName = value;
                     presetSkin = preset;
                 }  
-                else if (skinCfg != "" & PresetROMatarial.PresetsSkin.TryGetValue(skinCfg, out preset))
+                else if (skinCfg != "" && PresetROMatarial.PresetsSkin.TryGetValue(skinCfg, out preset))
                 {
                     Debug.LogError($"[ROThermal] " + part.name + " Preset " + presetSkinName + " config not available, falling back to" + skinCfg);
                     presetSkinName = value;
@@ -212,7 +212,7 @@ namespace ROLib
                         Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule got " + surfaceArea);
                 }
             }
-            else if (wingProceduralModule is WingProcedural.WingProcedural & fARWingModule != null)
+            else if (wingProceduralModule is WingProcedural.WingProcedural && fARWingModule != null)
             {
                 // TODO preciser calculation needed
                 Debug.Log("[ROThermal] get_SurfaceArea deriving from b9wingProceduralModule: ");
@@ -489,16 +489,16 @@ namespace ROLib
         {
             Debug.Log($"[ROThermal] OnStartFinished "  + part.name + " Scene: " + HighLogic.LoadedScene);
             base.OnStartFinished(state);
-
+            Debug.Log($"[ROThermal] OnStartFinished Stop 1");
             absorptiveConstantOrig = part.absorptiveConstant;
-
+            Debug.Log($"[ROThermal] OnStartFinished Stop 2");
             if (!PresetROMatarial.Initialized)
             {
                 Debug.Log($"[ROThermal] OnStartFinished Presets are not initialized" + part.name + " LoadedScene is " + HighLogic.LoadedScene);
                 return;
             }
-
-            modAblator = part.FindModuleImplementing<ModuleAblator>();
+            Debug.Log($"[ROThermal] OnStartFinished Stop 3");
+            modAblator = part?.FindModuleImplementing<ModuleAblator>();
             modularPart = part?.FindModuleImplementing<ModuleROTank>();
             proceduralPart = part?.FindModuleImplementing<ProceduralPart>();
             moduleFuelTanks = part?.FindModuleImplementing<ModuleFuelTanks>();
@@ -507,7 +507,7 @@ namespace ROLib
             fARWingModule = part?.FindModuleImplementing<FARWingAerodynamicModel>();
             wingProceduralModule = part?.FindModuleImplementing<WingProcedural.WingProcedural>();
             CCTagListModule = part?.FindModuleImplementing<ModuleTagList>();
-
+            Debug.Log($"[ROThermal] OnStartFinished Stop 4");
             if(HighLogic.LoadedSceneIsEditor) 
             {
                 if (moduleFuelTanks is ModuleFuelTanks)
@@ -519,13 +519,14 @@ namespace ROLib
                     Debug.Log("[ROThermal] " + part.name + " ModuleFuelTanks found " + moduleFuelTanks.name + " updating core material list");
                     UpdateCoreForRealfuels(false);
                 }
-                if (EditorLogic.RootPart != null & (fARWingModule != null | moduleFuelTanks is ModuleFuelTanks))
+                if (EditorLogic.RootPart != null && (fARWingModule != null | moduleFuelTanks is ModuleFuelTanks))
                     EditorCordinator.AddToMassCheckList(this);
-                    
+                Debug.Log($"[ROThermal] OnStartFinished Stop 9");
                 ApplyCorePreset(presetCoreName);
+                Debug.Log($"[ROThermal] OnStartFinished Stop 10");
                 ApplySkinPreset(presetSkinName, false);
             }
-            if(CCTagListModule is ModuleTagList & CCTagListModule.tags.Contains(reentryTag))
+            if(CCTagListModule is ModuleTagList && CCTagListModule.tags.Contains(reentryTag))
             {
                 reentryByDefault = true;
             }
@@ -579,7 +580,7 @@ namespace ROLib
             EditorCordinator.RemoveToMassCheckList(this);
             GameEvents.onPartActionUIDismiss.Remove(OnPartActionUIDismiss);
             GameEvents.onPartActionUIShown.Remove(OnPartActionUIShown);
-            if (moduleFuelTanks is ModuleFuelTanks & HighLogic.LoadedSceneIsEditor)
+            if (moduleFuelTanks is ModuleFuelTanks && HighLogic.LoadedSceneIsEditor)
                 GameEvents.onPartResourceListChange.Remove(OnPartResourceListChange);
         }
 
@@ -653,7 +654,7 @@ namespace ROLib
                     Debug.Log($"[ROThermal] UpdateHeight(New Skin) tpsHeightDisplay {tpsHeightDisplay}, heightfactor3 {heightfactor}" );
                     
                 }
-                else if (presetSkinName == skinCfg & skinHeightCfg > 0.0f) {
+                else if (presetSkinName == skinCfg && skinHeightCfg > 0.0f) {
                     tpsHeightDisplay = Mathf.Clamp(skinHeightCfg, heightMin, heightMax);
                 }
                 else {
@@ -783,7 +784,7 @@ namespace ROLib
         // skinIntTransferCoefficient[kW/(m^2*K)] = 1 / ThermalResistance [(m^2*K)/kW]
         //
         {
-            if (presetSkin.skinHeightMax > 0.0 & presetSkin.skinSpecificHeatCapacityMax > 0.0 & presetSkin.skinMassPerAreaMax > 0.0) 
+            if (presetSkin.skinHeightMax > 0.0 && presetSkin.skinSpecificHeatCapacityMax > 0.0 && presetSkin.skinMassPerAreaMax > 0.0) 
             {
                 double heightfactor = 0;
                 if (presetSkin.skinHeightMax != presetSkin.skinHeightMin)
@@ -984,18 +985,18 @@ namespace ROLib
             {
                 if (reentryByDefault)
                     CCTagListModule.tags.AddUnique(reentryTag);
-                else if (!reentryByDefault & CCTagListModule.tags.Contains(reentryTag))
+                else if (!reentryByDefault && CCTagListModule.tags.Contains(reentryTag))
                     CCTagListModule.tags.Remove(reentryTag);
 
                 CCTagListModule.tags.Sort();
             }
-            else if(preset.reentryTag == reentryTag &  !CCTagListModule.tags.Contains(reentryTag))
+            else if(preset.reentryTag == reentryTag &&  !CCTagListModule.tags.Contains(reentryTag))
             {
                 CCTagListModule.tags.Add(preset.reentryTag);
                 CCTagListModule.tags.Sort();
 
             }
-            else if(preset.reentryTag != reentryTag &  CCTagListModule.tags.Contains(reentryTag))
+            else if(preset.reentryTag != reentryTag &&  CCTagListModule.tags.Contains(reentryTag))
             {
                 CCTagListModule.tags.Remove(preset.reentryTag);
                 CCTagListModule.tags.Sort();
@@ -1336,7 +1337,7 @@ namespace ROLib
             //part.DragCubes.RequestOcclusionUpdate();
             //part.DragCubes.SetPartOcclusion();
             double skinThermalMassModifier;
-            if (presetSkin.skinHeightMax > 0.0 & presetSkin.skinSpecificHeatCapacityMax > 0.0 & presetSkin.skinMassPerAreaMax > 0.0) 
+            if (presetSkin.skinHeightMax > 0.0 && presetSkin.skinSpecificHeatCapacityMax > 0.0 && presetSkin.skinMassPerAreaMax > 0.0) 
             {
                 
                 double heightfactor = 0;
