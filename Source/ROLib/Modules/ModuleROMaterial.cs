@@ -1,6 +1,5 @@
 ﻿using ferram4;
 using FerramAerospaceResearch.FARAeroComponents;
-using ProceduralParts;
 using RealFuels.Tanks;
 using System;
 using System.Collections.Generic;
@@ -54,12 +53,9 @@ namespace ROLib
         #region Private Variables
 
         private ModuleAblator modAblator;
-        private ModuleROTank modularPart;
-        private ProceduralPart proceduralPart;
         private ModuleFuelTanks moduleFuelTanks;
         private FARAeroPartModule fARAeroPartModule; 
         private FARWingAerodynamicModel fARWingModule;
-        private WingProcedural.WingProcedural wingProceduralModule;
         private ModuleTagList CCTagListModule;
         private PresetROMatarial presetCore;
         private PresetROMatarial presetSkin;
@@ -118,7 +114,7 @@ namespace ROLib
         [SerializeField] private string[] availablePresetNamesSkin = new string[] {};
 
         #endregion Private Variables
-        [KSPField] public float surfaceAreaPart = -0.1f;
+        [KSPField] public float surfaceAreaCfg = -0.1f;
         [KSPField] public float volumePart = -0.1f;
         [KSPField] public bool tpsMassIsAdditive = true;
         [KSPField] public double surfaceArea = 0.0; // m2
@@ -129,9 +125,6 @@ namespace ROLib
         public float TPSAreaCost => presetSkin?.costPerArea ?? 1.0f;
         public float TPSAreaMult => presetSkin?.heatShieldAreaMult ?? 1.0f;
 
-        public float CurrentDiameter => modularPart?.currentDiameter ?? 0f;
-        public float LargestDiameter => modularPart?.largestDiameter ?? 0f;
-        public float TotalTankLength => modularPart?.totalTankLength ?? 0f;
         public string PresetCore {
             get{ return presetCore.name; }
             set{ 
@@ -182,25 +175,19 @@ namespace ROLib
 
         public double SetSurfaceArea ()
         {
-            if (surfaceAreaPart > 0.0f) 
+            if (surfaceAreaCfg > 0.0f) 
             {
-                Debug.Log("[ROThermal] get_SurfaceArea derived from SurfaceAreaPart Entry: " + surfaceAreaPart);
-                surfaceAreaCovered =  surfaceAreaPart;
+                Debug.Log("[ROThermal] get_SurfaceArea derived from SurfaceAreaPart Entry: " + surfaceAreaCfg);
+                surfaceAreaCovered =  surfaceAreaCfg;
             }
             else if (fARAeroPartModule != null) 
             {
-                // Inconsistant results on procedural parts with Editor & Flight, returned results for a cylinder are much closer to a cube
-                // Procedural Tank
-                // 3x3 cylinder 42.4m^2 -> surfaceArea = 52.5300 (In Editor) 77.36965 (In Flight)
-                // 3x3x3 cube   54.0m^2 -> surfaceArea = 56.3686 (In Editor) 71.05373 (In Flight)
-
                 surfaceArea = fARAeroPartModule?.ProjectedAreas.totalArea ?? 0.0f;
                 
                 if (surfaceArea > 0.0)
                 {
-                    // Debug.Log("[ROThermal] get_SurfaceArea derived from fARAeroPartModule: " + surfaceArea);
+                    /// No need to subtract occluded areas, fARAeroPartModule takes care of that
                     return surfaceArea;
-                    surfaceAreaCovered =  surfaceArea;
                 } 
                 else 
                 {
@@ -212,30 +199,6 @@ namespace ROLib
                         Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule got " + surfaceArea);
                 }
             }
-            else if (wingProceduralModule is WingProcedural.WingProcedural && fARWingModule != null)
-            {
-                // TODO preciser calculation needed
-                Debug.Log("[ROThermal] get_SurfaceArea deriving from b9wingProceduralModule: ");
-                surfaceArea = (float)fARWingModule.S * 2 + (wingProceduralModule.sharedBaseThicknessRoot + wingProceduralModule.sharedBaseThicknessTip)
-                        * Mathf.Atan((wingProceduralModule.sharedBaseWidthRoot + wingProceduralModule.sharedBaseWidthTip) / (float)fARWingModule.b_2_actual);
-                        // aproximation for leading & trailing Edge
-                Debug.Log("[ROThermal] get_SurfaceArea derived from ModuleWingProcedural: " + surfaceArea);
-                surfaceAreaCovered =  surfaceArea;
-            }
-            else if (modularPart is ModuleROTank)
-            {
-                surfaceArea =  Mathf.PI / 2f * ((CurrentDiameter + LargestDiameter) * TotalTankLength + (CurrentDiameter * CurrentDiameter + LargestDiameter * LargestDiameter) / 2f);
-                Debug.Log("[ROThermal] get_SurfaceArea derived from ModuleROTank: " + surfaceArea);
-                surfaceAreaCovered =  surfaceArea;
-            }
-            /*else if (proceduralPart is ProceduralPart)
-            {
-                Debug.Log("[ROThermal] get_SurfaceArea deriving from ProceduralPart: ");
-                surfaceArea =  proceduralPart.SurfaceArea;
-                Debug.Log("[ROThermal] get_SurfaceArea derived from ProceduralPart: " + surfaceArea);
-                surfaceAreaCovered =  surfaceArea;
-            }*/
-
             /// decrease surface area based on contact area of attached nodes & surface attached parts
             if (surfaceAreaCovered > 0.0) 
             {
@@ -274,7 +237,7 @@ namespace ROLib
             if (surfaceAreaCovered > 0.0)
                 return surfaceAreaCovered;
             Debug.LogWarning("[ROThermal] get_SurfaceArea failed: Area=" + surfaceAreaCovered);
-            return 0f;
+            return 0.0;
         }
 
 
@@ -382,9 +345,9 @@ namespace ROLib
                     Debug.Log("[ROThermal] "+ part.name + " moving Core temperature values up, between " +  nextUpdateDownCore + "-" + nextUpdateUpCore);
                 }
             }
-            if (pawOpen && PhysicsGlobals.ThermalDataDisplay) 
+            if (pawOpen && PhysicsGlobals.ThermalDataDisplay)
             {
-                if (tick % 25 == 0 && HighLogic.LoadedSceneIsEditor) {
+                if (tick % 25 == 0 && HighLogic.LoadedSceneIsFlight) {
                     UpdateFlightDebug();
                 }
                 tick ++;
@@ -395,7 +358,7 @@ namespace ROLib
         {
             onLoadFiredInEditor = HighLogic.LoadedSceneIsEditor;
 
-            node.TryGetValue("TPSSurfaceArea", ref surfaceAreaPart);
+            node.TryGetValue("TPSSurfaceArea", ref surfaceAreaCfg);
             node.TryGetValue("Volume", ref volumePart);
             if (!node.TryGetValue("skinMassIsAdditive", ref tpsMassIsAdditive))
                 Debug.Log("[ROThermal] "+ part.name + " skinMassAdditive entry not found");
@@ -446,25 +409,18 @@ namespace ROLib
             }
 
 
-            if (HighLogic.LoadedSceneIsEditor) {
-                
+            if (HighLogic.LoadedSceneIsEditor) 
+            {         
                 if (availablePresetNamesCore.Length > 0)
                 { 
                     // RP-1 allows selecting all configs but will run validation when trying to add the vessel to build queue
                     string[] unlockedPresetsName = RP1Found ? availablePresetNamesCore : GetUnlockedPresets(availablePresetNamesCore);
-
                     UpdatePresetsList(unlockedPresetsName, PresetType.Core);
                 }          
 
                 Fields[nameof(presetCoreName)].uiControlEditor.onFieldChanged = 
                 Fields[nameof(presetCoreName)].uiControlEditor.onSymmetryFieldChanged =
                     (bf, ob) => ApplyCorePreset(presetCoreName);
-
-                /*if (!onLoadFiredInEditor)
-                {
-                    EnsureBestAvailableConfigSelected();
-                }*/
-                
 
                 if (availablePresetNamesSkin.Length > 0)
                 {
@@ -489,27 +445,23 @@ namespace ROLib
         {
             Debug.Log($"[ROThermal] OnStartFinished "  + part.name + " Scene: " + HighLogic.LoadedScene);
             base.OnStartFinished(state);
-            Debug.Log($"[ROThermal] OnStartFinished Stop 1");
             absorptiveConstantOrig = part.absorptiveConstant;
-            Debug.Log($"[ROThermal] OnStartFinished Stop 2");
+
             if (!PresetROMatarial.Initialized)
             {
                 Debug.Log($"[ROThermal] OnStartFinished Presets are not initialized" + part.name + " LoadedScene is " + HighLogic.LoadedScene);
                 return;
             }
-            Debug.Log($"[ROThermal] OnStartFinished Stop 3");
+
             modAblator = part?.FindModuleImplementing<ModuleAblator>();
-            modularPart = part?.FindModuleImplementing<ModuleROTank>();
-            proceduralPart = part?.FindModuleImplementing<ProceduralPart>();
             moduleFuelTanks = part?.FindModuleImplementing<ModuleFuelTanks>();
             fARAeroPartModule = part?.FindModuleImplementing<FARAeroPartModule>();
-            fARWingModule = part?.FindModuleImplementing<FARControllableSurface>();
-            fARWingModule = part?.FindModuleImplementing<FARWingAerodynamicModel>();
-            wingProceduralModule = part?.FindModuleImplementing<WingProcedural.WingProcedural>();
             CCTagListModule = part?.FindModuleImplementing<ModuleTagList>();
-            Debug.Log($"[ROThermal] OnStartFinished Stop 4");
+
             if(HighLogic.LoadedSceneIsEditor) 
             {
+                fARWingModule = part?.FindModuleImplementing<FARControllableSurface>();
+                fARWingModule = part?.FindModuleImplementing<FARWingAerodynamicModel>();
                 if (moduleFuelTanks is ModuleFuelTanks)
                 { 
                     /// ModuleFuelTanks changes TankType & mass on Update()
@@ -521,9 +473,8 @@ namespace ROLib
                 }
                 if (EditorLogic.RootPart != null && (fARWingModule != null | moduleFuelTanks is ModuleFuelTanks))
                     EditorCordinator.AddToMassCheckList(this);
-                Debug.Log($"[ROThermal] OnStartFinished Stop 9");
+
                 ApplyCorePreset(presetCoreName);
-                Debug.Log($"[ROThermal] OnStartFinished Stop 10");
                 ApplySkinPreset(presetSkinName, false);
             }
             if(CCTagListModule is ModuleTagList && CCTagListModule.tags.Contains(reentryTag))
@@ -570,7 +521,6 @@ namespace ROLib
                     hasThermalProperties = true;
                     Debug.Log($"[ROThermal] OnStartFinished thermalPropertiesSkin array temperature set to " + thermalPropertiesSkin[indexSkin][0] + " part " + part);
                 }    
-                
                 DebugLog();
             }
         }
@@ -888,7 +838,7 @@ namespace ROLib
                 moduleMass = 0.0f;
             }
             
-            if ((modularPart != null || proceduralPart != null) && modAblator != null && modAblator.enabled)
+            if (modAblator != null && modAblator.enabled)
             {
                 if (ablatorResourceName != null)
                 {
@@ -1206,7 +1156,7 @@ namespace ROLib
         {
             if (PhysicsGlobals.ThermalDataDisplay) 
             {
-                Fields[nameof(FlightDebug)].guiActiveEditor = true;
+                Fields[nameof(FlightDebug)].guiActive = true;
             }
             pawOpen = true;
         }
@@ -1215,7 +1165,7 @@ namespace ROLib
         {
             if (!PhysicsGlobals.ThermalDataDisplay) 
             {
-                Fields[nameof(FlightDebug)].guiActiveEditor = false;
+                Fields[nameof(FlightDebug)].guiActive = false;
             }
             pawOpen = false;
         }
