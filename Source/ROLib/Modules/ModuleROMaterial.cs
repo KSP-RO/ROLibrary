@@ -75,7 +75,7 @@ namespace ROLib
         private bool ignoreSurfaceAttach = true; // ignore all surface attached parts/childern when subtracting surface area
         private string[] ignoredNodes = new string[] {}; // ignored Nodes when subtracting surface area
         private float prevHeight = -10.001f;
-        private double heatConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor);
+        private double heatConductivityDivGlobalSqrt => 1.0 / Math.Sqrt(10.0 * PhysicsGlobals.ConductionFactor);
         private double SkinInternalConductivityDivGlobal => 1.0 / (PhysicsGlobals.SkinInternalConductionFactor * 0.5 * PhysicsGlobals.ConductionFactor * 10.0 * part.heatConductivity);
         private double SkinSkinConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double SkinThermalMassModifierDiv => 1.0 / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
@@ -636,7 +636,7 @@ namespace ROLib
             }
             // heatConductivity
             if (presetCore.thermalConductivity > 0 ) {
-                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobal;
+                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobalSqrt;
             } else {
                 part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
             };
@@ -1325,8 +1325,6 @@ namespace ROLib
                     //+ "SurfaceArea: part.exposedArea " + part.exposedArea + ", part.skinExposedArea "  + part.skinExposedArea + ", skinExposedAreaFrac " + part.skinExposedAreaFrac + "\n"
                     + "part.DragCubes->  PostOcclusionArea " + part.DragCubes.PostOcclusionArea  + ", cubeData.exposedArea "+ part.DragCubes.ExposedArea + ", Area "+ part.DragCubes.Area + "\n"
             );
-        }
-
-        
+        }  
     }
 }
