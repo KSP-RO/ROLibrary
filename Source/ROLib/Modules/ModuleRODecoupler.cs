@@ -111,7 +111,7 @@ namespace ROLib
         public override void OnUpdate()
         {
             if (!isAutoDecouple) return;
-            if (topDecoupler.isDecoupled || bottomDecoupler.isDecoupled && triggerTime == 0)
+            if ((topDecoupler.isDecoupled || bottomDecoupler.isDecoupled) && triggerTime == 0)
             {
                 isCountingDown = true;
                 triggerTime = Planetarium.GetUniversalTime();
