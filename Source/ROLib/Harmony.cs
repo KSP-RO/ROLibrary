@@ -1,9 +1,12 @@
-﻿using HarmonyLib;
+﻿using FerramAerospaceResearch.FARGUI.FAREditorGUI;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection.Emit;
 using UniLinq;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 
 namespace ROLib.Harmony
@@ -23,7 +26,8 @@ namespace ROLib.Harmony
     {
         
         [HarmonyPatch(typeof(FlightIntegrator), "FixedUpdate")] 
-        public class FixedUpdate_patch{
+        public class FlightIntegrator_FixedUpdate_patch
+        {
             internal static void Prefix() 
             {
                 HarmonyFunctions.cacheStandardSpecificHeatCapacity = PhysicsGlobals.StandardSpecificHeatCapacity;
@@ -31,7 +35,7 @@ namespace ROLib.Harmony
         }
 
         [HarmonyPatch(typeof(FlightIntegrator), "UpdateMassStats")]
-        public static class UpdateMassStats_patch 
+        public static class FlightIntegrator_UpdateMassStats_patch 
         {
             static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codeInstructions) {
                 var SetSkinThermalMass = AccessTools.Method(typeof(FlightIntegrator), nameof(FlightIntegrator.SetSkinThermalMass));
@@ -90,6 +94,37 @@ namespace ROLib.Harmony
                     Debug.Log("[ROThermal] Harmony Transpiler found instruction 1 " + found1 + " instruction 2  " + found2 + " instruction 3 " + found3 );
                 }
                 return codes;
+            }
+        }
+        [HarmonyPatch(typeof(EditorGUI), "FixedUpdate")]
+        public class EditorGUI_FixedUpdate_patch 
+        {
+            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+            {
+                var stopWatchReset = AccessTools.Method(typeof(Stopwatch), nameof(Stopwatch.Reset));
+                var codes = codeInstructions.ToList();
+                bool found = false;
+
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    CodeInstruction code = codes[i];
+                    yield return code;
+                    if (code.opcode == OpCodes.Callvirt & code.OperandIs(stopWatchReset) && found == false) 
+                    {   
+                        found = true;
+                        yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EditorLogic), "get_" + nameof(EditorLogic.RootPart)));
+                        yield return new CodeInstruction(OpCodes.Ldstr, "OnVoxelizationComplete");
+                        yield return new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(Part), nameof(Part.SendEvent), new[] {typeof(string)}));
+                    }
+                }
+                if (found is false) 
+                {
+                    throw new ArgumentException("[ROThermal] Harmony Transpiler EditorGUI_FixedUpdate_patch instructions not found");
+                }
+                else 
+                {
+                    Debug.Log("[ROThermal] Harmony Transpiler EditorGUI_FixedUpdate_patch instructions found");
+                }
             }
         }
     }

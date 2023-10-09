@@ -1,11 +1,11 @@
 ﻿using ferram4;
 using FerramAerospaceResearch.FARAeroComponents;
+using RP0;
 using RealFuels.Tanks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using KerbalConstructionTime;
 
 
 namespace ROLib
@@ -59,7 +59,7 @@ namespace ROLib
         private ModuleTagList CCTagListModule;
         private PresetROMatarial presetCore;
         private PresetROMatarial presetSkin;
-        
+
         private const string reentryTag = "Reentry";
         private bool reentryByDefault = false;
         private float tpsCost = 0.0f;
@@ -181,15 +181,16 @@ namespace ROLib
                 surfaceAreaCovered =  surfaceAreaCfg;
             }
             else if (fARAeroPartModule != null) 
-            {
+            {   
                 surfaceArea = fARAeroPartModule?.ProjectedAreas.totalArea ?? 0.0f;
                 
                 if (surfaceArea > 0.0)
                 {
                     /// No need to subtract occluded areas, fARAeroPartModule takes care of that
+                    Debug.Log("[ROThermal] get_SurfaceArea fARAeroPartModule totalArea = " + surfaceArea);
                     return surfaceArea;
                 } 
-                else 
+                else
                 {
                     if (fARAeroPartModule?.ProjectedAreas == null)
                         Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule ProjectedAreas = null ");
@@ -278,7 +279,7 @@ namespace ROLib
 
         public void FixedUpdate()
         {
-            if (HighLogic.LoadedSceneIsFlight && hasThermalProperties) 
+            if (hasThermalProperties && HighLogic.LoadedSceneIsFlight) 
             {
                 if (part.skinTemperature > nextUpdateUpSkin) 
                 {  
@@ -344,7 +345,7 @@ namespace ROLib
                     part.thermalMassModifier = thermalPropertiesCore[indexCore][1];
                     Debug.Log("[ROThermal] "+ part.name + " moving Core temperature values up, between " +  nextUpdateDownCore + "-" + nextUpdateUpCore);
                 }
-            }
+            } 
             if (pawOpen && PhysicsGlobals.ThermalDataDisplay)
             {
                 if (tick % 25 == 0 && HighLogic.LoadedSceneIsFlight) {
@@ -471,8 +472,6 @@ namespace ROLib
                     Debug.Log("[ROThermal] " + part.name + " ModuleFuelTanks found " + moduleFuelTanks.name + " updating core material list");
                     UpdateCoreForRealfuels(false);
                 }
-                if (EditorLogic.RootPart != null && (fARWingModule != null | moduleFuelTanks is ModuleFuelTanks))
-                    EditorCordinator.AddToMassCheckList(this);
 
                 ApplyCorePreset(presetCoreName);
                 ApplySkinPreset(presetSkinName, false);
@@ -527,7 +526,6 @@ namespace ROLib
         
         private void OnDestroy()
         {
-            EditorCordinator.RemoveToMassCheckList(this);
             GameEvents.onPartActionUIDismiss.Remove(OnPartActionUIDismiss);
             GameEvents.onPartActionUIShown.Remove(OnPartActionUIShown);
             if (moduleFuelTanks is ModuleFuelTanks && HighLogic.LoadedSceneIsEditor)
@@ -827,10 +825,11 @@ namespace ROLib
             {
                 if (moduleMass != tpsMass)
                 {
-                    //TODO Fire EngineersReport update without FAR voxelization
                     moduleMass = tpsMass;
-                    EditorCordinator.ignoreNextShipModified = true;
-                    GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+
+                    // lets us update Engineer's Report without triggering re-voxelizaion
+                    Debug.Log($"[ROThermal] OnGUIStageSequenceModified Fired");
+                    GameEvents.StageManager.OnGUIStageSequenceModified.Fire();
                 }
                 
             } else 
@@ -1188,6 +1187,20 @@ namespace ROLib
             if (!HighLogic.LoadedSceneIsEditor) return;
             UpdateGeometricProperties();
         }
+
+        /// <summary>
+        /// Message sent from FAR via Harmony Patch.
+        /// </summary>
+        [KSPEvent]
+        public void OnVoxelizationComplete(BaseEventDetails data)
+        {
+            Debug.Log($"[ROThermal] VoxelizationComplete Message caught");
+            double frac = surfaceArea / fARAeroPartModule.ProjectedAreas.totalArea;
+            if (surfaceAreaCfg >= 0.0 && (frac > 1.01 || frac < 0.99)) {
+                SetSurfaceArea();
+            }
+            UpdateGeometricProperties();
+        }
         
 
         /// <summary>
@@ -1275,12 +1288,12 @@ namespace ROLib
                                 + "\nPeak Temp Skin/Core " + peakTempSkin.ToString("F1")+ " / " + peakTemp.ToString("F1") +"K"
                                 + "\ne " + part.emissiveConstant.ToString("F3") + " Exp AreaF " + part.skinExposedAreaFrac.ToString("F3")
                                 + "\nSkinThermalMass " + part.skinThermalMass.ToString("F1")
-                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * 1.0 / SkinInternalConductivityDivGlobal).ToString("F1") 
-                                + "\nInternalCondMult" + part.skinInternalConductionMult.ToString("F6")
+                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * 1.0 / SkinThermalMassModifierDiv).ToString("F1") 
+                                + "\nInternalCondMult " + part.skinInternalConductionMult.ToString("F6")
                                 + "\nconvection AreaMult " + part.ptd.convectionAreaMultiplier.ToString("F3")
-                                + "\nTempMult " + part.ptd.convectionTempMultiplier.ToString("F3")
+                                //+ "\nTempMult " + part.ptd.convectionTempMultiplier.ToString("F3")
                                 //+ "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
-                                + "\nSurface " + part.radiativeArea.ToString("F1") + "m2, Skin" + part.skinThermalMassModifier.ToString("F4") + "kg/m2-K";  
+                                + "\nSurface " + part.radiativeArea.ToString("F1") + "m2, Skin " + part.skinThermalMassModifier.ToString("F4") + "kg/m2-K";  
         }
         public void DebugLog()
         {
