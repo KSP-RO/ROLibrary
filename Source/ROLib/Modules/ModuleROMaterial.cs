@@ -1,5 +1,6 @@
 ﻿using ferram4;
 using FerramAerospaceResearch.FARAeroComponents;
+using KSP.Localization;
 using RP0;
 using RealFuels.Tanks;
 using System;
@@ -12,10 +13,11 @@ namespace ROLib
 {
     public class ModuleROMaterials : PartModule, IPartMassModifier, IPartCostModifier
     {
+        
+        #region Display
+
         private const string GroupDisplayName = "RO-Thermal_Protection";
         private const string GroupName = "ModuleROMaterials";
-
-        #region Display
 
         [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
@@ -45,8 +47,23 @@ namespace ROLib
 
         [KSPField(isPersistant = false, guiName = "Max Temp", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
         public string FlightDisplay = "";
-        [KSPField(isPersistant = false, guiName = ":", guiActive = true, guiActiveEditor = false, guiActiveUnfocused = false)]
-        public string FlightDebug = "";
+
+
+        private const string GroupDisplayNameDebug = "RO-Materials Debug";
+        private const string GroupNameDebug = "ModuleROMaterialsDebug";
+        
+        [KSPField(guiName = "Peak Temp Skin/Core",  groupName = GroupNameDebug, groupDisplayName = GroupDisplayNameDebug
+                    , guiActive = false, guiActiveEditor = false, guiActiveUnfocused = false)]
+        public string tempPeakText;
+        [KSPField(guiName = "Emissivity",  groupName = GroupNameDebug, groupDisplayName = GroupDisplayNameDebug
+                    , guiActive = false, guiActiveEditor = false, guiActiveUnfocused = false)]
+        public string emissiveConstantText;
+        [KSPField(guiName = "SkinHeatCap",  groupName = GroupNameDebug, groupDisplayName = GroupDisplayNameDebug
+                    , guiActive = false, guiActiveEditor = false, guiActiveUnfocused = false)]
+        public string skinHeatCapText;
+        [KSPField(guiName = "InternalCondMult",  groupName = GroupNameDebug, groupDisplayName = GroupDisplayNameDebug
+                    , guiActive = false, guiActiveEditor = false, guiActiveUnfocused = false)]
+        public string skinInternalConductionMultText;
 
         #endregion Display
 
@@ -79,6 +96,7 @@ namespace ROLib
         private double SkinInternalConductivityDivGlobal => 1.0 / (PhysicsGlobals.SkinInternalConductionFactor * 0.5 * PhysicsGlobals.ConductionFactor * 10.0 * part.heatConductivity);
         private double SkinSkinConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double SkinThermalMassModifierDiv => 1.0 / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
+        private double SkinThermalMassModifierMult => PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
         private double absorptiveConstantOrig;
         private double[][] thermalPropertiesSkin;
         private double[][] thermalPropertiesCore;
@@ -86,9 +104,8 @@ namespace ROLib
         private int thermalPropertyRowsCore = 1000;
         private bool hasThermalProperties = false;
         private bool pawOpen = false;
-        private double tick = 470.0;
         private double peakTempSkin = 0.0;
-        private double peakTemp;
+        private double peakTempCore;
         private double nextUpdateUpSkin = double.MaxValue;
         private double nextUpdateDownSkin = double.MinValue;
         private double nextUpdateUpCore = double.MaxValue;
@@ -117,6 +134,7 @@ namespace ROLib
         [KSPField] public float surfaceAreaCfg = -0.1f;
         [KSPField] public float volumePart = -0.1f;
         [KSPField] public bool tpsMassIsAdditive = true;
+        [KSPField] public double surfaceDensityRef = 0.0;
         [KSPField] public double surfaceArea = 0.0; // m2
         [KSPField] public double surfaceAreaCovered = 0.0; // m2
         [Persistent] public string coreCfg = "";
@@ -280,6 +298,7 @@ namespace ROLib
         }
         
         public float TPSMass => (float)(surfaceArea * tpsSurfaceDensity) * TPSAreaMult / 1000f;
+        public float TPSMassRef => (float)(surfaceArea * (tpsSurfaceDensity - surfaceDensityRef)) * TPSAreaMult / 1000f;
         public float TPSCost => (float)surfaceArea * TPSAreaCost * TPSAreaMult;
 
         public float Ablator => Mathf.Round((float)surfaceArea * presetSkin.heatShieldAblator * 10f) / 10f;       
@@ -309,6 +328,8 @@ namespace ROLib
                     part.skinInternalConductionMult = thermalPropertiesSkin[indexSkin][2];
                     part.emissiveConstant = thermalPropertiesSkin[indexSkin][3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
+                    if (pawOpen && PhysicsGlobals.ThermalDataDisplay)
+                        UpdateFlightDebug();
                 } 
                 else if (part.skinTemperature < nextUpdateDownSkin) 
                 {
@@ -327,6 +348,8 @@ namespace ROLib
                     part.skinInternalConductionMult = thermalPropertiesSkin[indexSkin][2];
                     part.emissiveConstant = thermalPropertiesSkin[indexSkin][3];
                     //part.ptd.emissScalar = part.emissiveConstant * PhysicsGlobals.RadiationFactor * 0.001;
+                    if (pawOpen && PhysicsGlobals.ThermalDataDisplay)
+                        UpdateFlightDebug();
                 }
                 if (part.temperature > nextUpdateUpCore) 
                 {
@@ -357,12 +380,14 @@ namespace ROLib
                     Debug.Log("[ROThermal] "+ part.name + " moving Core temperature values up, between " +  nextUpdateDownCore + "-" + nextUpdateUpCore);
                 }
             } 
-            if (pawOpen && PhysicsGlobals.ThermalDataDisplay)
+            if (pawOpen && PhysicsGlobals.ThermalDataDisplay && HighLogic.LoadedSceneIsFlight)
             {
-                if (tick % 25 == 0 && HighLogic.LoadedSceneIsFlight) {
-                    UpdateFlightDebug();
-                }
-                tick ++;
+                if (part.temperature > peakTempCore || part.skinTemperature > peakTempSkin) 
+                {
+                    peakTempCore = part.temperature;
+                    peakTempSkin = part.skinTemperature;
+                    tempPeakText = Localizer.Format("<<1>>/<<2>> K", peakTempSkin.ToString("F1"),  peakTempCore.ToString("F1"));
+                }     
             }
         }
 
@@ -372,6 +397,7 @@ namespace ROLib
 
             node.TryGetValue("TPSSurfaceArea", ref surfaceAreaCfg);
             node.TryGetValue("Volume", ref volumePart);
+            node.TryGetValue("refSurfaceAreaDensity", ref surfaceDensityRef);
             if (!node.TryGetValue("skinMassIsAdditive", ref tpsMassIsAdditive))
                 Debug.Log("[ROThermal] "+ part.name + " skinMassAdditive entry not found");
             if (node.TryGetValue("corePresets", ref availablePresetNamesCore))
@@ -530,7 +556,7 @@ namespace ROLib
                     part.emissiveConstant = thermalPropertiesSkin[indexCore][3];
                     hasThermalProperties = true;
                     Debug.Log($"[ROThermal] OnStartFinished thermalPropertiesSkin array temperature set to " + thermalPropertiesSkin[indexSkin][0] + " part " + part);
-                }    
+                }
                 DebugLog();
             }
         }
@@ -786,9 +812,10 @@ namespace ROLib
             tpsCost = TPSCost;
             if (tpsMassIsAdditive) 
             {
-                if (moduleMass != tpsMass)
+                float tpsMassRef = TPSMassRef;
+                if (moduleMass != tpsMassRef)
                 {
-                    moduleMass = tpsMass;
+                    moduleMass = tpsMassRef;
 
                     // lets us update Engineer's Report without triggering re-voxelizaion
                     Debug.Log($"[ROThermal] OnGUIStageSequenceModified Fired");
@@ -1109,19 +1136,32 @@ namespace ROLib
         #region Game Events
         public void OnPartActionUIShown (UIPartActionWindow window, Part p) 
         {
-            if (PhysicsGlobals.ThermalDataDisplay) 
+            if (PhysicsGlobals.ThermalDataDisplay && HighLogic.LoadedSceneIsFlight) 
             {
-                Fields[nameof(FlightDebug)].guiActive = true;
+                foreach (BaseField field in Fields)
+                {
+                    if (field.group.name == GroupNameDebug) 
+                    {
+                        field.guiActive = true;
+                    }
+                }
+                UpdateFlightDebug();
+            } 
+            else
+            {
+                foreach (BaseField field in Fields)
+                {
+                    if (field.group.name == GroupNameDebug) 
+                    {
+                        field.guiActive = false;
+                    }
+                }
             }
             pawOpen = true;
         }
 
         public void OnPartActionUIDismiss(Part p)
         {
-            if (!PhysicsGlobals.ThermalDataDisplay) 
-            {
-                Fields[nameof(FlightDebug)].guiActive = false;
-            }
             pawOpen = false;
         }
 
@@ -1229,24 +1269,11 @@ namespace ROLib
         public static string FormatMass(float mass) => mass < 1.0f ? KSPUtil.PrintSI(mass * 1e6, "g", 4) : KSPUtil.PrintSI(mass, "t", 4);
         public static string FormatThermalMass(float thermalmass) => KSPUtil.PrintSI(thermalmass * 1e3, "J/K", 4);
         public static string FormatThermalMass(double thermalmass) => KSPUtil.PrintSI(thermalmass * 1e3, "J/K", 4);
-
-        public void UpdateFlightDebug() 
+        public void UpdateFlightDebug()
         {
-            if ( part.temperature > peakTemp)
-                        peakTemp = part.temperature;
-            if (part.skinTemperature > peakTempSkin)
-                peakTempSkin = part.skinTemperature;
-
-            FlightDebug =   "Temp Exp " + part.skinTemperature.ToString("F1") + " Unexp " + part.skinUnexposedTemperature.ToString("F1") + "K"
-                                + "\nPeak Temp Skin/Core " + peakTempSkin.ToString("F1")+ " / " + peakTemp.ToString("F1") +"K"
-                                + "\ne " + part.emissiveConstant.ToString("F3") + " Exp AreaF " + part.skinExposedAreaFrac.ToString("F3")
-                                + "\nSkinThermalMass " + part.skinThermalMass.ToString("F1")
-                                + "\nSkinHeatCap " + (part.skinThermalMassModifier * 1.0 / SkinThermalMassModifierDiv).ToString("F1") 
-                                + "\nInternalCondMult " + part.skinInternalConductionMult.ToString("F6")
-                                + "\nconvection AreaMult " + part.ptd.convectionAreaMultiplier.ToString("F3")
-                                //+ "\nTempMult " + part.ptd.convectionTempMultiplier.ToString("F3")
-                                //+ "\nbkg rad " + String.Format("{0:0.#}", part.ptd.brtUnexposed) + " exposed " + String.Format("{0:0.#}", part.ptd.brtExposed)
-                                + "\nSurface " + part.radiativeArea.ToString("F1") + "m2, Skin " + part.skinThermalMassModifier.ToString("F4") + "kg/m2-K";  
+                emissiveConstantText = part.emissiveConstant.ToString("F3");
+                skinHeatCapText = (part.skinThermalMassModifier * SkinThermalMassModifierMult).ToString("F1") + " J*kg/K";
+                skinInternalConductionMultText = part.skinInternalConductionMult.ToString("F6");
         }
         public void DebugLog()
         {
@@ -1269,7 +1296,7 @@ namespace ROLib
             }
             skinThermalMassModifier *= SkinThermalMassModifierDiv;
             part.GetResourceMass(out float resourceThermalMass);
-            double mult = 1 / SkinThermalMassModifierDiv;
+            double mult = SkinThermalMassModifierMult;
             float thermalMass = part.mass * (float)mult + resourceThermalMass;
             float skinThermalMass = (float)Math.Max(0.1, Math.Min(0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult, (double)part.mass * mult * 0.5));
             thermalMass = Mathf.Max(thermalMass - skinThermalMass, 0.1f);
