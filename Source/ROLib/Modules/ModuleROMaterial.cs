@@ -173,32 +173,38 @@ namespace ROLib
             }      
         }
 
-        public double SetSurfaceArea ()
+        public bool UpdateSurfaceArea()
         {
             if (surfaceAreaCfg > 0.0f) 
             {
+                if (surfaceAreaCovered == surfaceAreaCfg)
+                    return false;
                 Debug.Log("[ROThermal] get_SurfaceArea derived from SurfaceAreaPart Entry: " + surfaceAreaCfg);
                 surfaceAreaCovered =  surfaceAreaCfg;
             }
             else if (fARAeroPartModule != null) 
             {   
-                surfaceArea = fARAeroPartModule?.ProjectedAreas.totalArea ?? 0.0f;
-                
-                if (surfaceArea > 0.0)
+                double frac = surfaceArea / fARAeroPartModule?.ProjectedAreas.totalArea ?? surfaceArea;
+                if (frac > 1.01 || frac < 0.99) 
                 {
-                    /// No need to subtract occluded areas, fARAeroPartModule takes care of that
-                    Debug.Log("[ROThermal] get_SurfaceArea fARAeroPartModule totalArea = " + surfaceArea);
-                    return surfaceArea;
-                } 
-                else
-                {
-                    if (fARAeroPartModule?.ProjectedAreas == null)
-                        Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule ProjectedAreas = null ");
-                    else if (fARAeroPartModule?.ProjectedAreas.totalArea == null)
-                        Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule totalArea = null ");
-                    else
-                        Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule got " + surfaceArea);
+                    surfaceArea = fARAeroPartModule.ProjectedAreas.totalArea;
+                    if (surfaceArea > 0.0)
+                    {
+                        /// No need to subtract occluded areas, fARAeroPartModule takes care of that
+                        Debug.Log("[ROThermal] get_SurfaceArea fARAeroPartModule totalArea = " + surfaceArea);
+                        return true;
+                    }
                 }
+                else 
+                {
+                    Debug.Log("[ROThermal] get_SurfaceArea No significant change in surface area base " + surfaceArea + " new " + (fARAeroPartModule?.ProjectedAreas.totalArea ?? 0.0));
+                }
+
+                if (fARAeroPartModule?.ProjectedAreas == null)
+                    Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule ProjectedAreas = null ");
+                else if (fARAeroPartModule?.ProjectedAreas.totalArea == null)
+                    Debug.Log("[ROThermal] get_SurfaceArea skipping fARAeroPartModule totalArea = null ");
+                return false;
             }
             /// decrease surface area based on contact area of attached nodes & surface attached parts
             if (surfaceAreaCovered > 0.0) 
@@ -233,12 +239,17 @@ namespace ROLib
                         surfaceAreaCovered -= child.srfAttachNode.contactArea;
                     }
                 }
-                //Debug.Log(str + "  Result: " +  surfaceAreaCovered);
             }
             if (surfaceAreaCovered > 0.0)
-                return surfaceAreaCovered;
-            Debug.LogWarning("[ROThermal] get_SurfaceArea failed: Area=" + surfaceAreaCovered);
-            return 0.0;
+            {
+                surfaceArea = surfaceAreaCovered;
+                return true;
+            } 
+            else
+            {
+                Debug.LogWarning("[ROThermal] get_SurfaceArea failed: Area=" + surfaceAreaCovered);
+                return false;
+            }
         }
 
 
@@ -268,7 +279,7 @@ namespace ROLib
             }
         }
         
-        public float TPSMass => (float)(surfaceArea * tpsSurfaceDensity * TPSAreaMult / 1000f);
+        public float TPSMass => (float)(surfaceArea * tpsSurfaceDensity) * TPSAreaMult / 1000f;
         public float TPSCost => (float)surfaceArea * TPSAreaCost * TPSAreaMult;
 
         public float Ablator => Mathf.Round((float)surfaceArea * presetSkin.heatShieldAblator * 10f) / 10f;       
@@ -436,7 +447,7 @@ namespace ROLib
                     (bf, ob) => ApplySkinPreset(presetSkinName, true);
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onFieldChanged =
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = 
-                    (bf, ob) => OnHeightChanged(tpsHeightDisplay);
+                    (bf, ob) => OnHeightChanged((float)bf.GetValue(this));
                 
                 this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetSkin.skinHeightMin, presetSkin.SkinHeightMaxVal, 10f, 1f, 0.01f);
             }
@@ -541,80 +552,26 @@ namespace ROLib
 
         #region Custom Methods
 
-        public bool checkMassUpdate(bool recheck = true, int ntry = 0)
+        public bool checkMassUpdate()
         {
             if(part.mass == partMassCached)
                 return false;
 
-            Debug.Log($"[ROThermal] checkMass Part {part} mass updated after {ntry} fixedUpdates new value {part.mass}, old {partMassCached}");
+            Debug.Log($"[ROThermal] checkMass Part {part} mass updated new value {part.mass}, old {partMassCached}");
             partMassCached = part.mass;
             UpdateGUI();
             return true;
         }
 
-        public bool TrySurfaceAreaUpdate(int ntry)
-        {
-            //Debug.Log($"[ROThermal] UpdateSurfaceArea Instance created surface area Part {surfaceArea}, fAR ProjectedArea {fARAeroPartModule?.ProjectedAreas.totalArea}");
-            if (fARAeroPartModule.ProjectedAreas.totalArea < 0.000001)
-                return false;
-            if (surfaceArea == fARAeroPartModule.ProjectedAreas.totalArea)
-                return false;
-                
-            Debug.Log($"[ROThermal] UpdateSurfaceArea updating surface Area after {ntry} fixedUpdates");
-            UpdateGeometricProperties();
-            return true;
-        }
         public void OnHeightChanged(float height) 
         {
             if (height == prevHeight) return;
-            UpdateHeight();
+            prevHeight = Mathf.Clamp(tpsHeightDisplay, presetSkin.skinHeightMin, presetSkin.SkinHeightMaxVal);
+            tpsHeightDisplay = prevHeight;
+
+            //UpdateHeight();
             ApplyThermal();
             UpdateGeometricProperties();
-        }
-
-        public void UpdateHeight(bool newSkin = false) 
-        {
-            float heightMax = presetSkin.SkinHeightMaxVal; 
-            float heightMin = presetSkin.skinHeightMin;
-
-            if (newSkin == true) {
-                if (heightMax < heightMin)
-                {
-                    Debug.LogWarning($"[ROThermal] Warning Preset "+ presetSkin.name + " skinHeightMax lower then skinHeightMin");
-                    tpsHeightDisplay = heightMin;
-                }
-                else if (thermalMassAreaBefore != 0.0) 
-                {
-                    float heightfactor  = (float)((thermalMassAreaBefore -  presetSkin.skinSpecificHeatCapacity * presetSkin.skinMassPerArea * SkinThermalMassModifierDiv)
-                                            / (presetSkin.skinMassPerAreaMax - presetSkin.skinMassPerArea 
-                                               + presetSkin.skinMassPerArea * (presetSkin.skinSpecificHeatCapacityMax - presetSkin.skinSpecificHeatCapacity) * SkinThermalMassModifierDiv));
-                    
-                    if (heightfactor == 0 | heightfactor == double.NegativeInfinity | heightfactor == double.PositiveInfinity) 
-                    {
-                        tpsHeightDisplay = heightMin;
-                    } 
-                    else
-                    {
-                        tpsHeightDisplay = heightfactor * (presetSkin.skinHeightMax - presetSkin.skinHeightMin) + presetSkin.skinHeightMin;
-
-                        tpsHeightDisplay = Mathf.Clamp(tpsHeightDisplay, heightMin, heightMax);
-                    }
-                    Debug.Log($"[ROThermal] UpdateHeight(New Skin) tpsHeightDisplay {tpsHeightDisplay}, heightfactor3 {heightfactor}" );
-                    
-                }
-                else if (presetSkinName == skinCfg && skinHeightCfg > 0.0f) {
-                    tpsHeightDisplay = Mathf.Clamp(skinHeightCfg, heightMin, heightMax);
-                }
-                else {
-                    tpsHeightDisplay = (float)Math.Round((double)((heightMax - heightMin) * 0.75f + heightMin), 1);
-                }
-                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), heightMin, heightMax, 10f, 1f, 0.1f);
-            }
-            else
-            {
-                tpsHeightDisplay = Mathf.Clamp(tpsHeightDisplay, heightMin, heightMax);
-            }
-            prevHeight = tpsHeightDisplay;
         }
 
         public void ApplyCorePreset (string preset) {
@@ -647,7 +604,13 @@ namespace ROLib
         }
         public void ApplySkinPreset (string preset, bool skinNew) {
             PresetTPS = preset;
-            UpdateHeight(skinNew);
+
+            float heightMax = presetSkin.SkinHeightMaxVal; 
+            float heightMin = presetSkin.skinHeightMin;
+            this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), heightMin, heightMax, 10f, 1f, 0.1f);
+            prevHeight = Mathf.Clamp(skinHeightCfg, heightMin, heightMax);
+            tpsHeightDisplay = prevHeight;
+
             ApplyThermal();
             CCTagUpdate(presetSkin);
 
@@ -817,7 +780,7 @@ namespace ROLib
         {
             if (HighLogic.LoadedSceneIsEditor) 
             {
-                part.radiativeArea = SetSurfaceArea();
+                part.radiativeArea = surfaceArea;
             }
             tpsMass = TPSMass;
             tpsCost = TPSCost;
@@ -830,9 +793,10 @@ namespace ROLib
                     // lets us update Engineer's Report without triggering re-voxelizaion
                     Debug.Log($"[ROThermal] OnGUIStageSequenceModified Fired");
                     GameEvents.StageManager.OnGUIStageSequenceModified.Fire();
-                }
-                
-            } else 
+                    part.UpdateMass();
+                }    
+            } 
+            else 
             {
                 moduleMass = 0.0f;
             }
@@ -854,11 +818,8 @@ namespace ROLib
                     ca.amount = 0;
                 }
             }
-            part.UpdateMass();
+
             partMassCached = part.mass;
-            //if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch?.ship != null)
-                //GameEvents.onEditorPartEvent.Fire(ConstructionEventType.PartTweaked, part);
-           
             UpdateGUI();
 
             // ModuleAblator's Start runs before this PM overrides the ablator values and will precalculate some parameters.
@@ -1092,13 +1053,8 @@ namespace ROLib
 
         public void UpdatePAW()
         {
-            foreach (UIPartActionWindow window in UIPartActionController.Instance.windows)
-            {
-                if (window.part == this.part)
-                {
-                    window.displayDirty = true;
-                }
-            }
+            if (UIPartActionController.Instance?.GetItem(part) is UIPartActionWindow paw)
+                paw.displayDirty = true;
         }
 
         private void RemoveAblatorResources()
@@ -1172,7 +1128,7 @@ namespace ROLib
         public void OnPartResourceListChange(Part dPart)
         {
             Debug.Log($"[ROThermal] onPartResourceListChange Part {part} Message caught.");
-            checkMassUpdate(true);
+            checkMassUpdate();
         }
 
         #endregion Game Events
@@ -1195,11 +1151,8 @@ namespace ROLib
         public void OnVoxelizationComplete(BaseEventDetails data)
         {
             Debug.Log($"[ROThermal] VoxelizationComplete Message caught");
-            double frac = surfaceArea / fARAeroPartModule.ProjectedAreas.totalArea;
-            if (surfaceAreaCfg >= 0.0 && (frac > 1.01 || frac < 0.99)) {
-                SetSurfaceArea();
-            }
-            UpdateGeometricProperties();
+            if (UpdateSurfaceArea())
+                UpdateGeometricProperties();
         }
         
 
