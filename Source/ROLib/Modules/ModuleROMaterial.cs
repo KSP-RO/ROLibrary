@@ -19,7 +19,7 @@ namespace ROLib
         private const string GroupDisplayName = "RO-Thermal_Protection";
         private const string GroupName = "ModuleROMaterials";
 
-        [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
+        [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = false, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public string presetCoreName = "";
         [KSPField(isPersistant = true, guiName = "TPS", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
@@ -30,7 +30,7 @@ namespace ROLib
         public float tpsHeightDisplay = 1.0f;
         [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string presetCoreNameAltDispl = "";
-        [KSPField(guiActiveEditor = true, guiName = "Desc", groupName = GroupName, groupDisplayName = GroupDisplayName)]
+        [KSPField(isPersistant = false, guiName = "Desc", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string description = "";
         [KSPField(guiActiveEditor = true, guiName = "Temp", guiUnits = "K", groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string maxTempDisplay = "";
@@ -92,7 +92,7 @@ namespace ROLib
         private bool ignoreSurfaceAttach = true; // ignore all surface attached parts/childern when subtracting surface area
         private string[] ignoredNodes = new string[] {}; // ignored Nodes when subtracting surface area
         private float prevHeight = -10.001f;
-        private double heatConductivityDivGlobalSqrt => 1.0 / Math.Sqrt(10.0 * PhysicsGlobals.ConductionFactor);
+        private double heatConductivityDivGlobal => 1.0 / (4.5 * 10.0 * PhysicsGlobals.ConductionFactor);
         private double SkinInternalConductivityDivGlobal => 1.0 / (PhysicsGlobals.SkinInternalConductionFactor * 0.5 * PhysicsGlobals.ConductionFactor * 10.0 * part.heatConductivity);
         private double SkinSkinConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double SkinThermalMassModifierDiv => 1.0 / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
@@ -141,6 +141,7 @@ namespace ROLib
         [KSPField] public string skinReferenceZeroPoint = null;
         [KSPField] public double surfaceDensityZeroPoint = -1.0;
         [KSPField] public float costPerAreaZeroPoint = -1.0f;
+        [KSPField] public bool coreSelectable = false;
         [Persistent] public float skinHeightCfg = -1.0f;
         public float TPSAreaCost => presetSkin?.costPerArea ?? 1.0f;
         public float TPSAreaMult => presetSkin?.heatShieldAreaMult ?? 1.0f;
@@ -410,6 +411,7 @@ namespace ROLib
             node.TryGetValue("ignoreSurfaceAttach", ref ignoreSurfaceAttach);
 
             node.TryGetValue("core", ref coreCfg);
+            node.TryGetValue("coreSelectable", ref coreSelectable);
             node.TryGetValue("skin", ref skinCfg);
             node.TryGetValue("skinHeight", ref skinHeightCfg);
 
@@ -419,12 +421,21 @@ namespace ROLib
 
             ensurePresetIsInList(ref availablePresetNamesCore, coreCfg);
             ensurePresetIsInList(ref availablePresetNamesSkin, skinCfg);
+
+            if (coreSelectable)
+            {
+                Fields[nameof(presetCoreName)].guiActiveEditor = true;
+                Fields[nameof(presetCoreNameAltDispl)].guiActiveEditor = false;
+            }
+            else
+            {
+                Fields[nameof(presetCoreName)].guiActiveEditor = false;
+                Fields[nameof(presetCoreNameAltDispl)].guiActiveEditor = true;
+            }
         }
 
         public override void OnStart(StartState state)
         {
-            Fields[nameof(presetCoreName)].guiActiveEditor = false;
-            Fields[nameof(presetCoreNameAltDispl)].guiActiveEditor = true;
             GameEvents.onPartActionUIDismiss.Add(OnPartActionUIDismiss);
             GameEvents.onPartActionUIShown.Add(OnPartActionUIShown);
             
@@ -517,11 +528,11 @@ namespace ROLib
             moduleFuelTanks = part?.FindModuleImplementing<ModuleFuelTanks>();
             fARAeroPartModule = part?.FindModuleImplementing<FARAeroPartModule>();
             CCTagListModule = part?.FindModuleImplementing<ModuleTagList>();
+            fARWingModule = part?.FindModuleImplementing<FARControllableSurface>();
+            fARWingModule = part?.FindModuleImplementing<FARWingAerodynamicModel>();
 
             if(HighLogic.LoadedSceneIsEditor) 
             {
-                fARWingModule = part?.FindModuleImplementing<FARControllableSurface>();
-                fARWingModule = part?.FindModuleImplementing<FARWingAerodynamicModel>();
                 if (moduleFuelTanks is ModuleFuelTanks)
                 { 
                     /// ModuleFuelTanks changes TankType & mass on Update()
@@ -625,6 +636,11 @@ namespace ROLib
         public void ApplyCorePreset (string preset) {
             PresetCore = preset;
 
+            if (fARWingModule != null)
+            {
+                //fARWingModule.wingBaseMassMultiplier = ;
+            }
+
             // maxTemp
             if (presetCore.maxTempOverride > 0) {
                 part.maxTemp = presetCore.maxTempOverride;
@@ -639,7 +655,7 @@ namespace ROLib
             }
             // heatConductivity
             if (presetCore.thermalConductivity > 0 ) {
-                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobalSqrt;
+                part.heatConductivity = presetCore.thermalConductivity * heatConductivityDivGlobal;
             } else {
                 part.heatConductivity = part.partInfo.partPrefab.heatConductivity;
             };

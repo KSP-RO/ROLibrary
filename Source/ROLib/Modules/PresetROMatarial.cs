@@ -202,10 +202,10 @@ namespace ROLib
 
         public static void LoadPresets()
         {
-            Debug.Log("[ROThermal] Loading Presets");
             if (Initialized && PresetsCore.Count > 0 && PresetsSkin.Count > 0)
                 return;
 
+            Debug.Log("[ROThermal] Loading Presets");
             var nodes = GameDatabase.Instance.GetConfigNodes("ROThermal_PRESET");
             string s = string.Empty;
             foreach (var node in nodes)
