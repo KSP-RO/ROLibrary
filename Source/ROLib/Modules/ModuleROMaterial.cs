@@ -134,11 +134,13 @@ namespace ROLib
         [KSPField] public float surfaceAreaCfg = -0.1f;
         [KSPField] public float volumePart = -0.1f;
         [KSPField] public bool tpsMassIsAdditive = true;
-        [KSPField] public double surfaceDensityRef = 0.0;
         [KSPField] public double surfaceArea = 0.0; // m2
         [KSPField] public double surfaceAreaCovered = 0.0; // m2
         [Persistent] public string coreCfg = "";
         [Persistent] public string skinCfg = "";
+        [KSPField] public string skinReferenceZeroPoint = null;
+        [KSPField] public double surfaceDensityZeroPoint = -1.0;
+        [KSPField] public float costPerAreaZeroPoint = -1.0f;
         [Persistent] public float skinHeightCfg = -1.0f;
         public float TPSAreaCost => presetSkin?.costPerArea ?? 1.0f;
         public float TPSAreaMult => presetSkin?.heatShieldAreaMult ?? 1.0f;
@@ -298,8 +300,8 @@ namespace ROLib
         }
         
         public float TPSMass => (float)(surfaceArea * tpsSurfaceDensity) * TPSAreaMult / 1000f;
-        public float TPSMassRef => (float)(surfaceArea * (tpsSurfaceDensity - surfaceDensityRef)) * TPSAreaMult / 1000f;
-        public float TPSCost => (float)surfaceArea * TPSAreaCost * TPSAreaMult;
+        public float TPSMassRef => (float)(surfaceArea * (tpsSurfaceDensity - surfaceDensityZeroPoint)) * TPSAreaMult / 1000f;
+        public float TPSCost => (float)surfaceArea * (TPSAreaCost - costPerAreaZeroPoint ) * TPSAreaMult;
 
         public float Ablator => Mathf.Round((float)surfaceArea * presetSkin.heatShieldAblator * 10f) / 10f;       
        
@@ -397,7 +399,7 @@ namespace ROLib
 
             node.TryGetValue("TPSSurfaceArea", ref surfaceAreaCfg);
             node.TryGetValue("Volume", ref volumePart);
-            node.TryGetValue("refSurfaceAreaDensity", ref surfaceDensityRef);
+            
             if (!node.TryGetValue("skinMassIsAdditive", ref tpsMassIsAdditive))
                 Debug.Log("[ROThermal] "+ part.name + " skinMassAdditive entry not found");
             if (node.TryGetValue("corePresets", ref availablePresetNamesCore))
@@ -410,6 +412,10 @@ namespace ROLib
             node.TryGetValue("core", ref coreCfg);
             node.TryGetValue("skin", ref skinCfg);
             node.TryGetValue("skinHeight", ref skinHeightCfg);
+
+            node.TryGetValue("skinZeroPoint", ref skinReferenceZeroPoint);
+            node.TryGetValue("skinMassPerAreaZeroPoint", ref surfaceDensityZeroPoint);
+            node.TryGetValue("skinCostPerAreaZeroPoint", ref costPerAreaZeroPoint);           
 
             ensurePresetIsInList(ref availablePresetNamesCore, coreCfg);
             ensurePresetIsInList(ref availablePresetNamesSkin, skinCfg);
@@ -427,6 +433,22 @@ namespace ROLib
                 Debug.Log($"[ROThermal] OnStart Presets could not be initialized" + part.name + " LoadedScene is " + HighLogic.LoadedScene);
                 return;
             }
+            if (skinReferenceZeroPoint != null)
+            {
+                if (PresetROMatarial.PresetsSkin.TryGetValue(skinReferenceZeroPoint, out PresetROMatarial preset))
+                {
+                    if (surfaceDensityZeroPoint < 0.0)
+                        surfaceDensityZeroPoint = preset.skinMassPerArea;
+                    if (costPerAreaZeroPoint < 0.0f)
+                        costPerAreaZeroPoint = preset.costPerArea;
+                }
+                else
+                    Debug.LogWarning($"[ROThermal] skinZeroPoint " + skinReferenceZeroPoint + "not present in presets list");
+            }
+            if (surfaceDensityZeroPoint < 0.0)
+                surfaceDensityZeroPoint = 0.0;
+            if (costPerAreaZeroPoint < 0.0)
+                costPerAreaZeroPoint = 0.0f;
                 
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
