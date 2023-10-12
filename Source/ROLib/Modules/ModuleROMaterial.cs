@@ -22,14 +22,14 @@ namespace ROLib
         [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = false, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public string presetCoreName = "";
+        [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
+        public string presetCoreNameAltDispl = "";
         [KSPField(isPersistant = true, guiName = "TPS", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public string presetSkinName = "";
         [KSPField(isPersistant = true, guiName = "TPS height (mm)", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_FloatEdit(sigFigs = 1, suppressEditorShipModified = true)]
         public float tpsHeightDisplay = 1.0f;
-        [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
-        public string presetCoreNameAltDispl = "";
         [KSPField(isPersistant = false, guiName = "Desc", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string description = "";
         [KSPField(guiActiveEditor = true, guiName = "Temp", guiUnits = "K", groupName = GroupName, groupDisplayName = GroupDisplayName)]
@@ -64,6 +64,9 @@ namespace ROLib
         [KSPField(guiName = "InternalCondMult",  groupName = GroupNameDebug, groupDisplayName = GroupDisplayNameDebug
                     , guiActive = false, guiActiveEditor = false, guiActiveUnfocused = false)]
         public string skinInternalConductionMultText;
+        [KSPField(guiName = "heatConductivity",  groupName = GroupNameDebug, groupDisplayName = GroupDisplayNameDebug
+                    , guiActive = false, guiActiveEditor = false, guiActiveUnfocused = false)]
+        public string heatConductivityText;
 
         #endregion Display
 
@@ -83,16 +86,14 @@ namespace ROLib
         private float tpsMass = 0.0f;
         private double tpsSurfaceDensity = 0.0f; 
         private double skinIntTransferCoefficient = 0.0;
-        private double thermalMassAreaBefore = 0.0f;
         private float moduleMass = 0.0f;
-        private float partMassCached = 0.0f;
         private string ablatorResourceName;
         private string outputResourceName;
         private bool onLoadFiredInEditor;
         private bool ignoreSurfaceAttach = true; // ignore all surface attached parts/childern when subtracting surface area
         private string[] ignoredNodes = new string[] {}; // ignored Nodes when subtracting surface area
         private float prevHeight = -10.001f;
-        private double heatConductivityDivGlobal => 1.0 / (4.5 * 10.0 * PhysicsGlobals.ConductionFactor);
+        private double heatConductivityDivGlobal => 1.0 / (45 * 10.0 * PhysicsGlobals.ConductionFactor);
         private double SkinInternalConductivityDivGlobal => 1.0 / (PhysicsGlobals.SkinInternalConductionFactor * 0.5 * PhysicsGlobals.ConductionFactor * 10.0 * part.heatConductivity);
         private double SkinSkinConductivityDivGlobal => 1.0 / (10.0 * PhysicsGlobals.ConductionFactor * PhysicsGlobals.SkinSkinConductionFactor);
         private double SkinThermalMassModifierDiv => 1.0 / (PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier);
@@ -142,6 +143,7 @@ namespace ROLib
         [KSPField] public double surfaceDensityZeroPoint = -1.0;
         [KSPField] public float costPerAreaZeroPoint = -1.0f;
         [KSPField] public bool coreSelectable = false;
+        [KSPField] public double coreThermalMassFraction = 1.0;
         [Persistent] public float skinHeightCfg = -1.0f;
         public float TPSAreaCost => presetSkin?.costPerArea ?? 1.0f;
         public float TPSAreaMult => presetSkin?.heatShieldAreaMult ?? 1.0f;
@@ -412,6 +414,7 @@ namespace ROLib
 
             node.TryGetValue("core", ref coreCfg);
             node.TryGetValue("coreSelectable", ref coreSelectable);
+            node.TryGetValue("coreThermalMassFraction", ref coreThermalMassFraction);
             node.TryGetValue("skin", ref skinCfg);
             node.TryGetValue("skinHeight", ref skinHeightCfg);
 
@@ -425,11 +428,13 @@ namespace ROLib
             if (coreSelectable)
             {
                 Fields[nameof(presetCoreName)].guiActiveEditor = true;
+                Fields[nameof(presetCoreName)].uiControlEditor.controlEnabled = true;
                 Fields[nameof(presetCoreNameAltDispl)].guiActiveEditor = false;
             }
             else
             {
                 Fields[nameof(presetCoreName)].guiActiveEditor = false;
+                Fields[nameof(presetCoreName)].uiControlEditor.controlEnabled = false;
                 Fields[nameof(presetCoreNameAltDispl)].guiActiveEditor = true;
             }
         }
@@ -508,7 +513,7 @@ namespace ROLib
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = 
                     (bf, ob) => OnHeightChanged((float)bf.GetValue(this));
                 
-                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetSkin.skinHeightMin, presetSkin.SkinHeightMaxVal, 10f, 1f, 0.01f);
+                this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), presetSkin.skinHeightMin, presetSkin.SkinHeightMaxVal, 10f, 1f, 0.05f);
             }
         } 
 
@@ -611,16 +616,7 @@ namespace ROLib
 
         #region Custom Methods
 
-        public bool checkMassUpdate()
-        {
-            if(part.mass == partMassCached)
-                return false;
 
-            Debug.Log($"[ROThermal] checkMass Part {part} mass updated new value {part.mass}, old {partMassCached}");
-            partMassCached = part.mass;
-            UpdateGUI();
-            return true;
-        }
 
         public void OnHeightChanged(float height) 
         {
@@ -649,7 +645,7 @@ namespace ROLib
             }    
             // thermalMassModifier
             if (presetCore.specificHeatCapacity > 0) {
-                part.thermalMassModifier = presetCore.specificHeatCapacity / PhysicsGlobals.StandardSpecificHeatCapacity;
+                part.thermalMassModifier = presetCore.specificHeatCapacity * coreThermalMassFraction / PhysicsGlobals.StandardSpecificHeatCapacity;
             } else {
                 part.thermalMassModifier = part.partInfo.partPrefab.thermalMassModifier;
             }
@@ -671,7 +667,7 @@ namespace ROLib
 
             float heightMax = presetSkin.SkinHeightMaxVal; 
             float heightMin = presetSkin.skinHeightMin;
-            this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), heightMin, heightMax, 10f, 1f, 0.1f);
+            this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), heightMin, heightMax, 10f, 1f, 0.05f);
             prevHeight = Mathf.Clamp(skinHeightCfg, heightMin, heightMax);
             tpsHeightDisplay = prevHeight;
 
@@ -884,7 +880,6 @@ namespace ROLib
                 }
             }
 
-            partMassCached = part.mass;
             UpdateGUI();
 
             // ModuleAblator's Start runs before this PM overrides the ablator values and will precalculate some parameters.
@@ -904,7 +899,7 @@ namespace ROLib
                 {
                     thermalPropertiesCore[r] = new double [columns];
                     thermalPropertiesCore[r][0] = presetCore.thermalPropMin[r][0];
-                    thermalPropertiesCore[r][1] = presetCore.thermalPropMin[r][1] / PhysicsGlobals.StandardSpecificHeatCapacity;
+                    thermalPropertiesCore[r][1] = presetCore.thermalPropMin[r][1] * coreThermalMassFraction / PhysicsGlobals.StandardSpecificHeatCapacity;
                     //thermalPropertiesCore[r][2] = presetCore.thermalPropMin[r][2]
                     //thermalPropertiesCore[r][3] = presetCore.thermalPropMin[r][3];
                 }
@@ -1206,7 +1201,7 @@ namespace ROLib
         public void OnPartResourceListChange(Part dPart)
         {
             Debug.Log($"[ROThermal] onPartResourceListChange Part {part} Message caught.");
-            checkMassUpdate();
+            UpdateGUI();
         }
 
         #endregion Game Events
@@ -1281,21 +1276,20 @@ namespace ROLib
 
         public void UpdateGUI() 
         {
-            part.GetResourceMass(out float resourceThermalMass);
+            float resourceMass = part.GetResourceMass(out double resourceThermalMass);
 
-            double mult = 1.0 / SkinInternalConductivityDivGlobal;
-            double skinThermalMass = (float)Math.Max(0.1, 0.001 * part.skinMassPerArea * part.skinThermalMassModifier * surfaceArea * mult);
-            double massSkin = part.skinMassPerArea * part.radiativeArea;
-            double thermalMass =  Math.Max((double)part.mass - massSkin, 0.2) * mult + part.resourceThermalMass;
-            thermalMassAreaBefore = part.skinMassPerArea * part.skinThermalMassModifier;
+            double mult = PhysicsGlobals.StandardSpecificHeatCapacity * part.thermalMassModifier;
+            double massSkin = part.skinMassPerArea * surfaceArea * 0.001;
+            double skinThermalMass = (float)Math.Max(0.1, massSkin * part.skinThermalMassModifier * mult);
+            double coreThermalMass =  Math.Max((double)part.mass - massSkin, 0.001) * mult + resourceThermalMass;
             //Debug.Log($"[ROThermal] UpdateGUI() skinThermalMass = " + skinThermalMass + "= 0.001 * part.skinMassPerArea: " + part.skinMassPerArea + " * part.skinThermalMassModifier: " + part.skinThermalMassModifier + " * surfaceArea: " + surfaceArea + " * mult: (" + PhysicsGlobals.StandardSpecificHeatCapacity + " * " + part.thermalMassModifier + ")");
 
             maxTempDisplay = "Skin: " + String.Format("{0:0.}", part.skinMaxTemp) + "K / Core: " + String.Format("{0:0.}", part.maxTemp) ;
-            thermalMassDisplay = "Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(thermalMass);
+            thermalMassDisplay = "Skin: " + FormatThermalMass(skinThermalMass) + " / Core: " + FormatThermalMass(coreThermalMass);
             //Debug.Log($"[ROThermal] UpdateGUI() thermalInsulance: skinIntTransferCoefficient " + skinIntTransferCoefficient + " presetCore.skinIntTransferCoefficient " + presetCore.skinIntTransferCoefficient );
             thermalInsulanceDisplay = KSPUtil.PrintSI(1.0/skinIntTransferCoefficient, "m²*K/kW", 4);
             emissiveConstantDisplay = part.emissiveConstant.ToString("F2");
-            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(partMassCached + resourceThermalMass);
+            massDisplay = "Skin " + FormatMass((float)tpsMass) + " Total: " + FormatMass(part.mass + resourceMass);
             surfaceDensityDisplay = (float)tpsSurfaceDensity;
 
             FlightDisplay = "" + part.skinMaxTemp + "/" + part.maxTemp + "\nSkin: " + PresetTPS  + " " + tpsHeightDisplay + "mm\nCore: " + PresetCore ;
@@ -1312,6 +1306,7 @@ namespace ROLib
                 emissiveConstantText = part.emissiveConstant.ToString("F3");
                 skinHeatCapText = (part.skinThermalMassModifier * SkinThermalMassModifierMult).ToString("F1") + " J*kg/K";
                 skinInternalConductionMultText = part.skinInternalConductionMult.ToString("F6");
+                heatConductivityText = part.heatConductivity.ToString("F6");
         }
         public void DebugLog()
         {
