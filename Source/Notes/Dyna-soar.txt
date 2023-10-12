@@ -23,11 +23,11 @@ Nose Vought variant
 Nose Boeing
     Layer 1
     "The Boeing concept used a monolithic zirconia nose cap that was reinforced
-    against cracking with two screens of platinum-rhodium wire."
+    against cracking with two screens of platinum-rhodium wire." (Melting Point ~2103.15 K)
 
     Layer 2
     "Like its counterpart from Vought, this design also installed a heat shield that 
-    used Q-felt insulation installed a heat shield that used Q-felt insulation"
+    used Q-felt insulation"
 
 Coating
     "a thin layer of silicon carbide, applied to the surface, gave the vehicle its distinctive black color."

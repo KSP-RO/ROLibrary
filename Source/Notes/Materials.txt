@@ -129,6 +129,7 @@ ref:
 https://tpsx.arc.nasa.gov/Material?id=3
 https://tpsx.arc.nasa.gov/Material?id=235
 https://tpsx.arc.nasa.gov/Material?id=234
+https://ntrs.nasa.gov/api/citations/19930009576/downloads/19930009576.pdf
 
 
 FRCI-20
@@ -282,7 +283,7 @@ Replacement Fraction per Flight: 1.30e-03
 Reuse Flight Limit:	33.0 # of flights
 ref:
 https://tpsx.arc.nasa.gov/Material?id=25
-
+https://ntrs.nasa.gov/api/citations/19970041399/downloads/19970041399.pdf
 
 
 Zirconia / zirconium oxide (zro2 96 cao 6 91 d)
@@ -420,7 +421,7 @@ https://tpsx.arc.nasa.gov/Material?id=14
 
 
 
-TUFI Composite Surface oughened Uni-piece Fibrous Insulation
+TUFI Composite Surface toughened Uni-piece Fibrous Insulation
 Emissivity: (1600 K) 0.937
 Emissivity: (1850 K) 0.943
 cp: (255.556 K) 795 J/kg-K
@@ -678,7 +679,7 @@ density: 10150
 ref:
 https://tpsx.arc.nasa.gov/Material?id=860
 https://www.fb-tecno.com/en/prodotti/molybdenum-and-molybdenum-alloys/
-
+https://www.wieland.com/en/content/download/12678/file/TZM_EN.pdf
 
 
 René 41 Nickel alloy 

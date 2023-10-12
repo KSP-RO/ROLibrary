@@ -6,7 +6,7 @@ num15 = part.skinTemperature - part.temperature;
 
 
 
-heatConductivity = 0.12 (default) changed by ModuleConductionMultiplier or ModuleAblator
+heatConductivity = 0.12 (default) changed by ModuleConductionMultiplier, ModuleAblator or in cfg
 
 conductionMult = cacheConductionFactor * 10.0 * part.heatConductivity
 num13 = partThermalData.conductionMult * 0.5;
