@@ -37,61 +37,105 @@ namespace ROLib.Harmony
         [HarmonyPatch(typeof(FlightIntegrator), "UpdateMassStats")]
         public static class FlightIntegrator_UpdateMassStats_patch 
         {
-            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codeInstructions) {
-                var SetSkinThermalMass = AccessTools.Method(typeof(FlightIntegrator), nameof(FlightIntegrator.SetSkinThermalMass));
+            /// <summary>
+            /// Replaceing ThermalMass calculation of parts
+            /// </summary>
+            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator il) {
                 var resourceMass = AccessTools.Field(typeof(Part), nameof(Part.resourceMass));
-                var thermalMass = AccessTools.Field(typeof(Part), nameof(Part.thermalMass));
+                var thermalMassReciprocal = AccessTools.Field(typeof(Part), nameof(Part.thermalMassReciprocal));
+                var mass = AccessTools.Field(typeof(Part), nameof(Part.mass));
+                var kerbalMass = AccessTools.Field(typeof(Part), "kerbalMass");
+                var kerbalResourceMass = AccessTools.Field(typeof(Part), "kerbalResourceMass");
+                var inventoryMass = AccessTools.Field(typeof(Part), "inventoryMass");
 
                 var codes = codeInstructions.ToList();
                 bool found1 = false;
                 bool found2 = false;
-                bool found3 = false;
                 int index = 0;
                 int index2 = 0; 
-                int index3 = 0; 
                 for (int i = 0; i < codes.Count; i++) {
                     CodeInstruction code = codes[i];
 
-                    // find start of the first part.thermalMass calculation
+                    /// find staring & ending index of the lines of code, in order to remove them later 
+                    //    part.thermalMass = (double)part.mass * this.cacheStandardSpecificHeatCapacity * part.thermalMassModifier + part.resourceThermalMass;
+                    //    this.SetSkinThermalMass(part);
+                    //    part.thermalMass = Math.Max(part.thermalMass - part.skinThermalMass, 0.1);
+                    //    part.thermalMassReciprocal = 1.0 / part.thermalMass;
                     if (!found1 & code.opcode == OpCodes.Stfld && code.OperandIs(resourceMass)) 
                     {
                         found1 = true;
                         index = i + 1;
                     }
-                    else if (code.opcode == OpCodes.Callvirt & code.OperandIs(SetSkinThermalMass)) 
+                    else if (found1 && code.opcode == OpCodes.Stfld & code.OperandIs(thermalMassReciprocal)) 
                     {
-                        // replace SetSkinThermalMass() call with our SetSkinThermalMass()
-                        codes[i] = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyFunctions), nameof(HarmonyFunctions.SetSkinThermalMass)));
-                        index2 = i;
                         found2 = true;
-                    }
-                    // skip secound thermalMass calculation
-                    else if (found1 & found2 & !found3) 
-                    {
-                        if (code.opcode == OpCodes.Stfld && code.OperandIs(thermalMass)){
-                            found3 = true;
-                            index3 = i;
-                        }
+                        index2 = i;
                     }
                 }
+                
+                
+                Label goToLabel566 = il.DefineLabel();
+                Label goToLabel567;
+                
+                if (codes[index2 + 1].labels.Any())
+                {
+                    goToLabel567 = codes[index2 + 1].labels.First();
+                }
+                else
+                {
+                    goToLabel567 = il.DefineLabel();
+                    codes[index2 + 1].labels.Add(goToLabel567);
+                }
+                
+
+                var instructionsToInsert = new List<CodeInstruction>
+                {
+                    //    if (part.kerbalMass != 0f)
+                    new CodeInstruction(OpCodes.Ldloc_0),
+                    new CodeInstruction(OpCodes.Ldfld, kerbalMass),
+                    new CodeInstruction(OpCodes.Ldc_R4, 0.0f),
+                    new CodeInstruction(OpCodes.Beq_S, goToLabel566),
+
+                    //    float mass = part.mass - part.mass - part.mass - part.mass;
+                    new CodeInstruction(OpCodes.Ldloc_0),
+                    new CodeInstruction(OpCodes.Ldfld, mass),
+                    new CodeInstruction(OpCodes.Ldloc_0),
+                    new CodeInstruction(OpCodes.Ldfld, kerbalMass),
+                    new CodeInstruction(OpCodes.Sub),
+                    new CodeInstruction(OpCodes.Ldloc_0),
+                    new CodeInstruction(OpCodes.Ldfld, kerbalResourceMass),
+                    new CodeInstruction(OpCodes.Sub),
+                    new CodeInstruction(OpCodes.Ldloc_0),
+                    new CodeInstruction(OpCodes.Ldfld, inventoryMass),
+                    new CodeInstruction(OpCodes.Sub),
+
+                    //    HarmonyFunctions.SetThermalMass(part, mass);
+                    new CodeInstruction(OpCodes.Ldloc_0),
+                    new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyFunctions), nameof(HarmonyFunctions.SetThermalMass))),
+                    new CodeInstruction(OpCodes.Br_S, goToLabel567),
+                };
+
+                //    HarmonyFunctions.SetThermalMass2(part);
+                CodeInstruction instruction = new CodeInstruction(OpCodes.Ldloc_0);
+                instruction.labels.Add(goToLabel566);
+                instructionsToInsert.Add(instruction);
+                instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyFunctions), nameof(HarmonyFunctions.SetThermalMass2))));
+
+                /// Remove indexed instruction & insert our own in their place
                 if (index2 > 0) {
-                    // remove: IL_0056, which loads the instance of the class (FlightIntegrator) onto the stack before SetSkinThermalMass call
-                    codes.RemoveRange(index2 - 2, 1);
-                    index2 -= 1;
-                    // remove code for the second part.thermalMass calculation
-                    if (index3 > 0)
-                        codes.RemoveRange(index2 + 1, index3 - index2 - 1);
-                    // remove code for the first part.thermalMass calculation
                     if (index > 0)
-                        codes.RemoveRange(index, index2 - index - 1);
-                } 
+                    {
+                        codes.RemoveRange(index, index2 - index + 1);
+                        codes.InsertRange(index, instructionsToInsert);
+                    }
+                }
                 if (found2 is false) 
                 {
                     throw new ArgumentException("[ROThermal] Harmony Transpiler instructions not found");
                 }
                 else 
                 {
-                    Debug.Log("[ROThermal] Harmony Transpiler found instruction 1 " + found1 + " instruction 2  " + found2 + " instruction 3 " + found3 );
+                    Debug.Log("[ROThermal] Harmony Transpiler for UpdateMassStats successful");
                 }
                 return codes;
             }
@@ -131,15 +175,67 @@ namespace ROLib.Harmony
     public static class HarmonyFunctions
     {
         public static double cacheStandardSpecificHeatCapacity;
-        public static void SetSkinThermalMass(Part part)
+        private const double MinValue = 0.001;
+        // excessMass = part.kerbalMass - part.kerbalResourceMass - part.inventoryMass;
+        public static void SetThermalMass(float mass, Part part)
         {
             double num = cacheStandardSpecificHeatCapacity * part.thermalMassModifier;
-            double massSkin = part.skinMassPerArea * part.radiativeArea;
+            double massSkin = part.skinMassPerArea * part.radiativeArea * MinValue;
+            double coreMass = (double)mass - massSkin;
 
-            part.thermalMass =  Math.Max((double)part.mass - massSkin, 0.2) * num + part.resourceThermalMass;
+            if (coreMass > MinValue)
+            {
+                part.thermalMass = coreMass * num + part.resourceThermalMass;
+            }
+            else
+            {
+                part.thermalMass = MinValue * num + part.resourceThermalMass;
+            }
+            part.thermalMassReciprocal = 1.0 / part.thermalMass;
             
-            part.skinThermalMass = Math.Max(0.1, 0.001 * massSkin * part.skinThermalMassModifier * num);
+            part.skinThermalMass = massSkin * part.skinThermalMassModifier * num;
+            if (part.skinThermalMass < MinValue)
+            {
+                part.skinThermalMass = MinValue;
+            }
             part.skinThermalMassRecip = 1.0 / part.skinThermalMass;
+        }
+        public static void SetThermalMass2(Part part)
+        {
+            double num = cacheStandardSpecificHeatCapacity * part.thermalMassModifier;
+            double massSkin = part.skinMassPerArea * part.radiativeArea * MinValue;
+            double coreMass = (double)part.mass - massSkin;
+
+            if (coreMass > MinValue)
+            {
+                part.thermalMass = coreMass * num + part.resourceThermalMass;
+            }
+            else
+            {
+                part.thermalMass = MinValue * num + part.resourceThermalMass;
+            }
+            part.thermalMassReciprocal = 1.0 / part.thermalMass;
+            
+            part.skinThermalMass = massSkin * part.skinThermalMassModifier * num;
+            if (part.skinThermalMass < MinValue)
+            {
+                part.skinThermalMass = MinValue;
+            }
+            part.skinThermalMassRecip = 1.0 / part.skinThermalMass;
+        }
+        public static void Test(Part part)
+        {   
+            double massSkin = part.skinMassPerArea * part.radiativeArea * MinValue;
+            if (part.mass != 0f)
+            {
+                float massCrew = part.mass - part.mass - part.mass - part.mass;
+                SetThermalMass(massCrew, part);
+            }
+            else
+            {
+                SetThermalMass2(part);
+            }
+            double tramble = part.skinMassPerArea * part.radiativeArea * MinValue;
         }
     }
 }
