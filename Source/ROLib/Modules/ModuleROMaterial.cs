@@ -28,7 +28,7 @@ namespace ROLib
          UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public string presetSkinName = "";
         [KSPField(isPersistant = true, guiName = "TPS height (mm)", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
-         UI_FloatEdit(sigFigs = 1, suppressEditorShipModified = true)]
+         UI_FloatEdit(sigFigs = 2, suppressEditorShipModified = true)]
         public float tpsHeightDisplay = 0.0f;
         [KSPField(isPersistant = false, guiName = "Desc", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string description = "";
