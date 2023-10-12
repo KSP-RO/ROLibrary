@@ -24,12 +24,12 @@ namespace ROLib
         public string presetCoreName = "";
         [KSPField(isPersistant = true, guiName = "Core", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string presetCoreNameAltDispl = "";
-        [KSPField(isPersistant = true, guiName = "TPS", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
+        [KSPField(isPersistant = false, guiName = "TPS", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_ChooseOption(scene = UI_Scene.Editor, suppressEditorShipModified = true)]
         public string presetSkinName = "";
         [KSPField(isPersistant = true, guiName = "TPS height (mm)", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName), 
          UI_FloatEdit(sigFigs = 1, suppressEditorShipModified = true)]
-        public float tpsHeightDisplay = 1.0f;
+        public float tpsHeightDisplay = 0.0f;
         [KSPField(isPersistant = false, guiName = "Desc", guiActiveEditor = true, groupName = GroupName, groupDisplayName = GroupDisplayName)]
         public string description = "";
         [KSPField(guiActiveEditor = true, guiName = "Temp", guiUnits = "K", groupName = GroupName, groupDisplayName = GroupDisplayName)]
@@ -508,7 +508,7 @@ namespace ROLib
                 
                 Fields[nameof(presetSkinName)].uiControlEditor.onFieldChanged =
                 Fields[nameof(presetSkinName)].uiControlEditor.onSymmetryFieldChanged =
-                    (bf, ob) => ApplySkinPreset(presetSkinName, true);
+                    (bf, ob) => ApplySkinPreset(presetSkinName);
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onFieldChanged =
                 Fields[nameof(tpsHeightDisplay)].uiControlEditor.onSymmetryFieldChanged = 
                     (bf, ob) => OnHeightChanged((float)bf.GetValue(this));
@@ -549,7 +549,7 @@ namespace ROLib
                 }
 
                 ApplyCorePreset(presetCoreName);
-                ApplySkinPreset(presetSkinName, false);
+                ApplySkinPreset(presetSkinName);
             }
             if(CCTagListModule is ModuleTagList && CCTagListModule.tags.Contains(reentryTag))
             {
@@ -576,7 +576,7 @@ namespace ROLib
                     Debug.Log($"[ROThermal] OnStartFinished thermalPropertiesCore array temperature set to " + thermalPropertiesCore[indexCore][0] + " part " + part);
                 }
 
-                ApplySkinPreset(presetSkinName, false);    
+                ApplySkinPreset(presetSkinName);    
                 if (presetSkin.hasCVS) 
                 {
                     LoadThermalPropertiesArraySkin();
@@ -662,13 +662,13 @@ namespace ROLib
             Debug.Log($"[ROThermal] applied preset {PresetCore} for core of {part.name}");     
             UpdateGeometricProperties();
         }
-        public void ApplySkinPreset (string preset, bool skinNew) {
+        public void ApplySkinPreset (string preset) {
             PresetTPS = preset;
 
             float heightMax = presetSkin.SkinHeightMaxVal; 
             float heightMin = presetSkin.skinHeightMin;
             this.ROLupdateUIFloatEditControl(nameof(tpsHeightDisplay), heightMin, heightMax, 10f, 1f, 0.05f);
-            prevHeight = Mathf.Clamp(skinHeightCfg, heightMin, heightMax);
+            prevHeight = Mathf.Clamp(tpsHeightDisplay, heightMin, heightMax);
             tpsHeightDisplay = prevHeight;
 
             ApplyThermal();
@@ -991,14 +991,21 @@ namespace ROLib
                 }
                 
             }
-            if (availableMaterialsNamesForFuelTank.Any()) {
-                presetCoreName = availableMaterialsNamesForFuelTank[0];
+            if (availableMaterialsNamesForFuelTank.Any()) 
+            {
                 string[] strList = availableMaterialsNamesForFuelTank.ToArray();
                 UpdatePresetsList(strList, PresetType.Core);
+                if (!availableMaterialsNamesForFuelTank.Contains(presetCoreName))
+                {
+                    if (availableMaterialsNamesForFuelTank.Contains(coreCfg))
+                        presetCoreName = coreCfg;
+                    else
+                        presetCoreName = availableMaterialsNamesForFuelTank[0];
+                    if (applyPreset)
+                        ApplyCorePreset(presetCoreName);
+                }
                 Debug.Log($"[ROThermal] UpdateFuelTankCore() " + moduleFuelTanks.type + " found in " + logStr 
                             + "\n\r presetCoreName set as " + availableMaterialsNamesForFuelTank[0]);
-                if (applyPreset)
-                    ApplyCorePreset(presetCoreName);
             } else {
                 Debug.Log("[ROThermal] No fitting PresetROMatarial for " + moduleFuelTanks.type + " found in " + part.name);   
             }
