@@ -9,6 +9,13 @@ namespace ROLib
     {
         protected PartModule pmROTank;
 
+        public override void OnLoad(ConfigNode node)
+        {
+            if (HighLogic.LoadedScene == GameScenes.LOADING)
+                isBreakable = false;
+            base.OnLoad(node);
+        }
+
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
@@ -22,6 +29,13 @@ namespace ROLib
                 moduleROTank.enableVScale = false;
                 moduleROTank.Fields[nameof(moduleROTank.currentVScale)].guiActiveEditor = false;
             }
+
+            var fld = Fields[nameof(sunAOA)];
+            fld.guiActive = fld.guiActiveEditor = false;
+            fld = Fields[nameof(flowRate)];
+            fld.guiActive = fld.guiActiveEditor = false;
+            fld = Fields[nameof(brokenStatusWarning)];
+            fld.guiActive = fld.guiActiveEditor = isBreakable;
         }
 
         internal void OnCoreChanged(BaseField bf, object obj)
@@ -48,6 +62,11 @@ namespace ROLib
                 anim ??= animations.FirstOrDefault();
             }
             useAnimation = anim != null;
+        }
+
+        public override string GetInfo()
+        {
+            return base.GetInfo();
         }
     }
 }
