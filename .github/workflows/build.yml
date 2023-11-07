@@ -47,6 +47,11 @@ jobs:
           msbuild /p:Configuration=Release /p:ReferencePath="${{ steps.download-assemblies.outputs.ksp-dll-path }}" ${GITHUB_WORKSPACE}/Source/ROLib/ROLib.sln
           cp -v ${GITHUB_WORKSPACE}/Source/ROLib/obj/Release/ROLib.dll ${GITHUB_WORKSPACE}/GameData/ROLib/Plugins/ROLib.dll
 
+      - name: Remove excess DLLs
+        uses: KSP-RO/BuildTools/remove-excess-dlls@master
+        with:
+          path: ${GITHUB_WORKSPACE}/GameData/
+
       - name: Setup python
         uses: actions/setup-python@v2
         with:
