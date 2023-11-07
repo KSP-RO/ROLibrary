@@ -35,10 +35,11 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]    // Don't change for every release
 #if CIBUILD
-[assembly: AssemblyFileVersion("@MAJOR@.@MINOR@.@PATCH.@BUILD@")]
+[assembly: AssemblyFileVersion("@MAJOR@.@MINOR@.@PATCH@.@BUILD@")]
+[assembly: KSPAssembly("ROLib", @MAJOR@, @MINOR@, @PATCH@)]
 #else
-[assembly: AssemblyFileVersion("1.4.0.0")]
+[assembly: AssemblyFileVersion("1.9.1.0")]
+[assembly: KSPAssembly("ROLib", 1, 9, 1)]
 #endif
 
-[assembly: KSPAssembly("ROLib", 1, 0)]
 //[assembly: KSPAssemblyDependency("TexturesUnlimited", 1, 0)]    // We need this to ensure correct load order but unfortunately TU doesn't define the KSPAssembly attribute. https://github.com/shadowmage45/TexturesUnlimited/issues/104
