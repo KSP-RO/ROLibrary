@@ -1,0 +1,86 @@
+
+Fuselage / Wing
+    "On the upper wing surface and upper fuselage, where temperatures were no higher than 2,000°F, the thermal-protection panels were also of Rene 41 rather than of a refractory"
+    "For the wing undersurface, and for other areas that were hotter than 2,000ºF, designers specified an insulated structure"
+
+
+    Insulation “pre-shrunk” Q-felt 
+    "density no greater than 6.2 pounds per cubic foot, one-tenth that of water. In addition, it withstood temperatures as high as 3,000°F. (1922.039 K)"
+
+
+Nose Vought variant
+    Layer 1 & 2:
+    "The final Vought design used a monolithic shell of siliconized graphite that was
+    covered over its full surface by zirconia tiles held in place using thick zirconia pins."
+    "siliconized carbon coated carbon graphite cap with an insulating layer of a temperature-resistant ceramic covering Zirconia"
+
+    Layer 3:
+    "A heat shield stood behind the graphite, fabricated as a thick disk-shaped
+    container made of coated TZM sheet metal and filled with Q-felt"
+
+    The nose cap attached to the vehicle with a forged ring and clamp that also were of coated TZM.
+
+Nose Boeing
+    Layer 1
+    "The Boeing concept used a monolithic zirconia nose cap that was reinforced
+    against cracking with two screens of platinum-rhodium wire." (Melting Point ~2103.15 K)
+
+    Layer 2
+    "Like its counterpart from Vought, this design also installed a heat shield that 
+    used Q-felt insulation"
+
+Coating
+    "a thin layer of silicon carbide, applied to the surface, gave the vehicle its distinctive black color."
+    ref: https://history.nasa.gov/sp4232-part2.pdf
+
+    Emittance table
+    ref: Coatings of High - Temperature Materials 
+        doi.org/10.1007/978-1-4757-1284-1 p.180 +
+
+Fuselage / Wing undersurface
+Rene 41 ribed panel 0.01 inch thick
+ref: DYNA-SOAR SKIN PANEL DEVELOPMENT
+     https://ntrs.nasa.gov/api/citations/19720063143/downloads/19720063143.pdf
+
+
+The internal structure of the X-20A was a truss structure of Rene 41 steel.
+The upper wing, body, and inside fin surfaces were also of Rene 41
+Coated molybdenum was used for the leading edge panels and the lower wing surface
+The nose cap was of zirconium
+http://astronautix.com/d/dynasoar.html
+
+
+
+Nose Cap
+    Max 2422.039 K
+
+    Chance-Vought concept 
+    shell of National Carbon RT-0029 graphite protected by a silicon carbide coating.
+        C/SiC (Carbon/Silicon-Carbide)
+        
+    further protected by an outer cover of zirconia tile 
+
+    Boeing Concept
+    shell of zirconia reinforced with platinum wire
+ref: https://ntrs.nasa.gov/citations/19720063747/
+https://doi.org/10.2514/6.1985-834
+
+
+
+René 41 was also used to create the outer shell of the Mercury space capsule
+
+
+
+Other Material:
+
+DYNA-SOAR-GLIDER FLIGHT-ENVELOPE STRUCTURAL PARAMETERS
+https://ntrs.nasa.gov/api/citations/19720063141/downloads/19720063141.pdf
+
+HOT-GAS TESTS FOR DYNA-SOAR STRUCTURES AND MATERIALS DEVELOPMENent
+https://ntrs.nasa.gov/api/citations/19720063145/downloads/19720063145.pdf
+
+
+SUMMARY COMPARISON OF DYNA-SOAR REENTRY DEVICE
+https://ntrs.nasa.gov/api/citations/19720063135/downloads/19720063135.pdf
+
+

@@ -1,0 +1,28 @@
+
+PrecalcRadiation()
+    
+
+    num6 = (Vector3.Dot(-vessel.upAxis, nVel) + 1f) * 0.5f;
+    num7 = Math.Min(bodyArea, part.skinExposedArea * num6);
+    num8 = Math.Min(bodyArea - num7, num2 * (1.0 - num6));
+    ptd.expFlux += ptd.bodyFlux * num7;
+    ptd.unexpFlux += ptd.bodyFlux * num8;
+
+    ptd.expFlux += ptd.bodyFlux * bodyArea;
+
+
+
+UpdateRadiation()
+    ptd.emissScalar = part.emissiveConstant * cacheRadiationFactor * 0.001;
+
+    num = part.radiativeArea * part.skinExposedAreaFrac;
+
+    brtExposed *= brtExposed;
+    brtExposed *= brtExposed;
+    skinTemperature *= skinTemperature;
+    skinTemperature *= skinTemperature;
+
+    ptd.expFlux -= (skinTemperature - brtExposed) * cacheStefanBoltzmanConstant * ptd.emissScalar * num;
+
+    ptd.radiationFlux += ptd.expFlux;
+    ptd.unexpRadiationFlux += ptd.unexpFlux;
