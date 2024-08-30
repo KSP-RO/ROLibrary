@@ -6,7 +6,7 @@ namespace ROLib
     /// This is the module that allows engines (like the RL10-B2) to deploy. This code is orignally written by
     /// ShadowMage as part of the SSTU Mod. It has been adapted to work with the ROEngines code.
     /// </summary>
-    public class ROLDeployableEngine : PartModule
+    public class ROEDeployableEngine : PartModule
     {
         /// <summary>
         /// engine ID for the engine module that this deployable engine module is responsible for
@@ -70,7 +70,7 @@ namespace ROLib
 
         public override void OnStartFinished(StartState state)
         {
-            engineModule = part.GetComponents<ModuleEnginesFX>().Where(x => x.engineID == engineID).FirstOrDefault();
+            engineModule = part.GetComponents<ModuleEnginesFX>().FirstOrDefault(x => x.engineID == engineID);
             if (engineModule == null)
             {
                 engineModule = part.GetComponents<ModuleEnginesFX>().FirstOrDefault();
@@ -86,7 +86,7 @@ namespace ROLib
             ConfigNode node = ROLUtils.parseConfigNode(configNodeData);
             AnimationData animData = new AnimationData(node.GetNode("ANIMATIONDATA"));
             animationModule = new ROLAnimationModule(part, this, nameof(persistentState), null, nameof(DeployEngineEvent), nameof(RetractEngineEvent));
-            animationModule.getSymmetryModule = m => ((ROLDeployableEngine)m).animationModule;
+            animationModule.getSymmetryModule = m => ((ROEDeployableEngine)m).animationModule;
             animationModule.setupAnimations(animData, part.transform.ROLFindRecursive("model"), 0);
             animationModule.onAnimStateChangeCallback = OnAnimationStateChange;
         }
