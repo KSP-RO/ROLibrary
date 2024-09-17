@@ -1,0 +1,30 @@
+
+FlightIntegrator.cs
+
+skinInteralConductionFlux = num16 * num21 * num15
+num15 = part.skinTemperature - part.temperature;
+
+
+
+heatConductivity = 0.12 (default) changed by ModuleConductionMultiplier, ModuleAblator or in cfg
+
+conductionMult = cacheConductionFactor * 10.0 * part.heatConductivity
+num13 = partThermalData.conductionMult * 0.5;
+num16 = part.skinExposedAreaFrac * part.radiativeArea * num13 * skinInternalConductionFactor * part.skinInternalConductionMult;
+
+
+num21 = Math.Max(0.0, Math.Min(val4, val3));
+
+
+val3 = (num24 - num26) / num24;
+val4 = (num25 - num27) / num25
+
+num26 = part.skinTemperature + num24 - num37;
+num27 = part.temperature + num25 - num37;
+
+num24 = (0.0 - num15) * num16 * part.skinThermalMassRecip * part.skinExposedMassMult; // (- delta T) * conduction / Thermal Mass = -dT * (k/d * A) / (m * c)  // [dT * (k/d * A) = Q] => Q / (m * c)
+num25 = num15 * num16 * part.thermalMassReciprocal; // delta T * (conductionMult / Area) / Thermal Mass = dT * (k/d * A) / (m * c)  // [dT * (k/d * A) = Q] => Q / (m * c)
+
+num37 = (num14 + part.skinTemperature * num36) / (part.thermalMass + num36); // combined Thermal Energy / combined Thermal Mass = ΔT = Q / (m * c)
+num36 = part.skinThermalMass * part.skinExposedAreaFrac; // thermalMass Skin Exposed
+num14 = part.temperature * part.thermalMass // Part.ThermalEnergy 

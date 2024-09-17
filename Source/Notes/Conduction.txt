@@ -1,0 +1,31 @@
+conductionFactor = 5 // default RO
+skinSkinConductionFactor = 0.06 // default RO
+
+PrecalcConduction()
+    part = ptd.part;
+    ptd.conductionMult = conductionFactor * 10.0 * part.heatConductivity;
+    ptd.skinSkinTransfer = part.skinSkinConductionMult * skinSkinConductionFactor * Math.Min(part.skinExposedAreaFrac, 1.0 - part.skinExposedAreaFrac) * 2.0 * Math.Sqrt(part.radiativeArea);
+
+
+
+conduction:
+
+num5 = partThermalData.conductionMult * thermalLink.remotePart.heatConductivity;
+// num5 = conductionFactor * 10.0 * part.heatConductivity * thermalLink.remotePart.heatConductivity;
+num6 = thermalLink.contactArea * num5 * thermalLink.temperatureDelta
+ptd.localIntConduction -= num6;
+partThermalData.localIntConduction += num6;
+
+
+
+
+skinSkinConduction:
+
+num13 = partThermalData.conductionMult * 0.5;
+num16 = num13 * partThermalData.skinSkinTransfer;
+num17 = (0.0 - num15) * num16 * part.skinThermalMassRecip * part.skinExposedMassMult;
+num18 = num15 * num16 * part.skinThermalMassRecip * part.skinUnexposedMassMult;
+num19 = part.skinTemperature + num17 - partThermalData.unifiedTemp;
+num20 = part.skinUnexposedTemperature + num18 - partThermalData.unifiedTemp;
+
+partThermalData.skinSkinConductionFlux = num16 * num21 * num15;
