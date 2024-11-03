@@ -1,0 +1,60 @@
+
+Wing Mass = massMultiplier * wingBaseMassMultiplier * supportedArea * (float)FARAeroUtil.massPerWingAreaSupported;
+Force Mult = Math.Pow(massMultiplier, FARAeroUtil.massStressPower)
+
+
+
+
+Wing Mass = massMultiplier * wingBaseMassMultiplier => [strength] * [density / strength] * supportedArea... [Area]
+
+Force Mult = massMultiplier => [strength] 
+
+
+
+
+
+
+Material            density     Tensile Strength p0.2   Yield Strength      
+Aluminium 2024  	2770        325                     425 
+Steel AISI 304      7950        215                     505
+Monel K-500,        8460        790                     1100
+Titanium 6A1-1V     4440        870                     920
+
+
+
+
+
+
+
+
+
+
+
+
+Mass
+curWingMass = supportedArea * (float)FARAeroUtil.massPerWingAreaSupported * massMultiplier;
+desiredMass = curWingMass * wingBaseMassMultiplier;
+
+GetModuleMass(..)
+{
+    if (MassOverride is not null)
+        return (float)MassOverride;
+    if (massScaleReady)
+        return desiredMass - baseMass;
+    return 0;
+}
+
+
+Max Force
+maxForceMult = Math.Pow(massMultiplier, FARAeroUtil.massStressPower);
+
+
+YmaxForce = template.YMaxStress; //in MPa
+YmaxForce *= S;
+
+XZmaxForce = template.XZMaxStress;
+XZmaxForce *= S;
+
+
+YmaxForce *= maxForceMult;
+XZmaxForce *= maxForceMult;

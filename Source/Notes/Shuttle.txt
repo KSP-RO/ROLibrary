@@ -1,0 +1,90 @@
+r1: https://ia802806.us.archive.org/22/items/PressInformationSpaceShuttleTransportationSystemMarch1982/Press_Information_Space_Shuttle_Transportation_System_March_1982.pdf
+
+
+
+Maiden Flights              
+OV-101  Aug 1977     ALT-12 Test Flight 
+OV-102  Apr 1981     STS-1 First Orbital Flight of a shuttle
+OV-099  Apr 1983     STS-6
+OV-103  Aug 1984     STS-41-D    
+OV-104  Oct 1985     STS-51-J    
+OV-105  May 1992     STS-49      
+
+
+OV-103 + Some of HSRI Li-2200 tiles may have been replaced with FRCI-12 HSRI Tiles
+Thermal protection systems manned spacecraft flight experience
+https://ntrs.nasa.gov/citations/19930003261 p23
+
+
+OV-102
+        m2      kg
+RCC     38      1697.3
+HSRI    479.7   4412.6
+LSRI    254.6   1014.2
+FRSI    337.2   532.1
+
+OV-99 & Subsecuent
+        m2      kg
+RCC     38      1697.3
+HSRI    
+FRCI
+LSRI    
+AFRSI
+FRSI    337.2   532.1
+
+
+
+FRCI Tiles & AFRSI Interface
+Orbiter 103 & Subsecuent
+S. 204 c1
+
+AFRSI Coat 
+FRCI Tile
+Strain Isolation Pad (SIP)
+Aluminium Skin
+
+
+HSRI
+    OV-102 
+        LI-2200 in Areas around nose, Landing Gear, umbilical & vent doors, vertical stabilizer leading edge 
+    Coating 0.4064 - 0.4572 mm thick
+    solar absorbance 0.85
+
+FRCI-12 & FRCI-10 HRSI 25.4-127mm
+
+SIP
+    2.28 mm or 4.06 mm
+
+FRSI Nomex
+4.06mm - 10.1mm 
+    bonded with 0.2mm thick room Temperature vulcanizing (RTV) silicon adhesive
+
+LRSI 
+    5-35mm tick
+    solar absorbance 0.32
+    OV-099 OMS-PoD LRSI Tiles replaced with AFRSI
+    OV-103+ the LRSI Tiles replaced with AFRSI
+
+AFRSI 11-24mm
+    bonded with 5.08mm thick room Temperature vulcanizing (RTV) adhesive
+
+Nosecone
+RCC ontop of 2 RCC SealStrip rings & internal insulation im hohlraum
+
+Carbon Insulation page 206
+    Wings
+        Insulation Iconel coverd Cerachrome aka Dynaflex
+        0.004-inch-thick Inconel 601 foil-covered Cerachrome
+        https://www.nasa.gov/sites/default/files/167473main_TPS-08.pdf
+        thicknes ~ palm sized, guess from photos
+    Nose
+        blanket cerramic fibers filled with silica fibers
+        and HSRI/FRCI Tiles
+
+
+
+Thermal window pane
+    1229.15 K
+
+Inconel Alloy 601
+https://tpsx.arc.nasa.gov/Material?id=258
