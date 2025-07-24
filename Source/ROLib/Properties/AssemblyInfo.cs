@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("ROLib")]
-[assembly: AssemblyCopyright("Copyright © KSP-RO group 2022")]
+[assembly: AssemblyCopyright("Copyright © KSP-RO group 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -33,13 +33,13 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]    // Don't change for every release
+[assembly: AssemblyVersion("2.0.0.0")]    // Don't change for every release
 #if CIBUILD
 [assembly: AssemblyFileVersion("@MAJOR@.@MINOR@.@PATCH@.@BUILD@")]
 [assembly: KSPAssembly("ROLib", @MAJOR@, @MINOR@, @PATCH@)]
 #else
-[assembly: AssemblyFileVersion("1.9.1.0")]
-[assembly: KSPAssembly("ROLib", 1, 9, 1)]
+[assembly: AssemblyFileVersion("2.0.0.0")]
+[assembly: KSPAssembly("ROLib", 2, 0, 0)]
 #endif
 
 [assembly: KSPAssemblyDependency("TexturesUnlimited", 1, 6)]
