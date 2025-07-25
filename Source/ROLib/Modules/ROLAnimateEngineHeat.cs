@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ROUtils;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,42 +13,42 @@ namespace ROLib
 
         //amount of 'heat' added per second at full throttle
         [KSPField]
-        public float heatOutput = 300;
+        public double heatOutput = 300;
 
         //amount of heat dissipated per second, adjusted by the heatDissipationCurve below
         [KSPField]
-        public float heatDissipation = 100;
+        public double heatDissipation = 100;
 
         //point at which the object will begin to glow
         [KSPField]
-        public float draperPoint = 400;
+        public double draperPoint = 400;
 
         //maximum amount of heat allowed in this engine
         //will reach max glow at this temp, and begin dissipating even faster past this point
         [KSPField]
-        public float maxHeat = 2400;
+        public double maxHeat = 2400;
 
         //maxStoredHeat
         //storedHeat will not go beyond this, sets retention period for maximum glow
         [KSPField]
-        public float maxStoredHeat = 3600;
+        public double maxStoredHeat = 3600;
 
         //curve to adjust heat dissipation; should generally expel heat faster when hotter
         [KSPField]
-        public FloatCurve heatDissipationCurve = new FloatCurve();
+        public HermiteCurve heatDissipationCurve = new HermiteCurve();
 
         //the heat-output curve for an engine (varies with thrust/throttle), in case it is not linear
         [KSPField]
-        public FloatCurve heatAccumulationCurve = new FloatCurve();
+        public HermiteCurve heatAccumulationCurve = new HermiteCurve();
 
         [KSPField]
-        public FloatCurve redCurve = new FloatCurve();
+        public HermiteCurve redCurve = new HermiteCurve();
 
         [KSPField]
-        public FloatCurve blueCurve = new FloatCurve();
+        public HermiteCurve blueCurve = new HermiteCurve();
 
         [KSPField]
-        public FloatCurve greenCurve = new FloatCurve();
+        public HermiteCurve greenCurve = new HermiteCurve();
 
         [KSPField]
         public string engineID = "Engine";
@@ -56,7 +57,7 @@ namespace ROLib
         public string meshName = string.Empty;
 
         [KSPField(isPersistant = true)]
-        public float currentHeat = 0;
+        public double currentHeat = 0;
 
         [KSPField]
         public bool useThrottle;
@@ -75,20 +76,20 @@ namespace ROLib
 
         public override void OnAwake()
         {
-            heatDissipationCurve.Add(0f, 0.2f);
-            heatDissipationCurve.Add(1f, 1f);
+            heatDissipationCurve.AddKey(0f, 0.2f);
+            heatDissipationCurve.AddKey(1f, 1f);
 
-            heatAccumulationCurve.Add(0f, 0f);
-            heatAccumulationCurve.Add(1f, 1f);
+            heatAccumulationCurve.AddKey(0f, 0f);
+            heatAccumulationCurve.AddKey(1f, 1f);
             
-            redCurve.Add(0f, 0f);
-            redCurve.Add(1f, 1f);
+            redCurve.AddKey(0f, 0f);
+            redCurve.AddKey(1f, 1f);
 
-            blueCurve.Add(0f, 0f);
-            blueCurve.Add(1f, 1f);
+            blueCurve.AddKey(0f, 0f);
+            blueCurve.AddKey(1f, 1f);
 
-            greenCurve.Add(0f, 0f);
-            greenCurve.Add(1f, 1f);
+            greenCurve.AddKey(0f, 0f);
+            greenCurve.AddKey(1f, 1f);
 
             shaderEmissiveID = Shader.PropertyToID("_EmissiveColor");
         }
@@ -150,16 +151,16 @@ namespace ROLib
                 //add heat from engine
                 if (engineModule.EngineIgnited && !engineModule.flameout && engineModule.currentThrottle > 0)
                 {
-                    float throttle = engineModule.currentThrottle;
-                    float heatIn = heatAccumulationCurve.Evaluate(throttle) * heatOutput * TimeWarp.fixedDeltaTime;
+                    double throttle = engineModule.currentThrottle;
+                    double heatIn = heatAccumulationCurve.Evaluate(throttle) * heatOutput * TimeWarp.fixedDeltaTime;
                     currentHeat += heatIn;
                 }
 
                 //dissipate heat
-                float heatPercent = currentHeat / maxHeat;
-                if (currentHeat > 0f)
+                double heatPercent = currentHeat / maxHeat;
+                if (currentHeat > 0)
                 {
-                    float heatOut = heatDissipationCurve.Evaluate(heatPercent) * heatDissipation * TimeWarp.fixedDeltaTime;
+                    double heatOut = heatDissipationCurve.Evaluate(heatPercent) * heatDissipation * TimeWarp.fixedDeltaTime;
                     if (heatOut > currentHeat) { heatOut = currentHeat; }
                     currentHeat -= heatOut;
                 }
@@ -171,21 +172,21 @@ namespace ROLib
         {
             if (engineModule == null) { return; }
 
-            float emissivePercent = 0f;
+            double emissivePercent = 0f;
 
             if (!useThrottle && !useSolverEngines)
             {
-                float mhd = maxHeat - draperPoint;
-                float chd = currentHeat - draperPoint;
+                double mhd = maxHeat - draperPoint;
+                double chd = currentHeat - draperPoint;
 
                 if (chd < 0f) { chd = 0f; }
                 emissivePercent = chd / mhd;
             }
             else if (!useThrottle && useSolverEngines)
             {
-                float mhd = maxHeat - draperPoint;
-                float chamberTemp = (float) getSolverChamberTemp();
-                float chd = chamberTemp - draperPoint;
+                double mhd = maxHeat - draperPoint;
+                double chamberTemp = getSolverChamberTemp();
+                double chd = chamberTemp - draperPoint;
 
                 if (chd < 0f) { chd = 0f; }
                 emissivePercent = chd / mhd;
@@ -197,9 +198,9 @@ namespace ROLib
 
 
             if (emissivePercent > 1f) { emissivePercent = 1f; }
-            emissiveColor.r = redCurve.Evaluate(emissivePercent);
-            emissiveColor.g = greenCurve.Evaluate(emissivePercent);
-            emissiveColor.b = blueCurve.Evaluate(emissivePercent);
+            emissiveColor.r = (float)redCurve.Evaluate(emissivePercent);
+            emissiveColor.g = (float)greenCurve.Evaluate(emissivePercent);
+            emissiveColor.b = (float)blueCurve.Evaluate(emissivePercent);
             setEmissiveColors();
         }
 
