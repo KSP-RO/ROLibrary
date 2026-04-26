@@ -105,6 +105,7 @@ namespace ROLib
 
         ModelDefinitionLayoutOptions[] coreDefs;
         private SolarTechLimit stl;
+        private int unlockedMaxTechLevel = 0;
 
         // Previous length/width/scale values for change detection
         private float prevLength = -1;
@@ -242,6 +243,7 @@ namespace ROLib
 
         internal void ModelChangedHandler(bool pushNodes)
         {
+            ApplyTLColoring();
             stl = SolarTechLimit.GetTechLevel(techLevel);
             retractable = stl.retractable && solarPanelType != "static";
             useRaycastForTrackingDot = true;
@@ -358,16 +360,54 @@ namespace ROLib
 
         private void SetMaxTechLevel()
         {
-
-            (Fields[nameof(TechLevel)].uiControlEditor as UI_FloatRange).maxValue = maxTechLevel;
-            if (HighLogic.LoadedSceneIsEditor && TechLevel < 0)
+            unlockedMaxTechLevel = maxTechLevel;
+            if (ROLModInterop.IsRP1Installed())
             {
-                TechLevel = maxTechLevel;
+                // For RP-1 purposes, allow selection of all TLs. Validation will prevent construction of TL above max, anyway.
+                maxTechLevel = SolarTechLimit.maxTL;
+            }
+            (Fields[nameof(TechLevel)].uiControlEditor as UI_FloatRange).maxValue = maxTechLevel;
+            
+            if (HighLogic.LoadedSceneIsEditor && (TechLevel < 0 || TechLevel > maxTechLevel))
+            {
+                // If the user loads a craft with TL > unlocked, clamp it back down.
+                TechLevel = maxTechLevel;           
+                if (ROLModInterop.IsRP1Installed()) // RP-1 
+                    TechLevel = SolarTechLimit.GetBestUnlockableTechLevel();
             }
             if (maxTechLevel == 0)
             {
                 Fields[nameof(TechLevel)].guiActiveEditor = false;
                 Fields[nameof(tlText)].guiActiveEditor = true;
+            }
+        }
+
+        private void UpdateMaxTechLevelInUI()
+        {
+            if (Fields[nameof(TechLevel)].uiControlEditor is UI_FloatRange fr)
+            {
+                fr.maxValue = maxTechLevel;
+            }
+            if (maxTechLevel > 0)
+            {
+                Fields[nameof(TechLevel)].guiActiveEditor = true;
+                Fields[nameof(tlText)].guiActiveEditor = false;
+            }
+            else
+            {
+                Fields[nameof(TechLevel)].guiActiveEditor = false;
+                Fields[nameof(tlText)].guiActiveEditor = true;
+            }
+        }
+
+        private void ApplyTLColoring()
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                int maxPurchasableTechLevel = SolarTechLimit.GetBestUnlockableTechLevel();
+                BaseField f = Fields[nameof(TechLevel)];
+                f.guiFormat = techLevel > maxPurchasableTechLevel ? "'<color=orange>'#'</color>'" : (techLevel > unlockedMaxTechLevel ? "'<color=yellow>'#'</color>'" : "N0");
+                f.guiName = techLevel > maxPurchasableTechLevel ? "<color=orange>Tech Level</color>" : (techLevel > unlockedMaxTechLevel ? "<color=yellow>Tech Level</color>" : "Tech Level");
             }
         }
 
@@ -559,5 +599,94 @@ namespace ROLib
         }
 
         #endregion Custom Methods
+
+        #region RP-1 Integration
+        /// <summary>
+        /// Called from RP-1 VesselBuildValidator
+        /// </summary>
+        /// <param name="validationError"></param>
+        /// <param name="canBeResolved"></param>
+        /// <param name="costToResolve"></param>
+        /// <returns></returns>
+        public virtual bool Validate(out string validationError, out bool canBeResolved, out float costToResolve, out string techToResolve)
+        {
+            validationError = null;
+            canBeResolved = false;
+            costToResolve = 0;
+            techToResolve = string.Empty;
+
+            PartUpgradeHandler.Upgrade upgd = SolarTechLimit.GetPartUpgradeForTL(techLevel);
+
+            if (PartUpgradeManager.Handler.IsUnlocked(upgd.name))
+            {
+                return true;
+            }
+            else if (PartUpgradeManager.Handler.IsAvailableToUnlock(upgd.name))
+            {
+                canBeResolved = true;
+                costToResolve = upgd.entryCost;
+                validationError = $"purchase {upgd.title}";
+            }
+            else
+            {
+                techToResolve = upgd.techRequired;
+                validationError = $"unlock tech {ResearchAndDevelopment.GetTechnologyTitle(upgd.techRequired)}";
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Called from RP-1 VesselBuildValidator
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool ResolveValidationError()
+        {
+            PartUpgradeHandler.Upgrade upgd = SolarTechLimit.GetPartUpgradeForTL(techLevel);
+            if (upgd == null)
+                return false;
+            return PurchaseConfig(upgd);
+        }
+
+        /// <summary>
+        /// NOTE: Harmony-patched from RP-1 to factor in unlock credit.
+        /// </summary>
+        /// <param name="cost"></param>
+        /// <returns></returns>
+        private static bool CanAffordEntryCost(float cost)
+        {
+            CurrencyModifierQuery cmq = CurrencyModifierQuery.RunQuery(TransactionReasons.RnDPartPurchase, -cost, 0, 0);
+            return cmq.CanAfford();
+        }
+
+        private static bool PurchaseConfig(PartUpgradeHandler.Upgrade upgd)
+        {
+            if (!CanAffordEntryCost(upgd.entryCost))
+                return false;
+            PartUpgradeManager.Handler.SetUnlocked(upgd.name, true);
+            GameEvents.OnPartUpgradePurchased.Fire(upgd);
+            return true;
+        }
+
+        /// <summary>
+        /// Handles TL PartUpgrade getting purchased in Editor scene
+        /// </summary>
+        /// <param name="upgd"></param>
+        private void OnPartUpgradePurchased(PartUpgradeHandler.Upgrade upgd)
+        {
+            if (!upgd.name.StartsWith("solarTL")) return;
+            for (int i = SolarTechLimit.maxTL; i > unlockedMaxTechLevel; --i) 
+            {
+                if (upgd.name == SolarTechLimit.GetPartUpgradeForTL(i).name) 
+                {
+                    unlockedMaxTechLevel = i;
+                    if (!ROLModInterop.IsRP1Installed()) maxTechLevel = i;
+                    UpdateMaxTechLevelInUI();
+                    ApplyTLColoring();
+                    break;
+                }
+            }
+        }
+        #endregion
     }
 }
