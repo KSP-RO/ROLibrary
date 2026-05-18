@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -251,6 +251,7 @@ namespace ROLib
             UpdateAttachNodes(pushNodes);
             UpdateAvailableVariants();
             UpdateDragCubes();
+            RegisterLargeBoundsRenderers();
             UpdateMassAndCost();
             RecalculateStats();
             ROLStockInterop.UpdatePartHighlighting(part);
@@ -477,6 +478,33 @@ namespace ROLib
             timeEfficCurve.ROLloadSingleLine(stl.key80);
             timeEfficCurve.ROLloadSingleLine(stl.key99);
         }
+
+        /// <summary>
+        /// This is a hack to try and get the bounds to register correctly. With some models, the armatures appear very large in Blender.
+        /// With these models, the ROLib is showing the prefab to be km's in size. This walks through the SkinnedMeshRenderer and finds
+        /// anything that is out of bounds compared to the expected mesh bounds.
+        /// </summary>
+        private void RegisterLargeBoundsRenderers()
+{
+    if (part.partRendererBoundsIgnore == null)
+        part.partRendererBoundsIgnore = new List<string>();
+
+    foreach (SkinnedMeshRenderer smr in part.transform.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+    {
+        if (smr == null) continue;
+
+        float worldMag = smr.bounds.size.magnitude;
+        float localMag = smr.localBounds.size.magnitude;
+
+        // Only treat it as broken when world bounds are massively larger than the mesh's own bounds.
+        if (localMag <= 0f) continue;
+        if (worldMag < 100f) continue;
+        if (worldMag < localMag * 10f) continue;
+
+        if (!part.partRendererBoundsIgnore.Contains(smr.name))
+            part.partRendererBoundsIgnore.Add(smr.name);
+    }
+}
 
         private void FindAnimations()
         {
