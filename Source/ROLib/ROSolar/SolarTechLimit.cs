@@ -27,7 +27,7 @@ namespace ROLib
         public static bool isInitialized = false;
 
         private static readonly Dictionary<int, SolarTechLimit> allTL = new Dictionary<int, SolarTechLimit>();
-        private static int maxTL = -1;
+        public static int maxTL { get; private set; } = -1;
         private const string modTag = "[ModuleROSolar.SolarTechLimit]";
 
         public SolarTechLimit() { }
@@ -67,6 +67,24 @@ namespace ROLib
                 return info;
             }
             return allTL[0];
+        }
+
+        public static PartUpgradeHandler.Upgrade GetPartUpgradeForTL(int lvl)
+        {
+            if (lvl < 0 || lvl > maxTL) return null;
+            string name = $"solarTL{lvl}";
+            return PartUpgradeManager.Handler.GetUpgrade(name);
+        }
+
+        public static int GetBestUnlockableTechLevel()
+        {
+            for (int i = maxTL; i >= 0; --i)
+            { 
+                string name = $"solarTL{i}";
+                if (PartUpgradeManager.Handler.IsUnlocked(name) || PartUpgradeManager.Handler.IsAvailableToUnlock(name)) 
+                    return i;
+            }
+            return 0;
         }
     }
 }
