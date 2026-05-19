@@ -361,7 +361,7 @@ namespace ROLib
         private void SetMaxTechLevel()
         {
             unlockedMaxTechLevel = maxTechLevel;
-            if (ROLModInterop.IsRP1Installed())
+            if (ROUtils.ModUtils.IsRP1Installed)
             {
                 // For RP-1 purposes, allow selection of all TLs. Validation will prevent construction of TL above max, anyway.
                 maxTechLevel = SolarTechLimit.maxTL;
@@ -372,7 +372,7 @@ namespace ROLib
             {
                 // If the user loads a craft with TL > unlocked, clamp it back down.
                 TechLevel = maxTechLevel;           
-                if (ROLModInterop.IsRP1Installed()) // RP-1 
+                if (ROUtils.ModUtils.IsRP1Installed) // RP-1 
                     TechLevel = SolarTechLimit.GetBestUnlockableTechLevel();
             }
             if (maxTechLevel == 0)
@@ -680,7 +680,7 @@ namespace ROLib
                 if (upgd.name == SolarTechLimit.GetPartUpgradeForTL(i).name) 
                 {
                     unlockedMaxTechLevel = i;
-                    if (!ROLModInterop.IsRP1Installed()) maxTechLevel = i;
+                    if (!ROUtils.ModUtils.IsRP1Installed) maxTechLevel = i;
                     UpdateMaxTechLevelInUI();
                     ApplyTLColoring();
                     break;

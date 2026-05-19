@@ -10,7 +10,7 @@ namespace ROLib
     public static class ROLModInterop
     {
         private static bool initialized = false;
-        private static Assembly FARAssembly, RFAssembly, MFTAssembly, SolverEnginesAssembly, RP0Assembly;
+        private static Assembly FARAssembly, RFAssembly, MFTAssembly, SolverEnginesAssembly;
         private static MethodInfo MFTChangeTotalVolumeMI, MFTCalculateMassMI;
         private static PropertyInfo SolverEnginesTempPI;
         private static Type MFTType, SolverEngineType;
@@ -119,7 +119,6 @@ namespace ROLib
             RFAssembly = AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.assembly.GetName().Name == "RealFuels")?.assembly;
             MFTAssembly = AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.assembly.GetName().Name == "modularFuelTanks")?.assembly;
             SolverEnginesAssembly = AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.assembly.GetName().Name == "SolverEngines")?.assembly;
-            RP0Assembly = AssemblyLoader.loadedAssemblies.FirstOrDefault(a => a.assembly.GetName().Name == "RP0")?.assembly;
             if (RFAssembly is Assembly || MFTAssembly is Assembly)
             {
                 string targ = RFAssembly is Assembly ? "RealFuels.Tanks.ModuleFuelTanks,RealFuels" : "RealFuels.Tanks.ModuleFuelTanks,modularFuelTanks";
@@ -156,12 +155,6 @@ namespace ROLib
         {
             if (!initialized) Init();
             return SolverEnginesAssembly is Assembly;
-        }
-
-        public static bool IsRP1Installed()
-        { 
-            if (!initialized) Init();
-            return RP0Assembly is Assembly;
         }
 
         public static void UpdatePartResourceDisplay(Part part)
