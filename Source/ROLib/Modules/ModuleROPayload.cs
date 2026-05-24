@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace ROLib
 {
     public class ModuleROPayload : ModuleDeployableSolarPanel
     {
-        protected PartModule pmROTank;
+        protected ModuleROTank pmROTank;
 
         public override void OnLoad(ConfigNode node)
         {
@@ -18,16 +16,15 @@ namespace ROLib
 
         public override void OnStart(StartState state)
         {
-            base.OnStart(state);
             pmROTank = part.Modules.GetModule<ModuleROTank>();
-            if (state == StartState.Editor && pmROTank is ModuleROTank moduleROTank)
+            if (state == StartState.Editor && pmROTank != null)
             {
-                if (moduleROTank?.Fields["currentCore"] is BaseField cCbf)
+                if (pmROTank?.Fields["currentCore"] is BaseField cCbf)
                 {
                     cCbf.uiControlEditor.onFieldChanged += OnCoreChanged;
                 }
-                moduleROTank.enableVScale = false;
-                moduleROTank.Fields[nameof(moduleROTank.currentVScale)].guiActiveEditor = false;
+                pmROTank.enableVScale = false;
+                pmROTank.Fields[nameof(pmROTank.currentVScale)].guiActiveEditor = false;
             }
 
             var fld = Fields[nameof(sunAOA)];
@@ -36,18 +33,44 @@ namespace ROLib
             fld.guiActive = fld.guiActiveEditor = false;
             fld = Fields[nameof(brokenStatusWarning)];
             fld.guiActive = fld.guiActiveEditor = isBreakable;
+
+            if (pmROTank != null)
+            {
+                UpdateAnimationAndTracking();
+            }
+
+            base.OnStart(state);
+
+            // OnStart will clobber the state to EXTENDED which can result in exception spam
+            if (!useAnimation && deployState == DeployState.EXTENDED && panelRotationTransform == null)
+                deployState = DeployState.RETRACTED;
         }
 
         internal void OnCoreChanged(BaseField bf, object obj)
         {
-            UpdateAnimationAndTracking(bf);
+            UpdateAnimationAndTracking();
             startFSM();
         }
 
-        private void UpdateAnimationAndTracking(BaseField bf)
+        private void UpdateAnimationAndTracking()
         {
+            ROLModelDefinition modelDef = pmROTank.coreModule.definition;
+            isTracking = modelDef.isTracking;
+            animationName = modelDef.animationName;
+            pivotName = modelDef.pivotName;
+            secondaryTransformName = raycastTransformName = modelDef.secondaryTransformName;
+
+            if (string.IsNullOrEmpty(pivotName))
+            {
+                alignType = PanelAlignType.X;   // Anything but Pivot
+            }
+            else
+            {
+                alignType = PanelAlignType.PIVOT;
+            }
+
             FindAnimations();
-            panelRotationTransform = part.FindModelTransform(pivotName);
+            panelRotationTransform = string.IsNullOrEmpty(pivotName) ? null : part.FindModelTransform(pivotName);
             hasPivot = panelRotationTransform is Transform;
             originalRotation = currentRotation = panelRotationTransform?.localRotation ?? Quaternion.identity;
         }
