@@ -90,7 +90,6 @@ namespace ROLib
             float oldCoreLen, float oldMountLen, float newNoseLen, float newCoreLen, float newMountLen)
         {
             float diamDelta = (newDiam - oldDiam) * 0.5f;
-            Vector3 parentPos = part.transform.localPosition;
 
             foreach (Part child in part.children)
             {
@@ -100,7 +99,7 @@ namespace ROLib
                     {
                         Vector3 childPos = child.transform.position;
                         Vector3 childInParentSpace = part.transform.InverseTransformPoint(childPos);
-                        Vector3 dir = childInParentSpace - parentPos;
+                        Vector3 dir = childInParentSpace;
                         dir.y = 0;
                         dir.Normalize();
 
@@ -131,7 +130,6 @@ namespace ROLib
         public static void UpdateSurfaceAttachedChildren(Part part, float oldDiam, float newDiam, float oldTopLen, float oldUpperLen, float oldCoreLen, float oldLowerLen, float oldBottomLen, float newTopLen, float newUpperLen, float newCoreLen, float newLowerLen, float newBottomLen)
         {
             float diamDelta = (newDiam - oldDiam) * 0.5f;
-            Vector3 parentPos = part.transform.localPosition;
 
             foreach (Part child in part.children)
             {
@@ -141,7 +139,7 @@ namespace ROLib
                     {
                         Vector3 childPos = child.transform.position;
                         Vector3 childInParentSpace = part.transform.InverseTransformPoint(childPos);
-                        Vector3 dir = childInParentSpace - parentPos;
+                        Vector3 dir = childInParentSpace;
                         dir.y = 0;
                         dir.Normalize();
 
@@ -170,7 +168,6 @@ namespace ROLib
         public static void updateSurfaceAttachedChildren(Part part, float oldDiameter, float newDiameter)
         {
             float delta = (newDiameter - oldDiameter) / 2;
-            Vector3 parentLS = part.transform.localPosition;
             foreach (Part child in part.children)
             {
                 if (child.srfAttachNode is AttachNode n && n.attachedPart == part)//has surface attach node, and surface attach node is attached to the input part
@@ -178,7 +175,7 @@ namespace ROLib
                     // The child must displace radially in the coordinate system of the parent
                     // Work in the parent coordinate space, then translate in world.
                     Vector3 childInParentSpace = part.transform.InverseTransformPoint(child.transform.position);
-                    Vector3 dir = childInParentSpace - parentLS;
+                    Vector3 dir = childInParentSpace;
                     dir.y = 0;
                     dir.Normalize();
                     // Debug.Log($"[ROLAttachNode] Moving surface-attached children by {delta} in dir {dir} in parent space");
